@@ -1,0 +1,162 @@
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { ToneType } from "@/components/carousel-creator/ToneSelector";
+import { StyleType } from "@/components/carousel-creator/StyleSelector";
+import { FormatType } from "@/components/carousel-creator/FormatSelector";
+
+export type ProcessingStatus = 
+  | "QUEUED" 
+  | "TRANSCRIBING" 
+  | "SCRIPTING" 
+  | "GENERATING" 
+  | "COMPLETED" 
+  | "FAILED";
+
+interface Slide {
+  number: number;
+  type: string;
+  text: string;
+  imageUrl?: string;
+}
+
+interface GenerationResult {
+  transcription: string;
+  script: {
+    tone: string;
+    slides: Slide[];
+    total_slides: number;
+  };
+  slides: Slide[];
+}
+
+export function useCarouselGeneration() {
+  const [status, setStatus] = useState<ProcessingStatus>("QUEUED");
+  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<GenerationResult | null>(null);
+
+  const generateCarousel = async (
+    audioFile: File,
+    tone: ToneType,
+    style: StyleType,
+    format: FormatType,
+    carouselId: string,
+    userId: string
+  ): Promise<GenerationResult | null> => {
+    setError(null);
+    
+    try {
+      // Step 1: Transcribe audio
+      setStatus("TRANSCRIBING");
+      await updateCarouselStatus(carouselId, "TRANSCRIBING");
+
+      // Convert audio file to base64
+      const audioBase64 = await fileToBase64(audioFile);
+
+      const { data: transcribeData, error: transcribeError } = await supabase.functions.invoke(
+        "transcribe-audio",
+        {
+          body: { audio: audioBase64, mimeType: audioFile.type }
+        }
+      );
+
+      if (transcribeError || transcribeData?.error) {
+        throw new Error(transcribeData?.error || transcribeError?.message || "Transcription failed");
+      }
+
+      const transcription = transcribeData.transcription;
+      console.log("Transcription completed:", transcription.substring(0, 100));
+
+      // Step 2: Generate script with AI
+      setStatus("SCRIPTING");
+      await updateCarouselStatus(carouselId, "SCRIPTING");
+
+      const { data: scriptData, error: scriptError } = await supabase.functions.invoke(
+        "generate-script",
+        {
+          body: { transcription, tone, language: "pt-BR" }
+        }
+      );
+
+      if (scriptError || scriptData?.error) {
+        throw new Error(scriptData?.error || scriptError?.message || "Script generation failed");
+      }
+
+      const script = scriptData.script;
+      console.log("Script generated with", script.slides?.length, "slides");
+
+      // Step 3: Generate images
+      setStatus("GENERATING");
+      await updateCarouselStatus(carouselId, "GENERATING");
+
+      const { data: imagesData, error: imagesError } = await supabase.functions.invoke(
+        "generate-carousel-images",
+        {
+          body: { script, style, format }
+        }
+      );
+
+      if (imagesError || imagesData?.error) {
+        throw new Error(imagesData?.error || imagesError?.message || "Image generation failed");
+      }
+
+      const slides = imagesData.slides;
+      console.log("Generated", slides.length, "slide images");
+
+      // Step 4: Update carousel in database
+      setStatus("COMPLETED");
+      await supabase.from("carousels").update({
+        status: "COMPLETED",
+        transcription,
+        script,
+        slide_count: slides.length,
+        image_urls: slides.map((s: Slide) => s.imageUrl),
+      }).eq("id", carouselId);
+
+      const generationResult: GenerationResult = {
+        transcription,
+        script,
+        slides
+      };
+
+      setResult(generationResult);
+      return generationResult;
+
+    } catch (err: any) {
+      console.error("Generation error:", err);
+      setError(err.message || "An error occurred");
+      setStatus("FAILED");
+      
+      await supabase.from("carousels").update({
+        status: "FAILED",
+        error_message: err.message
+      }).eq("id", carouselId);
+
+      return null;
+    }
+  };
+
+  const updateCarouselStatus = async (carouselId: string, status: ProcessingStatus) => {
+    await supabase.from("carousels").update({ status }).eq("id", carouselId);
+  };
+
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        // Remove data URL prefix to get just the base64 string
+        const base64 = result.split(",")[1];
+        resolve(base64);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  return {
+    status,
+    error,
+    result,
+    generateCarousel,
+  };
+}
