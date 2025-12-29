@@ -1,6 +1,10 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Check, Sparkles, Zap } from "lucide-react";
+import { Check, Sparkles, Zap, Loader2 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useSubscription } from "@/hooks/useSubscription";
 
 const plans = [
   {
@@ -44,6 +48,40 @@ const plans = [
 ];
 
 const Pricing = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { isPro, createCheckout } = useSubscription();
+  const [loading, setLoading] = useState(false);
+
+  const handleFreeTrial = () => {
+    if (!user) {
+      navigate("/auth");
+    } else {
+      navigate("/create");
+    }
+  };
+
+  const handleProSubscribe = async () => {
+    if (!user) {
+      navigate("/auth");
+      return;
+    }
+    
+    if (isPro) {
+      navigate("/dashboard");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await createCheckout();
+    } catch (error) {
+      console.error("Checkout error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <section id="pricing" className="py-24 md:py-32 bg-secondary/30">
       <div className="container mx-auto">
@@ -123,9 +161,17 @@ const Pricing = () => {
                   variant={plan.featured ? "secondary" : "accent"}
                   size="lg"
                   className={`w-full ${plan.featured ? "bg-primary-foreground text-primary hover:bg-primary-foreground/90" : ""}`}
+                  onClick={plan.featured ? handleProSubscribe : handleFreeTrial}
+                  disabled={plan.featured && loading}
                 >
-                  {plan.featured && <Zap className="w-4 h-4" />}
-                  {plan.cta}
+                  {plan.featured && loading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <>
+                      {plan.featured && <Zap className="w-4 h-4" />}
+                      {plan.featured && isPro ? "Acessar Dashboard" : plan.cta}
+                    </>
+                  )}
                 </Button>
               </CardFooter>
             </Card>

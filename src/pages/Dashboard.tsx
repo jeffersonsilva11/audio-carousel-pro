@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,10 +13,13 @@ import {
   Image as ImageIcon, 
   Calendar,
   Sparkles,
-  FolderOpen
+  FolderOpen,
+  Crown,
+  CreditCard
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { toast } from "sonner";
 
 interface Carousel {
   id: string;
@@ -30,9 +34,24 @@ interface Carousel {
 
 const Dashboard = () => {
   const { user, loading, signOut } = useAuth();
+  const { isPro, subscribed, subscriptionEnd, createCheckout, openCustomerPortal, loading: subLoading } = useSubscription();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [carousels, setCarousels] = useState<Carousel[]>([]);
   const [loadingCarousels, setLoadingCarousels] = useState(true);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+
+  // Handle subscription callback
+  useEffect(() => {
+    const subscription = searchParams.get("subscription");
+    if (subscription === "success") {
+      toast.success("Assinatura Pro ativada com sucesso! 🎉");
+      window.history.replaceState({}, "", "/dashboard");
+    } else if (subscription === "canceled") {
+      toast.info("Checkout cancelado");
+      window.history.replaceState({}, "", "/dashboard");
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -65,6 +84,25 @@ const Dashboard = () => {
   const handleSignOut = async () => {
     await signOut();
     navigate("/");
+  };
+
+  const handleUpgrade = async () => {
+    setCheckoutLoading(true);
+    try {
+      await createCheckout();
+    } catch (error) {
+      toast.error("Erro ao iniciar checkout");
+    } finally {
+      setCheckoutLoading(false);
+    }
+  };
+
+  const handleManageSubscription = async () => {
+    try {
+      await openCustomerPortal();
+    } catch (error) {
+      toast.error("Erro ao abrir portal de assinatura");
+    }
   };
 
   const getToneLabel = (tone: string) => {
@@ -111,7 +149,35 @@ const Dashboard = () => {
 
             {/* User actions */}
             <div className="flex items-center gap-4">
-              <span className="text-sm text-muted-foreground hidden sm:block">
+              {/* Subscription badge */}
+              {!subLoading && (
+                <div className="hidden sm:flex items-center gap-2">
+                  {isPro ? (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-accent/10 text-accent text-sm font-medium rounded-full">
+                      <Crown className="w-3.5 h-3.5" />
+                      Pro
+                    </span>
+                  ) : (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handleUpgrade}
+                      disabled={checkoutLoading}
+                      className="text-accent border-accent/30 hover:bg-accent/10"
+                    >
+                      {checkoutLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <>
+                          <Crown className="w-4 h-4 mr-1" />
+                          Upgrade Pro
+                        </>
+                      )}
+                    </Button>
+                  )}
+                </div>
+              )}
+              <span className="text-sm text-muted-foreground hidden md:block">
                 {user?.email}
               </span>
               <Button variant="ghost" size="sm" onClick={handleSignOut}>
@@ -134,6 +200,57 @@ const Dashboard = () => {
             Gerencie seus carrosséis e crie novos conteúdos.
           </p>
         </div>
+
+        {/* Subscription status card */}
+        {!subLoading && (
+          <Card className={`mb-6 ${isPro ? "border-accent/30 bg-gradient-to-br from-accent/5 to-transparent" : "border-border"}`}>
+            <CardContent className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4">
+              <div className="flex items-center gap-4">
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isPro ? "bg-accent/10" : "bg-muted"}`}>
+                  {isPro ? (
+                    <Crown className="w-5 h-5 text-accent" />
+                  ) : (
+                    <CreditCard className="w-5 h-5 text-muted-foreground" />
+                  )}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold">{isPro ? "Plano Pro" : "Plano Gratuito"}</span>
+                    {isPro && subscriptionEnd && (
+                      <span className="text-xs text-muted-foreground">
+                        até {format(new Date(subscriptionEnd), "d MMM yyyy", { locale: ptBR })}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {isPro 
+                      ? "Carrosséis ilimitados, sem marca d'água" 
+                      : "1 carrossel grátis com marca d'água"}
+                  </p>
+                </div>
+              </div>
+              {isPro ? (
+                <Button variant="outline" size="sm" onClick={handleManageSubscription}>
+                  Gerenciar assinatura
+                </Button>
+              ) : (
+                <Button 
+                  variant="accent" 
+                  size="sm" 
+                  onClick={handleUpgrade}
+                  disabled={checkoutLoading}
+                >
+                  {checkoutLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  ) : (
+                    <Crown className="w-4 h-4 mr-2" />
+                  )}
+                  Assinar Pro - R$ 29,90/mês
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Quick actions */}
         <Card className="mb-8 border-accent/20 bg-gradient-to-br from-accent/5 to-transparent">
