@@ -40,11 +40,11 @@ const Header = () => {
 
           {/* Desktop CTA */}
           <div className="hidden md:flex items-center gap-3">
-            <Button variant="ghost" size="sm">
-              Entrar
+            <Button variant="ghost" size="sm" asChild>
+              <a href="/auth">Entrar</a>
             </Button>
-            <Button variant="accent" size="sm">
-              Começar Grátis
+            <Button variant="accent" size="sm" asChild>
+              <a href="/auth">Começar Grátis</a>
             </Button>
           </div>
 
@@ -76,11 +76,11 @@ const Header = () => {
                 </a>
               ))}
               <div className="flex flex-col gap-2 mt-4 px-4">
-                <Button variant="outline" className="w-full">
-                  Entrar
+                <Button variant="outline" className="w-full" asChild>
+                  <a href="/auth">Entrar</a>
                 </Button>
-                <Button variant="accent" className="w-full">
-                  Começar Grátis
+                <Button variant="accent" className="w-full" asChild>
+                  <a href="/auth">Começar Grátis</a>
                 </Button>
               </div>
             </div>

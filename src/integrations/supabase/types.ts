@@ -14,7 +14,114 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      carousels: {
+        Row: {
+          audio_duration: number | null
+          audio_size: number | null
+          audio_url: string | null
+          created_at: string | null
+          error_message: string | null
+          format: string | null
+          has_watermark: boolean | null
+          id: string
+          image_urls: string[] | null
+          language: string | null
+          processing_time: number | null
+          script: Json | null
+          slide_count: number | null
+          status: string | null
+          style: string | null
+          tone: string | null
+          transcription: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          audio_duration?: number | null
+          audio_size?: number | null
+          audio_url?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          format?: string | null
+          has_watermark?: boolean | null
+          id?: string
+          image_urls?: string[] | null
+          language?: string | null
+          processing_time?: number | null
+          script?: Json | null
+          slide_count?: number | null
+          status?: string | null
+          style?: string | null
+          tone?: string | null
+          transcription?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          audio_duration?: number | null
+          audio_size?: number | null
+          audio_url?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          format?: string | null
+          has_watermark?: boolean | null
+          id?: string
+          image_urls?: string[] | null
+          language?: string | null
+          processing_time?: number | null
+          script?: Json | null
+          slide_count?: number | null
+          status?: string | null
+          style?: string | null
+          tone?: string | null
+          transcription?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          default_style: string | null
+          default_tone: string | null
+          email: string | null
+          id: string
+          instagram_handle: string | null
+          name: string | null
+          preferred_lang: string | null
+          profile_image: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          default_style?: string | null
+          default_tone?: string | null
+          email?: string | null
+          id?: string
+          instagram_handle?: string | null
+          name?: string | null
+          preferred_lang?: string | null
+          profile_image?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          default_style?: string | null
+          default_tone?: string | null
+          email?: string | null
+          id?: string
+          instagram_handle?: string | null
+          name?: string | null
+          preferred_lang?: string | null
+          profile_image?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
