@@ -149,7 +149,7 @@ const Dashboard = () => {
                 </p>
               </div>
             </div>
-            <Button variant="accent" className="w-full sm:w-auto">
+            <Button variant="accent" className="w-full sm:w-auto" onClick={() => navigate("/create")}>
               <Plus className="w-4 h-4 mr-2" />
               Novo Carrossel
             </Button>
@@ -179,7 +179,7 @@ const Dashboard = () => {
                 <CardDescription className="mb-4">
                   Crie seu primeiro carrossel a partir de um áudio
                 </CardDescription>
-                <Button variant="accent">
+                <Button variant="accent" onClick={() => navigate("/create")}>
                   <Plus className="w-4 h-4 mr-2" />
                   Criar Primeiro Carrossel
                 </Button>

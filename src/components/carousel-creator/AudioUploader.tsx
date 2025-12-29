@@ -1,0 +1,333 @@
+import { useState, useRef, useCallback } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Mic, Upload, Square, Trash2, Play, Pause } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+interface AudioUploaderProps {
+  audioFile: File | null;
+  setAudioFile: (file: File | null) => void;
+  audioDuration: number | null;
+  setAudioDuration: (duration: number | null) => void;
+}
+
+const MAX_DURATION = 60; // 60 seconds
+const MAX_SIZE = 10 * 1024 * 1024; // 10MB
+const ALLOWED_TYPES = ["audio/mpeg", "audio/wav", "audio/mp4", "audio/x-m4a", "audio/webm"];
+
+const AudioUploader = ({ 
+  audioFile, 
+  setAudioFile, 
+  audioDuration, 
+  setAudioDuration 
+}: AudioUploaderProps) => {
+  const [isRecording, setIsRecording] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const validateFile = useCallback((file: File): string | null => {
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      return "Formato não suportado. Use MP3, WAV ou M4A.";
+    }
+    if (file.size > MAX_SIZE) {
+      return "Arquivo muito grande. Máximo 10MB.";
+    }
+    return null;
+  }, []);
+
+  const getAudioDuration = useCallback((file: File): Promise<number> => {
+    return new Promise((resolve, reject) => {
+      const audio = new Audio();
+      audio.src = URL.createObjectURL(file);
+      audio.onloadedmetadata = () => {
+        URL.revokeObjectURL(audio.src);
+        resolve(audio.duration);
+      };
+      audio.onerror = () => reject(new Error("Não foi possível ler o áudio"));
+    });
+  }, []);
+
+  const handleFileSelect = async (file: File) => {
+    setError(null);
+    
+    const validationError = validateFile(file);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    try {
+      const duration = await getAudioDuration(file);
+      if (duration > MAX_DURATION) {
+        setError(`Áudio muito longo. Máximo ${MAX_DURATION} segundos.`);
+        return;
+      }
+      
+      setAudioFile(file);
+      setAudioDuration(duration);
+    } catch {
+      setError("Erro ao processar o áudio.");
+    }
+  };
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    
+    const file = e.dataTransfer.files[0];
+    if (file) handleFileSelect(file);
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  }, []);
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (e) => {
+        audioChunksRef.current.push(e.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        const file = new File([audioBlob], "recording.webm", { type: "audio/webm" });
+        
+        stream.getTracks().forEach(track => track.stop());
+        
+        if (recordingTime <= MAX_DURATION) {
+          setAudioFile(file);
+          setAudioDuration(recordingTime);
+        }
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+      setRecordingTime(0);
+      setError(null);
+
+      recordingIntervalRef.current = setInterval(() => {
+        setRecordingTime(prev => {
+          if (prev >= MAX_DURATION) {
+            stopRecording();
+            return prev;
+          }
+          return prev + 1;
+        });
+      }, 1000);
+    } catch {
+      setError("Não foi possível acessar o microfone.");
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      if (recordingIntervalRef.current) {
+        clearInterval(recordingIntervalRef.current);
+      }
+    }
+  };
+
+  const togglePlayback = () => {
+    if (!audioFile) return;
+
+    if (!audioRef.current) {
+      audioRef.current = new Audio(URL.createObjectURL(audioFile));
+      audioRef.current.onended = () => setIsPlaying(false);
+    }
+
+    if (isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      audioRef.current.play();
+      setIsPlaying(true);
+    }
+  };
+
+  const removeAudio = () => {
+    setAudioFile(null);
+    setAudioDuration(null);
+    setError(null);
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+    setIsPlaying(false);
+  };
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
+
+  if (audioFile) {
+    return (
+      <Card className="border-accent/30 bg-accent/5">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={togglePlayback}
+                className="rounded-full w-12 h-12"
+              >
+                {isPlaying ? (
+                  <Pause className="w-5 h-5" />
+                ) : (
+                  <Play className="w-5 h-5 ml-0.5" />
+                )}
+              </Button>
+              <div>
+                <p className="font-medium">{audioFile.name}</p>
+                <p className="text-sm text-muted-foreground">
+                  {formatTime(audioDuration || 0)} • {(audioFile.size / 1024 / 1024).toFixed(2)} MB
+                </p>
+              </div>
+            </div>
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={removeAudio}
+              className="text-muted-foreground hover:text-destructive"
+            >
+              <Trash2 className="w-5 h-5" />
+            </Button>
+          </div>
+          
+          {/* Waveform placeholder */}
+          <div className="mt-4 h-16 bg-background/50 rounded-lg flex items-center justify-center gap-1 overflow-hidden">
+            {Array.from({ length: 50 }).map((_, i) => (
+              <div
+                key={i}
+                className="w-1 bg-accent/40 rounded-full animate-pulse"
+                style={{
+                  height: `${Math.random() * 100}%`,
+                  animationDelay: `${i * 0.05}s`
+                }}
+              />
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Recording button */}
+      <Card className={cn(
+        "transition-all cursor-pointer",
+        isRecording && "border-red-500 bg-red-500/5"
+      )}>
+        <CardContent className="p-6">
+          <div className="flex flex-col items-center text-center">
+            <Button
+              variant={isRecording ? "destructive" : "outline"}
+              size="lg"
+              className="w-16 h-16 rounded-full mb-4"
+              onClick={isRecording ? stopRecording : startRecording}
+            >
+              {isRecording ? (
+                <Square className="w-6 h-6" />
+              ) : (
+                <Mic className="w-6 h-6" />
+              )}
+            </Button>
+            
+            {isRecording ? (
+              <>
+                <p className="font-semibold text-destructive">Gravando...</p>
+                <p className="text-2xl font-mono font-bold">
+                  {formatTime(recordingTime)}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Máximo {MAX_DURATION}s • Clique para parar
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="font-semibold">Gravar áudio</p>
+                <p className="text-sm text-muted-foreground">
+                  Clique para começar a gravar
+                </p>
+              </>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Divider */}
+      <div className="flex items-center gap-4">
+        <div className="flex-1 h-px bg-border" />
+        <span className="text-sm text-muted-foreground">ou</span>
+        <div className="flex-1 h-px bg-border" />
+      </div>
+
+      {/* Upload area */}
+      <Card
+        className={cn(
+          "border-dashed transition-all cursor-pointer",
+          isDragging && "border-accent bg-accent/5"
+        )}
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onClick={() => fileInputRef.current?.click()}
+      >
+        <CardContent className="p-8">
+          <div className="flex flex-col items-center text-center">
+            <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4">
+              <Upload className="w-6 h-6 text-muted-foreground" />
+            </div>
+            <p className="font-semibold mb-1">
+              Arraste seu arquivo ou clique para selecionar
+            </p>
+            <p className="text-sm text-muted-foreground">
+              MP3, WAV, M4A • Máximo {MAX_DURATION}s • Máximo 10MB
+            </p>
+          </div>
+          
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="audio/*"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) handleFileSelect(file);
+            }}
+          />
+        </CardContent>
+      </Card>
+
+      {error && (
+        <p className="text-sm text-destructive text-center">{error}</p>
+      )}
+    </div>
+  );
+};
+
+export default AudioUploader;
