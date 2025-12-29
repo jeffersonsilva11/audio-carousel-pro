@@ -15,7 +15,9 @@ import {
   Sparkles,
   FolderOpen,
   Crown,
-  CreditCard
+  CreditCard,
+  RefreshCw,
+  AlertTriangle
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -30,6 +32,7 @@ interface Carousel {
   slide_count: number;
   image_urls: string[] | null;
   created_at: string;
+  has_watermark: boolean | null;
 }
 
 const Dashboard = () => {
@@ -40,6 +43,7 @@ const Dashboard = () => {
   const [carousels, setCarousels] = useState<Carousel[]>([]);
   const [loadingCarousels, setLoadingCarousels] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [regeneratingId, setRegeneratingId] = useState<string | null>(null);
 
   // Handle subscription callback
   useEffect(() => {
@@ -102,6 +106,33 @@ const Dashboard = () => {
       await openCustomerPortal();
     } catch (error) {
       toast.error("Erro ao abrir portal de assinatura");
+    }
+  };
+
+  const handleRegenerateWithoutWatermark = async (carouselId: string) => {
+    if (!user || !isPro) {
+      toast.error("Apenas assinantes Pro podem remover marca d'água");
+      return;
+    }
+
+    setRegeneratingId(carouselId);
+    try {
+      const { data, error } = await supabase.functions.invoke("regenerate-without-watermark", {
+        body: { carouselId, userId: user.id }
+      });
+
+      if (error || data?.error) {
+        throw new Error(data?.error || error?.message || "Erro ao regenerar");
+      }
+
+      toast.success("Marca d'água removida com sucesso!");
+      // Refresh carousels list
+      await fetchCarousels();
+    } catch (error) {
+      console.error("Regeneration error:", error);
+      toast.error("Erro ao remover marca d'água");
+    } finally {
+      setRegeneratingId(null);
     }
   };
 
@@ -307,7 +338,7 @@ const Dashboard = () => {
               {carousels.map((carousel) => (
                 <Card 
                   key={carousel.id} 
-                  className="group hover:shadow-lg transition-all cursor-pointer hover:border-accent/50"
+                  className="group hover:shadow-lg transition-all hover:border-accent/50"
                 >
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
@@ -324,17 +355,61 @@ const Dashboard = () => {
                           </CardDescription>
                         </div>
                       </div>
-                      <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(carousel.status)}`}>
-                        {carousel.status === "COMPLETED" ? "Pronto" : 
-                         carousel.status === "PROCESSING" ? "Processando" : "Erro"}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        {carousel.has_watermark && (
+                          <span className="text-xs px-2 py-1 rounded-full bg-amber-500/10 text-amber-500 flex items-center gap-1">
+                            <AlertTriangle className="w-3 h-3" />
+                            Watermark
+                          </span>
+                        )}
+                        <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(carousel.status)}`}>
+                          {carousel.status === "COMPLETED" ? "Pronto" : 
+                           carousel.status === "PROCESSING" ? "Processando" : "Erro"}
+                        </span>
+                      </div>
                     </div>
                   </CardHeader>
-                  <CardContent className="pt-0">
+                  <CardContent className="pt-0 space-y-3">
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <Calendar className="w-3 h-3" />
                       {format(new Date(carousel.created_at), "d 'de' MMM, yyyy", { locale: ptBR })}
                     </div>
+                    
+                    {/* Regenerate without watermark button for Pro users */}
+                    {carousel.has_watermark && carousel.status === "COMPLETED" && isPro && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full text-xs"
+                        onClick={() => handleRegenerateWithoutWatermark(carousel.id)}
+                        disabled={regeneratingId === carousel.id}
+                      >
+                        {regeneratingId === carousel.id ? (
+                          <>
+                            <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                            Removendo...
+                          </>
+                        ) : (
+                          <>
+                            <RefreshCw className="w-3 h-3 mr-1" />
+                            Remover marca d'água
+                          </>
+                        )}
+                      </Button>
+                    )}
+                    
+                    {/* Upgrade prompt for free users with watermarked carousels */}
+                    {carousel.has_watermark && carousel.status === "COMPLETED" && !isPro && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full text-xs text-accent hover:text-accent"
+                        onClick={handleUpgrade}
+                      >
+                        <Crown className="w-3 h-3 mr-1" />
+                        Upgrade Pro para remover
+                      </Button>
+                    )}
                   </CardContent>
                 </Card>
               ))}

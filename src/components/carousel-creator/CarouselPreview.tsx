@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ChevronLeft, ChevronRight, Download, Share2, Check } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, FolderArchive, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import JSZip from "jszip";
 
 interface Slide {
   number: number;
@@ -15,10 +16,12 @@ interface Slide {
 interface CarouselPreviewProps {
   slides: Slide[];
   onDownloadAll: () => void;
+  isPro?: boolean;
 }
 
-const CarouselPreview = ({ slides, onDownloadAll }: CarouselPreviewProps) => {
+const CarouselPreview = ({ slides, onDownloadAll, isPro = false }: CarouselPreviewProps) => {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [isDownloadingZip, setIsDownloadingZip] = useState(false);
   const { toast } = useToast();
 
   const goToSlide = (index: number) => {
@@ -29,8 +32,7 @@ const CarouselPreview = ({ slides, onDownloadAll }: CarouselPreviewProps) => {
 
   const downloadSlide = async (slide: Slide) => {
     try {
-      // For SVG data URLs, convert to blob and download
-      if (slide.imageUrl?.startsWith("data:image/svg+xml")) {
+      if (slide.imageUrl) {
         const response = await fetch(slide.imageUrl);
         const blob = await response.blob();
         const url = URL.createObjectURL(blob);
@@ -53,6 +55,63 @@ const CarouselPreview = ({ slides, onDownloadAll }: CarouselPreviewProps) => {
         description: "Não foi possível baixar o slide.",
         variant: "destructive",
       });
+    }
+  };
+
+  const downloadAsZip = async () => {
+    if (!isPro) {
+      toast({
+        title: "Recurso Pro",
+        description: "Download em ZIP está disponível apenas para assinantes Pro.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsDownloadingZip(true);
+    try {
+      const zip = new JSZip();
+      const folder = zip.folder("carrossel");
+
+      if (!folder) throw new Error("Could not create folder");
+
+      // Fetch all slides and add to zip
+      for (const slide of slides) {
+        if (slide.imageUrl) {
+          try {
+            const response = await fetch(slide.imageUrl);
+            const blob = await response.blob();
+            folder.file(`slide-${slide.number}.svg`, blob);
+          } catch (err) {
+            console.error(`Error fetching slide ${slide.number}:`, err);
+          }
+        }
+      }
+
+      // Generate and download zip
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "carrossel.zip";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "Download concluído",
+        description: `ZIP com ${slides.length} slides baixado com sucesso.`,
+      });
+    } catch (error) {
+      console.error("ZIP download error:", error);
+      toast({
+        title: "Erro no download",
+        description: "Não foi possível criar o arquivo ZIP.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDownloadingZip(false);
     }
   };
 
@@ -146,15 +205,32 @@ const CarouselPreview = ({ slides, onDownloadAll }: CarouselPreviewProps) => {
 
       {/* Actions */}
       <div className="flex flex-col sm:flex-row gap-3 justify-center">
-        <Button 
-          variant="accent" 
-          size="lg" 
-          onClick={onDownloadAll}
-          className="flex-1 sm:flex-initial"
-        >
-          <Download className="w-4 h-4 mr-2" />
-          Baixar todas ({slides.length} slides)
-        </Button>
+        {isPro ? (
+          <Button 
+            variant="accent" 
+            size="lg" 
+            onClick={downloadAsZip}
+            disabled={isDownloadingZip}
+            className="flex-1 sm:flex-initial"
+          >
+            {isDownloadingZip ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <FolderArchive className="w-4 h-4 mr-2" />
+            )}
+            {isDownloadingZip ? "Criando ZIP..." : `Baixar ZIP (${slides.length} slides)`}
+          </Button>
+        ) : (
+          <Button 
+            variant="accent" 
+            size="lg" 
+            onClick={onDownloadAll}
+            className="flex-1 sm:flex-initial"
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Baixar todas ({slides.length} slides)
+          </Button>
+        )}
         <Button 
           variant="outline" 
           size="lg"
