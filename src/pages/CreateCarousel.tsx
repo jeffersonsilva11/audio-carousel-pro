@@ -2,14 +2,13 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { useCarouselGeneration } from "@/hooks/useCarouselGeneration";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { 
   Mic2, 
   ArrowLeft, 
   ArrowRight, 
   Loader2,
-  Check,
   ChevronLeft
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -20,6 +19,7 @@ import ToneSelector, { ToneType } from "@/components/carousel-creator/ToneSelect
 import StyleSelector, { StyleType } from "@/components/carousel-creator/StyleSelector";
 import FormatSelector, { FormatType } from "@/components/carousel-creator/FormatSelector";
 import ProcessingStatus from "@/components/carousel-creator/ProcessingStatus";
+import CarouselPreview from "@/components/carousel-creator/CarouselPreview";
 
 type Step = "upload" | "customize" | "processing" | "preview";
 
@@ -30,10 +30,18 @@ const steps: { id: Step; title: string; description: string }[] = [
   { id: "preview", title: "Pronto", description: "Baixe" },
 ];
 
+interface Slide {
+  number: number;
+  type: string;
+  text: string;
+  imageUrl?: string;
+}
+
 const CreateCarousel = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { status, error, result, generateCarousel } = useCarouselGeneration();
 
   // Step management
   const [currentStep, setCurrentStep] = useState<Step>("upload");
@@ -49,14 +57,34 @@ const CreateCarousel = () => {
 
   // Processing state
   const [isProcessing, setIsProcessing] = useState(false);
-  const [processingStatus, setProcessingStatus] = useState("QUEUED");
-  const [carouselId, setCarouselId] = useState<string | null>(null);
+  const [generatedSlides, setGeneratedSlides] = useState<Slide[]>([]);
 
   useEffect(() => {
     if (!loading && !user) {
       navigate("/auth");
     }
   }, [user, loading, navigate]);
+
+  // Watch for status changes
+  useEffect(() => {
+    if (status === "COMPLETED" && result) {
+      setGeneratedSlides(result.slides);
+      setCurrentStep("preview");
+      setIsProcessing(false);
+      toast({
+        title: "Carrossel criado!",
+        description: "Seu carrossel está pronto para download.",
+      });
+    } else if (status === "FAILED" && error) {
+      toast({
+        title: "Erro ao gerar carrossel",
+        description: error,
+        variant: "destructive",
+      });
+      setCurrentStep("customize");
+      setIsProcessing(false);
+    }
+  }, [status, result, error, toast]);
 
   const getCurrentStepIndex = () => steps.findIndex(s => s.id === currentStep);
 
@@ -90,7 +118,6 @@ const CreateCarousel = () => {
 
     setIsProcessing(true);
     setCurrentStep("processing");
-    setProcessingStatus("TRANSCRIBING");
 
     try {
       // Create carousel record in database
@@ -109,16 +136,22 @@ const CreateCarousel = () => {
         .single();
 
       if (insertError) throw insertError;
-      setCarouselId(carousel.id);
 
-      // Simulate processing steps (in production, this would be handled by edge functions)
-      await simulateProcessing(carousel.id);
+      // Start the real AI generation
+      await generateCarousel(
+        audioFile,
+        selectedTone,
+        selectedStyle,
+        selectedFormat,
+        carousel.id,
+        user.id
+      );
 
-    } catch (error) {
-      console.error("Error starting generation:", error);
+    } catch (err: any) {
+      console.error("Error starting generation:", err);
       toast({
         title: "Erro ao gerar carrossel",
-        description: "Tente novamente mais tarde.",
+        description: err.message || "Tente novamente mais tarde.",
         variant: "destructive",
       });
       setCurrentStep("customize");
@@ -126,44 +159,39 @@ const CreateCarousel = () => {
     }
   };
 
-  const simulateProcessing = async (id: string) => {
-    // Simulate transcription
-    await new Promise(r => setTimeout(r, 2000));
-    setProcessingStatus("SCRIPTING");
-    await supabase.from("carousels").update({ status: "SCRIPTING" }).eq("id", id);
+  const handleDownloadAll = async () => {
+    if (generatedSlides.length === 0) return;
 
-    // Simulate scripting
-    await new Promise(r => setTimeout(r, 2500));
-    setProcessingStatus("GENERATING");
-    await supabase.from("carousels").update({ status: "GENERATING" }).eq("id", id);
-
-    // Simulate image generation
-    await new Promise(r => setTimeout(r, 3000));
-    setProcessingStatus("COMPLETED");
-    await supabase.from("carousels").update({ 
-      status: "COMPLETED",
-      slide_count: 6,
-      transcription: "Transcrição simulada do áudio...",
-      script: {
-        tone: selectedTone,
-        slides: [
-          { number: 1, type: "HOOK", text: "Seu hook aqui" },
-          { number: 2, type: "CONTENT", text: "Slide 2" },
-          { number: 3, type: "CONTENT", text: "Slide 3" },
-          { number: 4, type: "CONTENT", text: "Slide 4" },
-          { number: 5, type: "CTA", text: "Slide 5" },
-          { number: 6, type: "SIGNATURE", text: "@seuinstagram" },
-        ]
+    try {
+      for (const slide of generatedSlides) {
+        if (slide.imageUrl) {
+          const response = await fetch(slide.imageUrl);
+          const blob = await response.blob();
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `slide-${slide.number}.svg`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          
+          // Small delay between downloads
+          await new Promise(r => setTimeout(r, 200));
+        }
       }
-    }).eq("id", id);
-
-    setIsProcessing(false);
-    setCurrentStep("preview");
-    
-    toast({
-      title: "Carrossel criado!",
-      description: "Seu carrossel está pronto para download.",
-    });
+      
+      toast({
+        title: "Download concluído",
+        description: `${generatedSlides.length} slides baixados com sucesso.`,
+      });
+    } catch (err) {
+      toast({
+        title: "Erro no download",
+        description: "Não foi possível baixar os slides.",
+        variant: "destructive",
+      });
+    }
   };
 
   if (loading) {
@@ -220,11 +248,7 @@ const CreateCarousel = () => {
                         isCompleted && "bg-accent/20",
                         isPending && "bg-muted"
                       )}>
-                        {isCompleted ? (
-                          <Check className="w-3 h-3" />
-                        ) : (
-                          index + 1
-                        )}
+                        {isCompleted ? "✓" : index + 1}
                       </div>
                       <span className="font-medium">{step.title}</span>
                     </div>
@@ -319,48 +343,32 @@ const CreateCarousel = () => {
                 </p>
               </div>
               
-              <ProcessingStatus status={processingStatus} />
+              <ProcessingStatus status={status} />
             </>
           )}
 
-          {currentStep === "preview" && (
+          {currentStep === "preview" && generatedSlides.length > 0 && (
             <>
               <div className="text-center mb-8">
                 <h1 className="text-2xl font-bold mb-2">Carrossel pronto! 🎉</h1>
                 <p className="text-muted-foreground">
-                  Seu carrossel foi gerado com sucesso
+                  Seu carrossel foi gerado com sucesso • {generatedSlides.length} slides
                 </p>
               </div>
               
-              <Card className="border-accent/20 bg-gradient-to-br from-accent/5 to-transparent">
-                <CardContent className="p-8 text-center">
-                  <div className="w-24 h-24 rounded-full bg-accent/10 flex items-center justify-center mx-auto mb-6">
-                    <Check className="w-12 h-12 text-accent" />
-                  </div>
-                  
-                  <h3 className="text-lg font-semibold mb-2">
-                    6 slides criados
-                  </h3>
-                  <p className="text-muted-foreground mb-6">
-                    Tom: {selectedTone === "EMOTIONAL" ? "Emocional" : selectedTone === "PROFESSIONAL" ? "Profissional" : "Provocador"}
-                    {" • "}
-                    Formato: {selectedFormat === "POST_SQUARE" ? "1:1" : selectedFormat === "POST_PORTRAIT" ? "4:5" : "9:16"}
-                  </p>
+              <CarouselPreview 
+                slides={generatedSlides} 
+                onDownloadAll={handleDownloadAll}
+              />
 
-                  <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                    <Button variant="accent" size="lg">
-                      Baixar todas as imagens
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="lg"
-                      onClick={() => navigate("/dashboard")}
-                    >
-                      Ver no Dashboard
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="flex justify-center mt-6">
+                <Button 
+                  variant="outline"
+                  onClick={() => navigate("/dashboard")}
+                >
+                  Ver no Dashboard
+                </Button>
+              </div>
             </>
           )}
         </div>
