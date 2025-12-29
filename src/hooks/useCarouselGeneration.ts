@@ -40,7 +40,8 @@ export function useCarouselGeneration() {
     style: StyleType,
     format: FormatType,
     carouselId: string,
-    userId: string
+    userId: string,
+    isPro: boolean = false
   ): Promise<GenerationResult | null> => {
     setError(null);
     
@@ -84,14 +85,23 @@ export function useCarouselGeneration() {
       const script = scriptData.script;
       console.log("Script generated with", script.slides?.length, "slides");
 
-      // Step 3: Generate images
+      // Step 3: Generate images (with watermark for free users)
       setStatus("GENERATING");
       await updateCarouselStatus(carouselId, "GENERATING");
 
+      const hasWatermark = !isPro;
+      
       const { data: imagesData, error: imagesError } = await supabase.functions.invoke(
         "generate-carousel-images",
         {
-          body: { script, style, format }
+          body: { 
+            script, 
+            style, 
+            format, 
+            carouselId, 
+            userId,
+            hasWatermark 
+          }
         }
       );
 
@@ -109,7 +119,8 @@ export function useCarouselGeneration() {
         transcription,
         script,
         slide_count: slides.length,
-        image_urls: slides.map((s: Slide) => s.imageUrl),
+        image_urls: imagesData.imageUrls,
+        has_watermark: hasWatermark,
       }).eq("id", carouselId);
 
       const generationResult: GenerationResult = {
@@ -121,14 +132,15 @@ export function useCarouselGeneration() {
       setResult(generationResult);
       return generationResult;
 
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "An error occurred";
       console.error("Generation error:", err);
-      setError(err.message || "An error occurred");
+      setError(errorMessage);
       setStatus("FAILED");
       
       await supabase.from("carousels").update({
         status: "FAILED",
-        error_message: err.message
+        error_message: errorMessage
       }).eq("id", carouselId);
 
       return null;

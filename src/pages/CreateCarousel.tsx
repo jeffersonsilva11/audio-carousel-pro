@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
 import { useCarouselGeneration } from "@/hooks/useCarouselGeneration";
 import { Button } from "@/components/ui/button";
@@ -9,7 +10,8 @@ import {
   ArrowLeft, 
   ArrowRight, 
   Loader2,
-  ChevronLeft
+  ChevronLeft,
+  Crown
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -20,6 +22,14 @@ import StyleSelector, { StyleType } from "@/components/carousel-creator/StyleSel
 import FormatSelector, { FormatType } from "@/components/carousel-creator/FormatSelector";
 import ProcessingStatus from "@/components/carousel-creator/ProcessingStatus";
 import CarouselPreview from "@/components/carousel-creator/CarouselPreview";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 type Step = "upload" | "customize" | "processing" | "preview";
 
@@ -39,7 +49,9 @@ interface Slide {
 
 const CreateCarousel = () => {
   const { user, loading } = useAuth();
+  const { isPro, createCheckout, loading: subLoading } = useSubscription();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const { status, error, result, generateCarousel } = useCarouselGeneration();
 
@@ -59,11 +71,36 @@ const CreateCarousel = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [generatedSlides, setGeneratedSlides] = useState<Slide[]>([]);
 
+  // Usage limit state
+  const [carouselCount, setCarouselCount] = useState<number>(0);
+  const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+
   useEffect(() => {
     if (!loading && !user) {
       navigate("/auth");
     }
   }, [user, loading, navigate]);
+
+  // Fetch carousel count for usage limits
+  useEffect(() => {
+    if (user) {
+      fetchCarouselCount();
+    }
+  }, [user]);
+
+  const fetchCarouselCount = async () => {
+    if (!user) return;
+    
+    const { count, error } = await supabase
+      .from("carousels")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user.id);
+
+    if (!error && count !== null) {
+      setCarouselCount(count);
+    }
+  };
 
   // Watch for status changes
   useEffect(() => {
@@ -73,7 +110,9 @@ const CreateCarousel = () => {
       setIsProcessing(false);
       toast({
         title: "Carrossel criado!",
-        description: "Seu carrossel está pronto para download.",
+        description: isPro 
+          ? "Seu carrossel está pronto para download." 
+          : "Seu carrossel está pronto (com marca d'água).",
       });
     } else if (status === "FAILED" && error) {
       toast({
@@ -84,7 +123,7 @@ const CreateCarousel = () => {
       setCurrentStep("customize");
       setIsProcessing(false);
     }
-  }, [status, result, error, toast]);
+  }, [status, result, error, toast, isPro]);
 
   const getCurrentStepIndex = () => steps.findIndex(s => s.id === currentStep);
 
@@ -103,6 +142,11 @@ const CreateCarousel = () => {
     if (currentStep === "upload" && audioFile) {
       setCurrentStep("customize");
     } else if (currentStep === "customize") {
+      // Check usage limit for free users
+      if (!isPro && carouselCount >= 1) {
+        setShowUpgradeDialog(true);
+        return;
+      }
       await startGeneration();
     }
   };
@@ -131,6 +175,7 @@ const CreateCarousel = () => {
           audio_size: audioFile.size,
           audio_duration: audioDuration,
           status: "TRANSCRIBING",
+          has_watermark: !isPro,
         })
         .select()
         .single();
@@ -144,18 +189,36 @@ const CreateCarousel = () => {
         selectedStyle,
         selectedFormat,
         carousel.id,
-        user.id
+        user.id,
+        isPro
       );
 
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Tente novamente mais tarde.";
       console.error("Error starting generation:", err);
       toast({
         title: "Erro ao gerar carrossel",
-        description: err.message || "Tente novamente mais tarde.",
+        description: errorMessage,
         variant: "destructive",
       });
       setCurrentStep("customize");
       setIsProcessing(false);
+    }
+  };
+
+  const handleUpgrade = async () => {
+    setCheckoutLoading(true);
+    try {
+      await createCheckout();
+      setShowUpgradeDialog(false);
+    } catch (error) {
+      toast({
+        title: "Erro ao iniciar checkout",
+        description: "Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setCheckoutLoading(false);
     }
   };
 
@@ -194,7 +257,7 @@ const CreateCarousel = () => {
     }
   };
 
-  if (loading) {
+  if (loading || subLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-accent" />
@@ -204,6 +267,55 @@ const CreateCarousel = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Upgrade Dialog */}
+      <Dialog open={showUpgradeDialog} onOpenChange={setShowUpgradeDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Crown className="w-5 h-5 text-accent" />
+              Limite atingido
+            </DialogTitle>
+            <DialogDescription>
+              Você já criou seu carrossel grátis. Assine o Pro para criar carrosséis ilimitados e sem marca d'água!
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="bg-accent/10 rounded-lg p-4 my-4">
+            <div className="font-semibold text-lg mb-2">Plano Pro</div>
+            <div className="text-2xl font-bold text-accent mb-2">R$ 29,90<span className="text-sm font-normal text-muted-foreground">/mês</span></div>
+            <ul className="text-sm space-y-1 text-muted-foreground">
+              <li>✓ Carrosséis ilimitados</li>
+              <li>✓ Sem marca d'água</li>
+              <li>✓ Histórico completo</li>
+              <li>✓ Download em ZIP</li>
+            </ul>
+          </div>
+
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowUpgradeDialog(false)}
+              className="w-full sm:w-auto"
+            >
+              Voltar
+            </Button>
+            <Button 
+              variant="accent" 
+              onClick={handleUpgrade}
+              disabled={checkoutLoading}
+              className="w-full sm:w-auto"
+            >
+              {checkoutLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              ) : (
+                <Crown className="w-4 h-4 mr-2" />
+              )}
+              Assinar Pro
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Header */}
       <header className="border-b border-border/50 bg-background/80 backdrop-blur-xl sticky top-0 z-50">
         <div className="container mx-auto px-4">
@@ -263,13 +375,57 @@ const CreateCarousel = () => {
               })}
             </div>
 
-            <div className="w-20" />
+            {/* Pro badge or upgrade */}
+            <div className="flex items-center gap-2">
+              {isPro ? (
+                <span className="inline-flex items-center gap-1 px-2 py-1 bg-accent/10 text-accent text-xs font-medium rounded-full">
+                  <Crown className="w-3 h-3" />
+                  Pro
+                </span>
+              ) : (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setShowUpgradeDialog(true)}
+                  className="text-accent text-xs"
+                >
+                  <Crown className="w-3 h-3 mr-1" />
+                  Upgrade
+                </Button>
+              )}
+            </div>
           </nav>
         </div>
       </header>
 
       {/* Main content */}
       <main className="container mx-auto px-4 py-8 max-w-2xl">
+        {/* Free user warning */}
+        {!isPro && currentStep !== "processing" && currentStep !== "preview" && (
+          <div className="bg-muted/50 border border-border rounded-lg p-4 mb-6 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center">
+                <Crown className="w-4 h-4 text-accent" />
+              </div>
+              <div className="text-sm">
+                <span className="font-medium">Plano Grátis</span>
+                <span className="text-muted-foreground"> • {carouselCount}/1 carrossel usado</span>
+                {carouselCount >= 1 && (
+                  <span className="text-destructive ml-1">(limite atingido)</span>
+                )}
+              </div>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setShowUpgradeDialog(true)}
+              className="text-xs"
+            >
+              Upgrade Pro
+            </Button>
+          </div>
+        )}
+
         {/* Mobile step indicator */}
         <div className="md:hidden mb-6">
           <div className="flex items-center justify-between mb-2">
@@ -354,6 +510,11 @@ const CreateCarousel = () => {
                 <p className="text-muted-foreground">
                   Seu carrossel foi gerado com sucesso • {generatedSlides.length} slides
                 </p>
+                {!isPro && (
+                  <p className="text-sm text-amber-500 mt-2">
+                    ⚠️ Este carrossel contém marca d'água. Assine o Pro para remover.
+                  </p>
+                )}
               </div>
               
               <CarouselPreview 
@@ -361,7 +522,16 @@ const CreateCarousel = () => {
                 onDownloadAll={handleDownloadAll}
               />
 
-              <div className="flex justify-center mt-6">
+              <div className="flex flex-col sm:flex-row justify-center gap-3 mt-6">
+                {!isPro && (
+                  <Button 
+                    variant="accent"
+                    onClick={() => setShowUpgradeDialog(true)}
+                  >
+                    <Crown className="w-4 h-4 mr-2" />
+                    Remover marca d'água
+                  </Button>
+                )}
                 <Button 
                   variant="outline"
                   onClick={() => navigate("/dashboard")}
