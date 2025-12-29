@@ -520,6 +520,7 @@ const CreateCarousel = () => {
               <CarouselPreview 
                 slides={generatedSlides} 
                 onDownloadAll={handleDownloadAll}
+                isPro={isPro}
               />
 
               <div className="flex flex-col sm:flex-row justify-center gap-3 mt-6">
