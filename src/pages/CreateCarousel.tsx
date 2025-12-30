@@ -250,15 +250,20 @@ const CreateCarousel = () => {
       if (insertError) throw insertError;
 
       // Start the real AI generation
-      await generateCarousel(
+      await generateCarousel({
         audioFile,
-        selectedTone,
-        selectedStyle,
-        selectedFormat,
-        carousel.id,
-        user.id,
-        isPro
-      );
+        textMode: selectedTextMode,
+        creativeTone,
+        slideCountMode,
+        slideCount: manualSlideCount,
+        template: selectedTemplate,
+        style: selectedStyle,
+        format: selectedFormat,
+        carouselId: carousel.id,
+        userId: user.id,
+        isPro,
+        language: 'pt-BR'
+      });
 
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "Tente novamente mais tarde.";
