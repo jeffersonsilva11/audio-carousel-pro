@@ -14,7 +14,7 @@ import {
 import { toast } from "sonner";
 import { BRAND } from "@/lib/constants";
 import { PLANS } from "@/lib/plans";
-import { formatLocalizedDate, formatSubscriptionDate } from "@/lib/localization";
+import { formatLocalizedDate, formatSubscriptionDate, formatCount, formatInteger } from "@/lib/localization";
 import {
   Select,
   SelectContent,
@@ -319,7 +319,7 @@ const Dashboard = () => {
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold">{t("dashboard", "yourCarousels", language)}</h2>
             <span className="text-sm text-muted-foreground">
-              {carousels.length} {carousels.length !== 1 ? t("dashboard", "carouselsCount", language) : t("dashboard", "carouselCount", language)}
+              {formatCount(carousels.length, language)} {carousels.length !== 1 ? t("dashboard", "carouselsCount", language) : t("dashboard", "carouselCount", language)}
             </span>
           </div>
 
@@ -358,7 +358,7 @@ const Dashboard = () => {
                         <div>
                           <CardTitle className="text-base">{getToneLabel(carousel.tone)}</CardTitle>
                           <CardDescription className="text-xs">
-                            {carousel.slide_count} {t("dashboard", "slides", language)} • {carousel.format.replace("_", " ")}
+                            {formatInteger(carousel.slide_count, language)} {t("dashboard", "slides", language)} • {carousel.format.replace("_", " ")}
                           </CardDescription>
                         </div>
                       </div>

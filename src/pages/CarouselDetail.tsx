@@ -29,7 +29,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import JSZip from "jszip";
-import { formatLocalizedDate } from "@/lib/localization";
+import { formatLocalizedDate, formatDuration, formatInteger, formatFileSize } from "@/lib/localization";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -397,7 +397,7 @@ const CarouselDetail = () => {
                 )}
               </div>
               <p className="text-muted-foreground">
-                {getStyleLabel(carousel.style)} • {getFormatLabel(carousel.format)} • {carousel.slide_count} {t("carouselDetail", "slides")}
+                {getStyleLabel(carousel.style)} • {getFormatLabel(carousel.format)} • {formatInteger(carousel.slide_count, language)} {t("carouselDetail", "slides")}
               </p>
             </div>
 
@@ -421,7 +421,7 @@ const CarouselDetail = () => {
                     <div>
                       <p className="text-xs text-muted-foreground">{t("carouselDetail", "processingTime")}</p>
                       <p className="text-sm font-medium">
-                        {Math.round(carousel.processing_time)}s
+                        {formatDuration(carousel.processing_time, language)}
                       </p>
                     </div>
                   </CardContent>
