@@ -16,11 +16,15 @@ import {
   AVATAR_POSITIONS, 
   DISPLAY_MODES, 
   type AvatarPosition, 
-  type DisplayMode 
+  type DisplayMode,
+  getPositionLabel,
+  getDisplayModeLabel
 } from "@/lib/constants";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/hooks/useLanguage";
+import { t } from "@/lib/translations";
 
 export interface ProfileIdentity {
   name: string;
@@ -38,6 +42,7 @@ interface ProfileIdentitySelectorProps {
 const ProfileIdentitySelector = ({ profile, setProfile }: ProfileIdentitySelectorProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { language } = useLanguage();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
 
@@ -246,7 +251,7 @@ const ProfileIdentitySelector = ({ profile, setProfile }: ProfileIdentitySelecto
                   )}
                 />
               </div>
-              <span className="text-xs font-medium">{pos.label}</span>
+              <span className="text-xs font-medium">{getPositionLabel(pos.labelKey, language)}</span>
               {profile.avatarPosition === pos.id && (
                 <CheckCircle2 className="absolute top-1 right-1 w-4 h-4 text-accent" />
               )}
@@ -274,7 +279,7 @@ const ProfileIdentitySelector = ({ profile, setProfile }: ProfileIdentitySelecto
               )}
             >
               <RadioGroupItem value={mode.id} id={mode.id} />
-              <span className="text-sm font-medium">{mode.label}</span>
+              <span className="text-sm font-medium">{getDisplayModeLabel(mode.labelKey, language)}</span>
             </label>
           ))}
         </RadioGroup>

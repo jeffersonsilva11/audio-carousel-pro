@@ -45,7 +45,9 @@ import {
   DISPLAY_MODES, 
   BRAND,
   type AvatarPosition, 
-  type DisplayMode 
+  type DisplayMode,
+  getPositionLabel,
+  getDisplayModeLabel
 } from "@/lib/constants";
 import { formatLocalizedDate } from "@/lib/localization";
 import SlidePreview from "@/components/carousel-creator/SlidePreview";
@@ -65,7 +67,7 @@ const TIME_FORMAT_OPTIONS: { value: TimeFormatPreference; label: string; example
 const ProfileSettings = () => {
   const { user, loading: authLoading } = useAuth();
   const { preferences, loading: prefsLoading, saving, savePreferences } = useUserPreferences();
-  const { language: siteLanguage } = useLanguage();
+  const { language } = useLanguage();
   const navigate = useNavigate();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -386,7 +388,7 @@ const ProfileSettings = () => {
                             )}
                           />
                         </div>
-                        <span className="text-xs font-medium">{pos.label}</span>
+                        <span className="text-xs font-medium">{getPositionLabel(pos.labelKey, language)}</span>
                         {avatarPosition === pos.id && (
                           <CheckCircle2 className="absolute top-1 right-1 w-4 h-4 text-accent" />
                         )}
@@ -414,7 +416,7 @@ const ProfileSettings = () => {
                         )}
                       >
                         <RadioGroupItem value={mode.id} />
-                        <span className="text-sm font-medium">{mode.label}</span>
+                        <span className="text-sm font-medium">{getDisplayModeLabel(mode.labelKey, language)}</span>
                       </label>
                     ))}
                   </RadioGroup>
@@ -447,7 +449,7 @@ const ProfileSettings = () => {
                           <div className="flex justify-between items-center gap-4">
                             <span>{option.label}</span>
                             <span className="text-muted-foreground text-xs">
-                              {option.example(siteLanguage)}
+                              {option.example(language)}
                             </span>
                           </div>
                         </SelectItem>
