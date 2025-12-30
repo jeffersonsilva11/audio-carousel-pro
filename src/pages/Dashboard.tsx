@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   Mic2, Plus, LogOut, Loader2, Image as ImageIcon, Calendar,
-  Sparkles, FolderOpen, Crown, CreditCard, RefreshCw, AlertTriangle, Globe
+  Sparkles, FolderOpen, Crown, CreditCard, RefreshCw, AlertTriangle, Globe, Settings
 } from "lucide-react";
 import { toast } from "sonner";
 import { BRAND } from "@/lib/constants";
@@ -208,6 +208,9 @@ const Dashboard = () => {
                 </div>
               )}
               <span className="text-sm text-muted-foreground hidden md:block">{user?.email}</span>
+              <Button variant="ghost" size="icon" onClick={() => navigate("/profile-settings")} title={t("settings", "profile", language)}>
+                <Settings className="w-4 h-4" />
+              </Button>
               <Button variant="ghost" size="sm" onClick={handleSignOut}>
                 <LogOut className="w-4 h-4 mr-2" />
                 {t("nav", "logout", language)}

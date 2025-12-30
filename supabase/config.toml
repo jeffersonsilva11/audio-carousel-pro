@@ -1,1 +1,22 @@
 project_id = "czsxwcgathtklvwtgdhn"
+
+[functions.check-subscription]
+verify_jwt = true
+
+[functions.create-checkout]
+verify_jwt = true
+
+[functions.customer-portal]
+verify_jwt = true
+
+[functions.transcribe-audio]
+verify_jwt = true
+
+[functions.generate-script]
+verify_jwt = true
+
+[functions.generate-carousel-images]
+verify_jwt = true
+
+[functions.regenerate-without-watermark]
+verify_jwt = true
