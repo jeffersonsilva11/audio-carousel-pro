@@ -2,8 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { useLanguage } from '@/hooks/useLanguage';
 
 // reCAPTCHA v2 site key - this is a publishable key
-// Replace with your own key from https://www.google.com/recaptcha/admin
-const RECAPTCHA_V2_SITE_KEY = '6LcwNJcrAAAAAArSCKFgD1j1CX8XQfBqbWBJfLj9';
+const RECAPTCHA_V2_SITE_KEY = '6LckrjssAAAAALZUi5LorvDMcL6AqGHsi2wGr10r';
 
 interface RecaptchaV2 {
   render: (container: HTMLElement | string, options: {

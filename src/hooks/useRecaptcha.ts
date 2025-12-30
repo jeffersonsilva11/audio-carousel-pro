@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 // reCAPTCHA v3 site key - this is a publishable key
-const RECAPTCHA_SITE_KEY = '6LcwNJcrAAAAAArSCKFgD1j1CX8XQfBqbWBJfLj9';
+const RECAPTCHA_SITE_KEY = '6LckrjssAAAAALZUi5LorvDMcL6AqGHsi2wGr10r';
 
 declare global {
   interface Window {
