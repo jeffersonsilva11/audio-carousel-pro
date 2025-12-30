@@ -17,12 +17,116 @@ const STYLES = {
   WHITE_BLACK: { background: '#FFFFFF', text: '#0A0A0A' }
 };
 
+// Plan daily limits
+const PLAN_LIMITS: Record<string, number> = {
+  'free': 1,
+  'starter': 1,
+  'creator': 8,
+  'agency': 20,
+};
+
 interface ProfileIdentity {
   name: string;
   username: string;
   photoUrl: string | null;
   avatarPosition: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
   displayMode: 'name_and_username' | 'username_only';
+}
+
+const logStep = (step: string, details?: unknown) => {
+  const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
+  console.log(`[GENERATE-IMAGES] ${step}${detailsStr}`);
+};
+
+// Get user's current plan from Stripe
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function getUserPlan(supabase: any, userId: string, email: string): Promise<{ plan: string; dailyUsed: number; dailyLimit: number; isAdmin: boolean }> {
+  const today = new Date().toISOString().split('T')[0];
+  
+  // Get daily usage
+  const { data: usageData } = await supabase
+    .from("daily_usage")
+    .select("carousels_created")
+    .eq("user_id", userId)
+    .eq("usage_date", today)
+    .maybeSingle();
+  
+  const dailyUsed = (usageData as { carousels_created?: number })?.carousels_created || 0;
+  
+  // Check if admin
+  const { data: roleData } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId)
+    .eq("role", "admin")
+    .maybeSingle();
+  
+  if (roleData) {
+    return { plan: 'agency', dailyUsed, dailyLimit: 9999, isAdmin: true };
+  }
+  
+  // Check Stripe subscription
+  const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+  if (!stripeKey) {
+    return { plan: 'free', dailyUsed, dailyLimit: PLAN_LIMITS['free'], isAdmin: false };
+  }
+  
+  try {
+    const { default: Stripe } = await import("https://esm.sh/stripe@18.5.0");
+    const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
+    
+    const customers = await stripe.customers.list({ email, limit: 1 });
+    if (customers.data.length === 0) {
+      return { plan: 'free', dailyUsed, dailyLimit: PLAN_LIMITS['free'], isAdmin: false };
+    }
+    
+    const subscriptions = await stripe.subscriptions.list({
+      customer: customers.data[0].id,
+      status: "active",
+      limit: 1,
+    });
+    
+    if (subscriptions.data.length === 0) {
+      return { plan: 'free', dailyUsed, dailyLimit: PLAN_LIMITS['free'], isAdmin: false };
+    }
+    
+    const price = subscriptions.data[0].items.data[0]?.price;
+    const unitAmount = price?.unit_amount || 0;
+    
+    let plan = 'starter';
+    if (unitAmount >= 19990) plan = 'agency';
+    else if (unitAmount >= 9990) plan = 'creator';
+    
+    return { plan, dailyUsed, dailyLimit: PLAN_LIMITS[plan], isAdmin: false };
+  } catch (error) {
+    logStep('Error checking subscription', { error: String(error) });
+    return { plan: 'free', dailyUsed, dailyLimit: PLAN_LIMITS['free'], isAdmin: false };
+  }
+}
+
+// Log usage
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function logUsage(
+  supabase: any,
+  userId: string | null,
+  action: string,
+  resource: string | null,
+  status: string,
+  metadata: Record<string, unknown>,
+  ipAddress: string | null
+) {
+  try {
+    await supabase.from('usage_logs').insert({
+      user_id: userId,
+      action,
+      resource,
+      status,
+      metadata,
+      ip_address: ipAddress
+    });
+  } catch (error) {
+    logStep('Failed to log usage', { error: String(error) });
+  }
 }
 
 // Generate initials from name for default avatar
@@ -43,7 +147,7 @@ function generateProfileIdentitySVG(
   if (!profile.username) return '';
   
   const { width, height } = DIMENSIONS[format];
-  const { text: textColor, background: bgColor } = STYLES[style];
+  const { text: textColor } = STYLES[style];
   
   // Avatar size and positioning
   const avatarSize = 60;
@@ -213,19 +317,55 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Initialize Supabase client
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  
+  const ipAddress = req.headers.get('x-forwarded-for')?.split(',')[0] || req.headers.get('cf-connecting-ip') || null;
+
   try {
+    // Authenticate user
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      await logUsage(supabase, null, 'generate_images', null, 'unauthorized', {}, ipAddress);
+      throw new Error("Authentication required");
+    }
+    
+    const token = authHeader.replace("Bearer ", "");
+    const { data: userData, error: userError } = await supabase.auth.getUser(token);
+    if (userError || !userData.user) {
+      await logUsage(supabase, null, 'generate_images', null, 'unauthorized', { error: userError?.message }, ipAddress);
+      throw new Error("Invalid authentication");
+    }
+    
+    const user = userData.user;
+    logStep('User authenticated', { userId: user.id });
+    
+    // Check rate limits
+    const { plan, dailyUsed, dailyLimit, isAdmin } = await getUserPlan(supabase, user.id, user.email || '');
+    logStep('Plan checked', { plan, dailyUsed, dailyLimit, isAdmin });
+    
+    if (!isAdmin && dailyUsed >= dailyLimit) {
+      await logUsage(supabase, user.id, 'generate_images', null, 'rate_limited', { plan, dailyUsed, dailyLimit }, ipAddress);
+      return new Response(JSON.stringify({ 
+        error: 'Daily limit reached',
+        code: 'RATE_LIMIT_EXCEEDED',
+        details: { plan, dailyUsed, dailyLimit }
+      }), {
+        status: 429,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const { script, style, format, carouselId, userId, hasWatermark = true, profile } = await req.json();
 
     if (!script || !script.slides) {
+      await logUsage(supabase, user.id, 'generate_images', carouselId, 'invalid_request', { error: 'No script provided' }, ipAddress);
       throw new Error('No script provided');
     }
 
-    console.log(`Generating ${script.slides.length} slide images (watermark: ${hasWatermark}, profile: ${profile?.username || 'none'})...`);
-
-    // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    logStep(`Generating ${script.slides.length} slide images`, { watermark: hasWatermark, profile: profile?.username });
 
     const imageUrls: string[] = [];
 
@@ -244,12 +384,12 @@ serve(async (req) => {
       );
 
       // Convert to base64
-      const base64 = svgToBase64(svg);
+      svgToBase64(svg);
       const svgBuffer = new TextEncoder().encode(svg);
 
       // Upload to storage
       const fileName = `${userId}/${carouselId}/slide-${index + 1}.svg`;
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('carousel-images')
         .upload(fileName, svgBuffer, {
           contentType: 'image/svg+xml',
@@ -257,7 +397,7 @@ serve(async (req) => {
         });
 
       if (uploadError) {
-        console.error('Upload error:', uploadError);
+        logStep('Upload error', { error: uploadError.message });
         throw uploadError;
       }
 
@@ -281,7 +421,7 @@ serve(async (req) => {
         .eq('id', carouselId);
 
       if (updateError) {
-        console.error('Update error:', updateError);
+        logStep('Update error', { error: updateError.message });
       }
     }
 
@@ -292,13 +432,19 @@ serve(async (req) => {
       imageUrl: imageUrls[index]
     }));
 
-    console.log('Generated and uploaded', slides.length, 'slide images');
+    logStep('Generated and uploaded slides', { count: slides.length });
+    
+    await logUsage(supabase, user.id, 'generate_images', carouselId, 'success', { 
+      slideCount: slides.length,
+      hasWatermark,
+      plan
+    }, ipAddress);
 
     return new Response(JSON.stringify({ slides, imageUrls }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error: unknown) {
-    console.error('Error in generate-carousel-images function:', error);
+    logStep('Error in generate-carousel-images function', { error: String(error) });
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(JSON.stringify({ error: errorMessage }), {
       status: 500,
