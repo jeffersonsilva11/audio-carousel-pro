@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { BRAND } from "@/lib/constants";
+import HistorySkeleton from "@/components/skeletons/HistorySkeleton";
 import { formatLocalizedDate, formatRelativeTime, formatInteger } from "@/lib/localization";
 import {
   Select,
@@ -315,12 +316,8 @@ const History = () => {
   
   const completedCount = filteredCarousels.filter(c => c.status === "COMPLETED" && c.image_urls?.length).length;
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-accent" />
-      </div>
-    );
+  if (loading || loadingCarousels) {
+    return <HistorySkeleton />;
   }
 
   return (

@@ -12,6 +12,7 @@ import {
   Sparkles, FolderOpen, Crown, CreditCard, RefreshCw, AlertTriangle, Globe, Settings, History, Shield
 } from "lucide-react";
 import UsageStats from "@/components/dashboard/UsageStats";
+import DashboardSkeleton from "@/components/skeletons/DashboardSkeleton";
 import { useAdminAccess } from "@/hooks/useAdminAccess";
 import { toast } from "sonner";
 import { BRAND } from "@/lib/constants";
@@ -161,12 +162,8 @@ const Dashboard = () => {
     return t("dashboard", "errorStatus", language);
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-accent" />
-      </div>
-    );
+  if (loading || subLoading) {
+    return <DashboardSkeleton />;
   }
 
   return (

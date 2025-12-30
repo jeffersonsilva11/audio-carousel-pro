@@ -2680,6 +2680,35 @@ export const translations = {
       es: "Editar",
     },
   },
+
+  // Cookie Consent
+  cookies: {
+    title: {
+      "pt-BR": "Usamos cookies",
+      en: "We use cookies",
+      es: "Usamos cookies",
+    },
+    description: {
+      "pt-BR": "Este site usa cookies para melhorar sua experiência e analisar o tráfego. Ao continuar navegando, você concorda com nossa Política de Privacidade.",
+      en: "This site uses cookies to improve your experience and analyze traffic. By continuing to browse, you agree to our Privacy Policy.",
+      es: "Este sitio usa cookies para mejorar su experiencia y analizar el tráfico. Al continuar navegando, acepta nuestra Política de Privacidad.",
+    },
+    accept: {
+      "pt-BR": "Aceitar",
+      en: "Accept",
+      es: "Aceptar",
+    },
+    reject: {
+      "pt-BR": "Recusar",
+      en: "Reject",
+      es: "Rechazar",
+    },
+    learnMore: {
+      "pt-BR": "Saiba mais",
+      en: "Learn more",
+      es: "Más información",
+    },
+  },
 } as const;
 
 export type TranslationKey = keyof typeof translations;
