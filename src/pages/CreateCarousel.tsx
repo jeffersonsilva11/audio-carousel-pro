@@ -273,7 +273,8 @@ const CreateCarousel = () => {
         carouselId: carousel.id,
         userId: user.id,
         isPro,
-        language: carouselLanguage
+        language: carouselLanguage,
+        profile: profileIdentity.username ? profileIdentity : undefined
       });
 
     } catch (err: unknown) {

@@ -29,6 +29,14 @@ interface GenerationResult {
   slides: Slide[];
 }
 
+export interface ProfileIdentity {
+  name: string;
+  username: string;
+  photoUrl: string | null;
+  avatarPosition: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+  displayMode: 'name_and_username' | 'username_only';
+}
+
 export interface CarouselGenerationOptions {
   audioFile: File;
   textMode: TextModeId;
@@ -42,6 +50,7 @@ export interface CarouselGenerationOptions {
   userId: string;
   isPro?: boolean;
   language?: string;
+  profile?: ProfileIdentity;
 }
 
 export function useCarouselGeneration() {
@@ -62,7 +71,8 @@ export function useCarouselGeneration() {
       carouselId,
       userId,
       isPro = false,
-      language = 'pt-BR'
+      language = 'pt-BR',
+      profile
     } = options;
     setError(null);
     
@@ -129,7 +139,8 @@ export function useCarouselGeneration() {
             format, 
             carouselId, 
             userId,
-            hasWatermark 
+            hasWatermark,
+            profile
           }
         }
       );
