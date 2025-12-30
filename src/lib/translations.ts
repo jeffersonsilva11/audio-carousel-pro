@@ -2457,6 +2457,52 @@ export const translations = {
       en: "12 hours",
       es: "12 horas",
     },
+    // LGPD Data Export
+    dataPrivacy: {
+      "pt-BR": "Privacidade e Dados (LGPD)",
+      en: "Privacy & Data (LGPD)",
+      es: "Privacidad y Datos (LGPD)",
+    },
+    dataPrivacyDesc: {
+      "pt-BR": "Gerencie seus dados pessoais conforme a Lei Geral de Proteção de Dados",
+      en: "Manage your personal data according to data protection laws",
+      es: "Gestiona tus datos personales según las leyes de protección de datos",
+    },
+    exportData: {
+      "pt-BR": "Exportar Meus Dados",
+      en: "Export My Data",
+      es: "Exportar Mis Datos",
+    },
+    exportDataDesc: {
+      "pt-BR": "Baixe uma cópia de todos os seus dados armazenados em nossa plataforma",
+      en: "Download a copy of all your data stored on our platform",
+      es: "Descarga una copia de todos tus datos almacenados en nuestra plataforma",
+    },
+    exporting: {
+      "pt-BR": "Exportando...",
+      en: "Exporting...",
+      es: "Exportando...",
+    },
+    exportSuccess: {
+      "pt-BR": "Dados exportados",
+      en: "Data exported",
+      es: "Datos exportados",
+    },
+    exportSuccessDesc: {
+      "pt-BR": "Seu arquivo JSON foi baixado com sucesso.",
+      en: "Your JSON file has been downloaded successfully.",
+      es: "Tu archivo JSON se ha descargado correctamente.",
+    },
+    exportError: {
+      "pt-BR": "Erro na exportação",
+      en: "Export error",
+      es: "Error de exportación",
+    },
+    exportErrorDesc: {
+      "pt-BR": "Não foi possível exportar seus dados. Tente novamente.",
+      en: "Could not export your data. Please try again.",
+      es: "No se pudieron exportar tus datos. Inténtalo de nuevo.",
+    },
   },
 
   // Advanced Template Editor
