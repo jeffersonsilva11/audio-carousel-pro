@@ -687,6 +687,8 @@ const CreateCarousel = () => {
                     carouselId={currentCarouselId || undefined}
                     style={selectedStyle}
                     format={selectedFormat}
+                    profile={profileIdentity.username ? profileIdentity : undefined}
+                    customization={isCreator ? templateCustomization : undefined}
                   />
                 </TabsContent>
               </Tabs>
