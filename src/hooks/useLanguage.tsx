@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { t as translateFn, TranslationKey } from "@/lib/translations";
 
 export type SupportedLanguage = "pt-BR" | "en" | "es";
 
@@ -147,10 +148,8 @@ export const LANGUAGES = [
 export function useTranslation() {
   const { language } = useLanguage();
   
-  const translate = (section: string, key: string): string => {
-    // Dynamic import workaround - we'll import the function directly
-    const { t } = require("@/lib/translations");
-    return t(section, key, language);
+  const translate = (section: TranslationKey, key: string): string => {
+    return translateFn(section, key, language);
   };
   
   return { t: translate, language };
