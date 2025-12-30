@@ -5,58 +5,97 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const TONE_PROMPTS = {
-  EMOTIONAL: `Você é roteirista de storytelling emocional para Instagram.
+// Creative tone prompts for "creative" text mode
+const CREATIVE_TONE_PROMPTS = {
+  emotional: `Você é roteirista de storytelling emocional para Instagram.
 
-ESTRUTURA OBRIGATÓRIA (6 slides):
-1. HOOK: Declaração emocional impactante (use Aversão à Perda)
-2. SETUP: Contexto pessoal e vulnerável
-3. CONFLICT: Ponto de virada dramático
-4. RESOLUTION: Lição aprendida com emoção
-5. CTA: Reflexão profunda ou convite à ação
-6. SIGNATURE: Nome do autor + @instagram
-
-REGRAS:
+ESTILO:
 - Linguagem íntima e confessional
 - Use metáforas pessoais
-- Frases curtas e impactantes (15-40 palavras por slide)
+- Frases curtas e impactantes
 - Evite clichês corporativos
-- Conecte-se emocionalmente com o leitor`,
+- Conecte-se emocionalmente com o leitor
+- Comece com um HOOK emocional impactante (use Aversão à Perda)
+- Termine com reflexão profunda ou convite à ação`,
 
-  PROFESSIONAL: `Você é consultor criando conteúdo educacional premium para Instagram.
+  professional: `Você é consultor criando conteúdo educacional premium para Instagram.
 
-ESTRUTURA OBRIGATÓRIA (6 slides - Círculo Dourado):
-1. HOOK: Estatística surpreendente ou insight contraintuitivo
-2. WHY: Por que esse tema importa (contexto e relevância)
-3. HOW: Como funciona na prática (método ou framework)
-4. WHAT: O que fazer concretamente (ações específicas)
-5. CTA: Próximo passo claro e acionável
-6. SIGNATURE: Nome + título profissional + @instagram
-
-REGRAS:
+ESTILO:
 - Dados > Opinião (cite números quando possível)
 - Use verbos de ação: "Implemente", "Analise", "Execute"
 - Bullets para listas (máximo 3 itens)
-- Tom profissional mas acessível (20-50 palavras por slide)
-- Posicione como autoridade no assunto`,
+- Tom profissional mas acessível
+- Posicione como autoridade no assunto
+- Comece com estatística surpreendente ou insight contraintuitivo
+- Use o Círculo Dourado: Why → How → What`,
 
-  PROVOCATIVE: `Você é provocador intelectual que desafia convenções no Instagram.
+  provocative: `Você é provocador intelectual que desafia convenções no Instagram.
 
-ESTRUTURA OBRIGATÓRIA (6 slides):
-1. HOOK: Pergunta controversa que incomoda
-2. PATTERN_BREAK: Mostre que uma crença comum está errada
-3. UNCOMFORTABLE_TRUTH: Verdade que as pessoas evitam
-4. REFRAME: Nova perspectiva inesperada
-5. CTA: Desafio direto ao leitor
-6. SIGNATURE: Nome do autor + @instagram
-
-REGRAS:
-- Frases curtas e diretas (estilo "soco") (10-35 palavras por slide)
+ESTILO:
+- Frases curtas e diretas (estilo "soco")
 - Use perguntas retóricas
 - Não suavize a mensagem
 - Provocação inteligente, não ofensiva
-- Quebre padrões de pensamento`
+- Quebre padrões de pensamento
+- Comece com pergunta controversa que incomoda
+- Mostre verdades que as pessoas evitam`
 };
+
+// Text mode instructions
+const TEXT_MODE_INSTRUCTIONS = {
+  compact: `MODO COMPACTO:
+- Mantenha o tom original do texto
+- Apenas organize, reduza e divida em slides
+- Não adicione dramatização ou mudanças de estilo
+- Preserve a essência e linguagem do autor
+- Foque em clareza e concisão`,
+
+  creative: `MODO CRIATIVO:
+- Ajuste tom, ritmo e impacto conforme o estilo escolhido
+- Adicione elementos de storytelling
+- Use técnicas de copywriting
+- Crie conexão emocional com o leitor`,
+
+  single: `MODO TEXTO ÚNICO:
+- Gere apenas 1 slide com texto mais longo
+- Estilo thread/post longo
+- Mantenha fluidez narrativa
+- Pode ter até 200 palavras`
+};
+
+function getSlideStructure(slideCount: number, textMode: string): string {
+  if (textMode === 'single') {
+    return `ESTRUTURA (1 slide único):
+1. CONTENT: Texto completo e fluido (até 200 palavras)`;
+  }
+
+  if (slideCount <= 4) {
+    return `ESTRUTURA (${slideCount} slides):
+1. HOOK: Abertura impactante que prende atenção
+${slideCount >= 2 ? '2. CONTENT: Desenvolvimento principal' : ''}
+${slideCount >= 3 ? '3. CONTENT: Continuação ou exemplos' : ''}
+${slideCount >= 4 ? '4. CTA: Chamada para ação ou reflexão final' : ''}`;
+  }
+
+  return `ESTRUTURA (${slideCount} slides):
+1. HOOK: Abertura impactante que prende atenção
+2-${slideCount - 2}. CONTENT: Desenvolvimento do conteúdo (divida de forma equilibrada)
+${slideCount - 1}. CTA: Chamada para ação
+${slideCount}. SIGNATURE: Nome do autor + @instagram`;
+}
+
+function getWordsPerSlide(slideCount: number, textMode: string): string {
+  if (textMode === 'single') {
+    return '150-200 palavras no slide único';
+  }
+  if (slideCount <= 4) {
+    return '20-40 palavras por slide';
+  }
+  if (slideCount <= 6) {
+    return '15-35 palavras por slide';
+  }
+  return '10-30 palavras por slide';
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -64,7 +103,15 @@ serve(async (req) => {
   }
 
   try {
-    const { transcription, tone, language = 'pt-BR' } = await req.json();
+    const { 
+      transcription, 
+      textMode = 'compact',
+      creativeTone = 'professional',
+      slideCount = 6,
+      slideCountMode = 'auto',
+      template = 'solid',
+      language = 'pt-BR' 
+    } = await req.json();
 
     if (!transcription) {
       throw new Error('No transcription provided');
@@ -75,12 +122,69 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
 
-    const tonePrompt = TONE_PROMPTS[tone as keyof typeof TONE_PROMPTS] || TONE_PROMPTS.PROFESSIONAL;
+    // Determine actual slide count
+    const actualSlideCount = textMode === 'single' ? 1 : 
+                             slideCountMode === 'manual' ? slideCount : 
+                             'auto';
+
     const languageInstruction = language === 'pt-BR' ? 'Escreva em português brasileiro.' : 
                                 language === 'es' ? 'Escribe en español.' : 
                                 'Write in English.';
 
-    console.log(`Generating ${tone} script from transcription...`);
+    // Build the system prompt based on text mode
+    let styleInstructions = TEXT_MODE_INSTRUCTIONS[textMode as keyof typeof TEXT_MODE_INSTRUCTIONS] || TEXT_MODE_INSTRUCTIONS.compact;
+    
+    if (textMode === 'creative') {
+      const tonePrompt = CREATIVE_TONE_PROMPTS[creativeTone as keyof typeof CREATIVE_TONE_PROMPTS] || CREATIVE_TONE_PROMPTS.professional;
+      styleInstructions = `${styleInstructions}\n\n${tonePrompt}`;
+    }
+
+    const slideStructure = typeof actualSlideCount === 'number' 
+      ? getSlideStructure(actualSlideCount, textMode)
+      : `ESTRUTURA AUTOMÁTICA: A IA decidirá o número ideal de slides (entre 4 e 8) baseado no conteúdo.`;
+
+    const wordsGuide = typeof actualSlideCount === 'number'
+      ? getWordsPerSlide(actualSlideCount, textMode)
+      : '15-35 palavras por slide';
+
+    // Template context for image generation hints
+    const templateContext = template === 'gradient' 
+      ? 'Os slides terão imagem IA de fundo com overlay gradiente.'
+      : template === 'image_top'
+      ? 'Os slides terão imagem IA no topo e texto na área inferior.'
+      : 'Os slides terão fundo sólido (preto ou branco).';
+
+    console.log(`Generating script: mode=${textMode}, tone=${creativeTone}, slides=${actualSlideCount}, template=${template}`);
+
+    const systemPrompt = `Você é um especialista em criação de carrosséis para Instagram.
+
+${languageInstruction}
+
+${styleInstructions}
+
+${slideStructure}
+
+REGRAS DE FORMATAÇÃO:
+- ${wordsGuide}
+- Frases curtas e impactantes
+- Evite parágrafos longos
+
+CONTEXTO DO TEMPLATE:
+${templateContext}
+
+Você deve retornar APENAS um JSON válido no seguinte formato (sem markdown, sem código, apenas JSON puro):
+{
+  "textMode": "${textMode}",
+  "creativeTone": "${textMode === 'creative' ? creativeTone : 'none'}",
+  "slides": [
+    {"number": 1, "type": "HOOK|CONTENT|CTA|SIGNATURE", "text": "Texto do slide"}
+  ],
+  "total_slides": <número de slides gerados>
+}`;
+
+    const userPrompt = typeof actualSlideCount === 'number'
+      ? `Transforme esta transcrição em exatamente ${actualSlideCount} slide${actualSlideCount > 1 ? 's' : ''} seguindo as regras acima:\n\nTRANSCRIÇÃO:\n${transcription}`
+      : `Transforme esta transcrição em um carrossel seguindo as regras acima. Decida o número ideal de slides (entre 4 e 8):\n\nTRANSCRIÇÃO:\n${transcription}`;
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -91,33 +195,8 @@ serve(async (req) => {
       body: JSON.stringify({
         model: 'google/gemini-2.5-flash',
         messages: [
-          {
-            role: 'system',
-            content: `${tonePrompt}
-
-${languageInstruction}
-
-Você deve retornar APENAS um JSON válido no seguinte formato (sem markdown, sem código, apenas JSON puro):
-{
-  "tone": "${tone}",
-  "slides": [
-    {"number": 1, "type": "HOOK", "text": "Texto do slide 1"},
-    {"number": 2, "type": "...", "text": "Texto do slide 2"},
-    {"number": 3, "type": "...", "text": "Texto do slide 3"},
-    {"number": 4, "type": "...", "text": "Texto do slide 4"},
-    {"number": 5, "type": "CTA", "text": "Texto do slide 5"},
-    {"number": 6, "type": "SIGNATURE", "text": "@seuinstagram"}
-  ],
-  "total_slides": 6
-}`
-          },
-          {
-            role: 'user',
-            content: `Transforme esta transcrição em um carrossel de 6 slides seguindo as regras acima:
-
-TRANSCRIÇÃO:
-${transcription}`
-          }
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
         ],
       }),
     });
@@ -145,7 +224,7 @@ ${transcription}`
     const data = await response.json();
     let scriptText = data.choices?.[0]?.message?.content || '';
 
-    console.log('Raw script response:', scriptText.substring(0, 200) + '...');
+    console.log('Raw script response:', scriptText.substring(0, 300) + '...');
 
     // Clean up the response - remove markdown code blocks if present
     scriptText = scriptText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
@@ -156,17 +235,18 @@ ${transcription}`
     } catch (parseError) {
       console.error('Failed to parse script JSON:', parseError);
       // Create a fallback script structure
+      const fallbackSlideCount = typeof actualSlideCount === 'number' ? actualSlideCount : 6;
       script = {
-        tone,
-        slides: [
-          { number: 1, type: 'HOOK', text: 'Conteúdo gerado' },
-          { number: 2, type: 'CONTENT', text: transcription.substring(0, 100) },
-          { number: 3, type: 'CONTENT', text: transcription.substring(100, 200) || 'Continuação' },
-          { number: 4, type: 'CONTENT', text: transcription.substring(200, 300) || 'Mais conteúdo' },
-          { number: 5, type: 'CTA', text: 'Siga para mais conteúdo!' },
-          { number: 6, type: 'SIGNATURE', text: '@seuinstagram' }
-        ],
-        total_slides: 6
+        textMode,
+        creativeTone: textMode === 'creative' ? creativeTone : 'none',
+        slides: textMode === 'single' 
+          ? [{ number: 1, type: 'CONTENT', text: transcription.substring(0, 500) }]
+          : Array.from({ length: fallbackSlideCount }, (_, i) => ({
+              number: i + 1,
+              type: i === 0 ? 'HOOK' : i === fallbackSlideCount - 1 ? 'CTA' : 'CONTENT',
+              text: i === 0 ? 'Conteúdo gerado' : transcription.substring(i * 80, (i + 1) * 80) || 'Continuação'
+            })),
+        total_slides: textMode === 'single' ? 1 : fallbackSlideCount
       };
     }
 
