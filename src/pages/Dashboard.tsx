@@ -9,8 +9,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   Mic2, Plus, LogOut, Loader2, Image as ImageIcon, Calendar,
-  Sparkles, FolderOpen, Crown, CreditCard, RefreshCw, AlertTriangle, Globe, Settings, History
+  Sparkles, FolderOpen, Crown, CreditCard, RefreshCw, AlertTriangle, Globe, Settings, History, Shield
 } from "lucide-react";
+import UsageStats from "@/components/dashboard/UsageStats";
+import { useAdminAccess } from "@/hooks/useAdminAccess";
 import { toast } from "sonner";
 import { BRAND } from "@/lib/constants";
 import { PLANS } from "@/lib/plans";
@@ -37,6 +39,7 @@ interface Carousel {
 
 const Dashboard = () => {
   const { user, loading, signOut } = useAuth();
+  const { isAdmin } = useAdminAccess();
   const { isPro, plan, dailyUsed, dailyLimit, subscriptionEnd, createCheckout, openCustomerPortal, loading: subLoading, getRemainingCarousels } = useSubscription();
   const { language, setLanguage } = useLanguage();
   const navigate = useNavigate();
@@ -208,7 +211,12 @@ const Dashboard = () => {
                 </div>
               )}
               <span className="text-sm text-muted-foreground hidden md:block">{user?.email}</span>
-              <Button variant="ghost" size="icon" onClick={() => navigate("/profile-settings")} title={t("settings", "profile", language)}>
+              {isAdmin && (
+                <Button variant="ghost" size="icon" onClick={() => navigate("/admin")} title="Admin Panel">
+                  <Shield className="w-4 h-4 text-accent" />
+                </Button>
+              )}
+              <Button variant="ghost" size="icon" onClick={() => navigate("/settings/profile")} title={t("settings", "profile", language)}>
                 <Settings className="w-4 h-4" />
               </Button>
               <Button variant="ghost" size="sm" onClick={handleSignOut}>
@@ -297,6 +305,11 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         )}
+
+        {/* Usage Stats - Metrics */}
+        <div className="mb-6">
+          <UsageStats />
+        </div>
 
         {/* Quick actions */}
         <Card className="mb-8 border-accent/20 bg-gradient-to-br from-accent/5 to-transparent">
