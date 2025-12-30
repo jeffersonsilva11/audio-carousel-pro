@@ -12,13 +12,19 @@ import {
   Users, 
   Activity, 
   CreditCard,
-  AlertTriangle
+  AlertTriangle,
+  Flag,
+  DollarSign,
+  UserCog
 } from "lucide-react";
 import { BRAND } from "@/lib/constants";
 import AdminStats from "@/components/admin/AdminStats";
 import UsersTable from "@/components/admin/UsersTable";
 import UsageLogsTable from "@/components/admin/UsageLogsTable";
 import StripeEventsTable from "@/components/admin/StripeEventsTable";
+import FeatureFlagsCard from "@/components/admin/FeatureFlagsCard";
+import ApiUsageCard from "@/components/admin/ApiUsageCard";
+import RoleManagement from "@/components/admin/RoleManagement";
 
 const Admin = () => {
   const { user, loading: authLoading } = useAuth();
@@ -116,14 +122,26 @@ const Admin = () => {
 
         {/* Tabs */}
         <Tabs defaultValue="users" className="space-y-6">
-          <TabsList>
+          <TabsList className="flex-wrap">
             <TabsTrigger value="users" className="gap-2">
               <Users className="w-4 h-4" />
               {language === "pt-BR" ? "Usuários" : language === "es" ? "Usuarios" : "Users"}
             </TabsTrigger>
+            <TabsTrigger value="roles" className="gap-2">
+              <UserCog className="w-4 h-4" />
+              {language === "pt-BR" ? "Permissões" : language === "es" ? "Permisos" : "Permissions"}
+            </TabsTrigger>
+            <TabsTrigger value="flags" className="gap-2">
+              <Flag className="w-4 h-4" />
+              Features
+            </TabsTrigger>
+            <TabsTrigger value="api" className="gap-2">
+              <DollarSign className="w-4 h-4" />
+              {language === "pt-BR" ? "Custos API" : language === "es" ? "Costos API" : "API Costs"}
+            </TabsTrigger>
             <TabsTrigger value="logs" className="gap-2">
               <Activity className="w-4 h-4" />
-              {language === "pt-BR" ? "Logs" : "Logs"}
+              Logs
             </TabsTrigger>
             <TabsTrigger value="stripe" className="gap-2">
               <CreditCard className="w-4 h-4" />
@@ -133,6 +151,18 @@ const Admin = () => {
 
           <TabsContent value="users">
             <UsersTable />
+          </TabsContent>
+
+          <TabsContent value="roles">
+            <RoleManagement />
+          </TabsContent>
+
+          <TabsContent value="flags">
+            <FeatureFlagsCard />
+          </TabsContent>
+
+          <TabsContent value="api">
+            <ApiUsageCard />
           </TabsContent>
 
           <TabsContent value="logs">
