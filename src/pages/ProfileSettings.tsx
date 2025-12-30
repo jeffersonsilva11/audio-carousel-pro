@@ -36,7 +36,9 @@ import {
   Loader2,
   Calendar,
   Clock,
-  CheckCircle2
+  CheckCircle2,
+  Download,
+  Shield
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -83,6 +85,7 @@ const ProfileSettings = () => {
   const [showRelativeTime, setShowRelativeTime] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   // Initialize from preferences
   useEffect(() => {
@@ -204,6 +207,51 @@ const ProfileSettings = () => {
       title: t("profileSettings", "saved", language),
       description: t("profileSettings", "savedDesc", language),
     });
+  };
+
+  const handleExportData = async () => {
+    if (!user) return;
+    
+    setExporting(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      const response = await supabase.functions.invoke('export-user-data', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (response.error) throw response.error;
+
+      // Create and download JSON file
+      const blob = new Blob([JSON.stringify(response.data.data, null, 2)], { 
+        type: 'application/json' 
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `carrossel-ai-data-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: t("profileSettings", "exportSuccess", language),
+        description: t("profileSettings", "exportSuccessDesc", language),
+      });
+    } catch (error) {
+      console.error('Export error:', error);
+      toast({
+        title: t("profileSettings", "exportError", language),
+        description: t("profileSettings", "exportErrorDesc", language),
+        variant: "destructive",
+      });
+    } finally {
+      setExporting(false);
+    }
   };
 
   if (authLoading || prefsLoading) {
@@ -500,6 +548,47 @@ const ProfileSettings = () => {
                     checked={showRelativeTime} 
                     onCheckedChange={setShowRelativeTime}
                   />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Privacy & Data Card (LGPD) */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Shield className="w-5 h-5" />
+                  {t("profileSettings", "dataPrivacy", language)}
+                </CardTitle>
+                <CardDescription>
+                  {t("profileSettings", "dataPrivacyDesc", language)}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>{t("profileSettings", "exportData", language)}</Label>
+                    <p className="text-sm text-muted-foreground">
+                      {t("profileSettings", "exportDataDesc", language)}
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    onClick={handleExportData}
+                    disabled={exporting}
+                    className="gap-2"
+                  >
+                    {exporting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        {t("profileSettings", "exporting", language)}
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-4 h-4" />
+                        {t("profileSettings", "exportData", language)}
+                      </>
+                    )}
+                  </Button>
                 </div>
               </CardContent>
             </Card>

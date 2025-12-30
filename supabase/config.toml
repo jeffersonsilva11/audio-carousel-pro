@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.log-auth-attempt]
 verify_jwt = false
+
+[functions.export-user-data]
+verify_jwt = true
