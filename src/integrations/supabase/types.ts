@@ -112,6 +112,7 @@ export type Database = {
           avatar_position: string | null
           created_at: string | null
           daily_carousels_used: number | null
+          date_format: string | null
           default_creative_tone: string | null
           default_manual_slide_count: number | null
           default_slide_count_mode: string | null
@@ -128,7 +129,9 @@ export type Database = {
           plan_tier: Database["public"]["Enums"]["plan_tier"] | null
           preferred_lang: string | null
           profile_image: string | null
+          show_relative_time: boolean | null
           tiktok_handle: string | null
+          time_format: string | null
           updated_at: string | null
           user_id: string
         }
@@ -136,6 +139,7 @@ export type Database = {
           avatar_position?: string | null
           created_at?: string | null
           daily_carousels_used?: number | null
+          date_format?: string | null
           default_creative_tone?: string | null
           default_manual_slide_count?: number | null
           default_slide_count_mode?: string | null
@@ -152,7 +156,9 @@ export type Database = {
           plan_tier?: Database["public"]["Enums"]["plan_tier"] | null
           preferred_lang?: string | null
           profile_image?: string | null
+          show_relative_time?: boolean | null
           tiktok_handle?: string | null
+          time_format?: string | null
           updated_at?: string | null
           user_id: string
         }
@@ -160,6 +166,7 @@ export type Database = {
           avatar_position?: string | null
           created_at?: string | null
           daily_carousels_used?: number | null
+          date_format?: string | null
           default_creative_tone?: string | null
           default_manual_slide_count?: number | null
           default_slide_count_mode?: string | null
@@ -176,7 +183,9 @@ export type Database = {
           plan_tier?: Database["public"]["Enums"]["plan_tier"] | null
           preferred_lang?: string | null
           profile_image?: string | null
+          show_relative_time?: boolean | null
           tiktok_handle?: string | null
+          time_format?: string | null
           updated_at?: string | null
           user_id?: string
         }

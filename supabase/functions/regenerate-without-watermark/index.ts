@@ -17,6 +17,98 @@ const STYLES = {
   WHITE_BLACK: { background: '#FFFFFF', text: '#0A0A0A' }
 };
 
+interface ProfileIdentity {
+  name: string;
+  username: string;
+  photoUrl: string | null;
+  avatarPosition: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+  displayMode: 'name_and_username' | 'username_only';
+}
+
+// Generate initials from name for default avatar
+function getInitials(name: string): string {
+  if (!name) return '?';
+  const parts = name.trim().split(' ').filter(Boolean);
+  if (parts.length === 0) return '?';
+  if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+}
+
+// Generate profile identity SVG elements
+function generateProfileIdentitySVG(
+  profile: ProfileIdentity,
+  style: keyof typeof STYLES,
+  format: keyof typeof DIMENSIONS
+): string {
+  if (!profile.username) return '';
+  
+  const { width, height } = DIMENSIONS[format];
+  const { text: textColor } = STYLES[style];
+  
+  // Avatar size and positioning
+  const avatarSize = 60;
+  const padding = 40;
+  const textGap = 12;
+  
+  // Calculate position based on avatarPosition
+  let x = padding;
+  let y = padding;
+  let textAnchor = 'start';
+  
+  switch (profile.avatarPosition) {
+    case 'top-right':
+      x = width - padding;
+      textAnchor = 'end';
+      break;
+    case 'bottom-left':
+      y = height - padding - avatarSize;
+      break;
+    case 'bottom-right':
+      x = width - padding;
+      y = height - padding - avatarSize;
+      textAnchor = 'end';
+      break;
+    default: // top-left
+      break;
+  }
+  
+  const isRight = profile.avatarPosition.includes('right');
+  const avatarX = isRight ? x - avatarSize : x;
+  const textX = isRight ? avatarX - textGap : x + avatarSize + textGap;
+  
+  // Avatar (circle with initials if no photo)
+  const initials = getInitials(profile.name);
+  const avatarElement = profile.photoUrl 
+    ? `<clipPath id="avatarClip"><circle cx="${avatarX + avatarSize/2}" cy="${y + avatarSize/2}" r="${avatarSize/2}"/></clipPath>
+       <image href="${profile.photoUrl}" x="${avatarX}" y="${y}" width="${avatarSize}" height="${avatarSize}" clip-path="url(#avatarClip)" preserveAspectRatio="xMidYMid slice"/>`
+    : `<circle cx="${avatarX + avatarSize/2}" cy="${y + avatarSize/2}" r="${avatarSize/2}" fill="${textColor}" opacity="0.15"/>
+       <text x="${avatarX + avatarSize/2}" y="${y + avatarSize/2 + 8}" text-anchor="middle" fill="${textColor}" font-family="Inter, system-ui, sans-serif" font-size="24" font-weight="600">${initials}</text>`;
+  
+  // Name and username text
+  let identityText = '';
+  const nameY = y + avatarSize/2 - 6;
+  const usernameY = y + avatarSize/2 + 14;
+  
+  if (profile.displayMode === 'name_and_username' && profile.name) {
+    identityText = `
+      <text x="${textX}" y="${nameY}" text-anchor="${textAnchor}" fill="${textColor}" font-family="Inter, system-ui, sans-serif" font-size="18" font-weight="600">${escapeXml(profile.name)}</text>
+      <text x="${textX}" y="${usernameY}" text-anchor="${textAnchor}" fill="${textColor}" opacity="0.7" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="500">@${escapeXml(profile.username)}</text>
+    `;
+  } else {
+    const singleY = y + avatarSize/2 + 5;
+    identityText = `
+      <text x="${textX}" y="${singleY}" text-anchor="${textAnchor}" fill="${textColor}" font-family="Inter, system-ui, sans-serif" font-size="18" font-weight="600">@${escapeXml(profile.username)}</text>
+    `;
+  }
+  
+  return `
+    <g class="profile-identity">
+      ${avatarElement}
+      ${identityText}
+    </g>
+  `;
+}
+
 // Generate SVG for each slide
 function generateSlideSVG(
   text: string,
@@ -25,7 +117,8 @@ function generateSlideSVG(
   style: keyof typeof STYLES,
   format: keyof typeof DIMENSIONS,
   isSignature: boolean = false,
-  hasWatermark: boolean = true
+  hasWatermark: boolean = true,
+  profile?: ProfileIdentity
 ): string {
   const { width, height } = DIMENSIONS[format];
   const { background, text: textColor } = STYLES[style];
@@ -70,20 +163,24 @@ function generateSlideSVG(
   // Slide counter
   const counter = `<text x="${width - 60}" y="60" text-anchor="end" fill="${textColor}" opacity="0.5" font-family="Inter, system-ui, sans-serif" font-size="28" font-weight="500">${slideNumber}/${totalSlides}</text>`;
 
+  // Profile identity
+  const profileIdentity = profile ? generateProfileIdentitySVG(profile, style, format) : '';
+
   // Watermark for free users
   const watermark = hasWatermark ? `
     <g opacity="0.15">
-      <text x="${width / 2}" y="${height - 40}" text-anchor="middle" fill="${textColor}" font-family="Inter, system-ui, sans-serif" font-size="24" font-weight="600">CarrosselAI</text>
+      <text x="${width / 2}" y="${height - 40}" text-anchor="middle" fill="${textColor}" font-family="Inter, system-ui, sans-serif" font-size="24" font-weight="600">Audisell</text>
     </g>
     <g opacity="0.08" transform="rotate(-30 ${width / 2} ${height / 2})">
       <text x="${width / 2}" y="${height / 2 - 100}" text-anchor="middle" fill="${textColor}" font-family="Inter, system-ui, sans-serif" font-size="80" font-weight="700">DEMO</text>
-      <text x="${width / 2}" y="${height / 2 + 50}" text-anchor="middle" fill="${textColor}" font-family="Inter, system-ui, sans-serif" font-size="40" font-weight="500">carrosselai.com</text>
+      <text x="${width / 2}" y="${height / 2 + 50}" text-anchor="middle" fill="${textColor}" font-family="Inter, system-ui, sans-serif" font-size="40" font-weight="500">audisell.com</text>
     </g>` : '';
 
   return `<?xml version="1.0" encoding="UTF-8"?>
-<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
+<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
   <rect width="${width}" height="${height}" fill="${background}"/>
   ${counter}
+  ${profileIdentity}
   <g>
     ${textElements}
   </g>
@@ -131,6 +228,21 @@ serve(async (req) => {
       throw new Error('Carousel not found or access denied');
     }
 
+    // Fetch user profile for identity
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('name, instagram_handle, profile_image, avatar_position, display_mode')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    const profile: ProfileIdentity | undefined = profileData?.instagram_handle ? {
+      name: profileData.name || '',
+      username: profileData.instagram_handle,
+      photoUrl: profileData.profile_image || null,
+      avatarPosition: (profileData.avatar_position || 'top-left') as ProfileIdentity['avatarPosition'],
+      displayMode: (profileData.display_mode || 'name_and_username') as ProfileIdentity['displayMode'],
+    } : undefined;
+
     const script = carousel.script as { slides: Array<{ type: string; text: string }> };
     if (!script || !script.slides) {
       throw new Error('No script found for this carousel');
@@ -152,7 +264,8 @@ serve(async (req) => {
         style,
         format,
         isSignature,
-        false // No watermark
+        false, // No watermark
+        profile
       );
 
       const svgBuffer = new TextEncoder().encode(svg);

@@ -4,6 +4,9 @@ import { useAuth } from "./useAuth";
 import { TemplateId, TextModeId, SlideCountMode, AvatarPosition, DisplayMode } from "@/lib/constants";
 import { CreativeTone } from "@/components/carousel-creator/TextModeSelector";
 
+export type DateFormatPreference = 'short' | 'medium' | 'long' | 'withTime';
+export type TimeFormatPreference = '12h' | '24h';
+
 export interface UserPreferences {
   // Profile identity
   name: string;
@@ -11,6 +14,11 @@ export interface UserPreferences {
   photoUrl: string | null;
   avatarPosition: AvatarPosition;
   displayMode: DisplayMode;
+  
+  // Date/time preferences
+  dateFormat: DateFormatPreference;
+  timeFormat: TimeFormatPreference;
+  showRelativeTime: boolean;
   
   // Carousel preferences
   defaultTemplate: TemplateId;
@@ -28,6 +36,9 @@ const DEFAULT_PREFERENCES: UserPreferences = {
   photoUrl: null,
   avatarPosition: "top-left",
   displayMode: "name_and_username",
+  dateFormat: "medium",
+  timeFormat: "24h",
+  showRelativeTime: true,
   defaultTemplate: "solid",
   defaultTextMode: "compact",
   defaultCreativeTone: "professional",
@@ -71,6 +82,9 @@ export function useUserPreferences() {
           photoUrl: data.profile_image || user.user_metadata?.avatar_url || null,
           avatarPosition: (data.avatar_position as AvatarPosition) || "top-left",
           displayMode: (data.display_mode as DisplayMode) || "name_and_username",
+          dateFormat: (data.date_format as DateFormatPreference) || "medium",
+          timeFormat: (data.time_format as TimeFormatPreference) || "24h",
+          showRelativeTime: data.show_relative_time ?? true,
           defaultTemplate: (data.default_template as TemplateId) || "solid",
           defaultTextMode: (data.default_text_mode as TextModeId) || "compact",
           defaultCreativeTone: (data.default_creative_tone as CreativeTone) || "professional",
@@ -111,6 +125,9 @@ export function useUserPreferences() {
       if (newPreferences.photoUrl !== undefined) updateData.profile_image = newPreferences.photoUrl;
       if (newPreferences.avatarPosition !== undefined) updateData.avatar_position = newPreferences.avatarPosition;
       if (newPreferences.displayMode !== undefined) updateData.display_mode = newPreferences.displayMode;
+      if (newPreferences.dateFormat !== undefined) updateData.date_format = newPreferences.dateFormat;
+      if (newPreferences.timeFormat !== undefined) updateData.time_format = newPreferences.timeFormat;
+      if (newPreferences.showRelativeTime !== undefined) updateData.show_relative_time = newPreferences.showRelativeTime;
       if (newPreferences.defaultTemplate !== undefined) updateData.default_template = newPreferences.defaultTemplate;
       if (newPreferences.defaultTextMode !== undefined) updateData.default_text_mode = newPreferences.defaultTextMode;
       if (newPreferences.defaultCreativeTone !== undefined) updateData.default_creative_tone = newPreferences.defaultCreativeTone;
