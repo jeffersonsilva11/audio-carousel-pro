@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { BRAND, TemplateId } from "@/lib/constants";
+import { BRAND, TemplateId, TextModeId } from "@/lib/constants";
 
 import AudioUploader from "@/components/carousel-creator/AudioUploader";
 import ToneSelector, { ToneType } from "@/components/carousel-creator/ToneSelector";
@@ -25,6 +25,7 @@ import ProcessingStatus from "@/components/carousel-creator/ProcessingStatus";
 import CarouselPreview from "@/components/carousel-creator/CarouselPreview";
 import ProfileIdentitySelector, { ProfileIdentity } from "@/components/carousel-creator/ProfileIdentitySelector";
 import TemplateSelector from "@/components/carousel-creator/TemplateSelector";
+import TextModeSelector, { CreativeTone } from "@/components/carousel-creator/TextModeSelector";
 import {
   Dialog,
   DialogContent,
@@ -76,6 +77,8 @@ const CreateCarousel = () => {
 
   // Customization state
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateId>("solid");
+  const [selectedTextMode, setSelectedTextMode] = useState<TextModeId>("compact");
+  const [creativeTone, setCreativeTone] = useState<CreativeTone>("professional");
   const [selectedTone, setSelectedTone] = useState<ToneType>("PROFESSIONAL");
   const [selectedStyle, setSelectedStyle] = useState<StyleType>("BLACK_WHITE");
   const [selectedFormat, setSelectedFormat] = useState<FormatType>("POST_SQUARE");
@@ -497,6 +500,15 @@ const CreateCarousel = () => {
                   <TemplateSelector
                     selectedTemplate={selectedTemplate}
                     setSelectedTemplate={setSelectedTemplate}
+                  />
+                </div>
+                
+                <div className="border-t border-border pt-8">
+                  <TextModeSelector
+                    selectedMode={selectedTextMode}
+                    setSelectedMode={setSelectedTextMode}
+                    creativeTone={creativeTone}
+                    setCreativeTone={setCreativeTone}
                   />
                 </div>
                 
