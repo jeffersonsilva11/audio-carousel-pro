@@ -1791,6 +1791,280 @@ export const translations = {
       es: "Las plantillas con imagen IA están disponibles en el plan Agency ({price}/mes)",
     },
   },
+
+  // Error messages
+  errors: {
+    generic: {
+      "pt-BR": "Algo deu errado. Tente novamente.",
+      en: "Something went wrong. Please try again.",
+      es: "Algo salió mal. Inténtalo de nuevo.",
+    },
+    networkError: {
+      "pt-BR": "Erro de conexão. Verifique sua internet.",
+      en: "Connection error. Check your internet.",
+      es: "Error de conexión. Verifica tu internet.",
+    },
+    unauthorized: {
+      "pt-BR": "Sessão expirada. Faça login novamente.",
+      en: "Session expired. Please log in again.",
+      es: "Sesión expirada. Inicia sesión nuevamente.",
+    },
+    rateLimitExceeded: {
+      "pt-BR": "Limite diário atingido. Volte amanhã ou faça upgrade.",
+      en: "Daily limit reached. Come back tomorrow or upgrade.",
+      es: "Límite diario alcanzado. Vuelve mañana o mejora tu plan.",
+    },
+    invalidFileFormat: {
+      "pt-BR": "Formato de arquivo inválido. Use MP3, WAV, M4A ou WebM.",
+      en: "Invalid file format. Use MP3, WAV, M4A, or WebM.",
+      es: "Formato de archivo inválido. Usa MP3, WAV, M4A o WebM.",
+    },
+    fileTooLarge: {
+      "pt-BR": "Arquivo muito grande. Máximo 10MB.",
+      en: "File too large. Maximum 10MB.",
+      es: "Archivo demasiado grande. Máximo 10MB.",
+    },
+    audioTooLong: {
+      "pt-BR": "Áudio muito longo. Máximo 60 segundos.",
+      en: "Audio too long. Maximum 60 seconds.",
+      es: "Audio demasiado largo. Máximo 60 segundos.",
+    },
+    transcriptionFailed: {
+      "pt-BR": "Falha na transcrição. Tente novamente.",
+      en: "Transcription failed. Please try again.",
+      es: "La transcripción falló. Inténtalo de nuevo.",
+    },
+    scriptGenerationFailed: {
+      "pt-BR": "Falha ao gerar roteiro. Tente novamente.",
+      en: "Script generation failed. Please try again.",
+      es: "La generación del guión falló. Inténtalo de nuevo.",
+    },
+    imageGenerationFailed: {
+      "pt-BR": "Falha ao gerar imagens. Tente novamente.",
+      en: "Image generation failed. Please try again.",
+      es: "La generación de imágenes falló. Inténtalo de nuevo.",
+    },
+    subscriptionError: {
+      "pt-BR": "Erro ao verificar assinatura. Tente novamente.",
+      en: "Subscription verification error. Please try again.",
+      es: "Error al verificar la suscripción. Inténtalo de nuevo.",
+    },
+    paymentFailed: {
+      "pt-BR": "Pagamento falhou. Verifique seus dados.",
+      en: "Payment failed. Check your details.",
+      es: "El pago falló. Verifica tus datos.",
+    },
+    invalidCredentials: {
+      "pt-BR": "Email ou senha incorretos.",
+      en: "Invalid email or password.",
+      es: "Email o contraseña incorrectos.",
+    },
+    emailAlreadyExists: {
+      "pt-BR": "Este email já está cadastrado.",
+      en: "This email is already registered.",
+      es: "Este email ya está registrado.",
+    },
+    weakPassword: {
+      "pt-BR": "Senha muito fraca. Use letras, números e símbolos.",
+      en: "Password too weak. Use letters, numbers and symbols.",
+      es: "Contraseña muy débil. Usa letras, números y símbolos.",
+    },
+    leakedPassword: {
+      "pt-BR": "Esta senha foi vazada em uma violação de dados. Use outra senha.",
+      en: "This password was leaked in a data breach. Use a different password.",
+      es: "Esta contraseña fue filtrada en una violación de datos. Usa otra contraseña.",
+    },
+    invalidEmail: {
+      "pt-BR": "Email inválido.",
+      en: "Invalid email.",
+      es: "Email inválido.",
+    },
+  },
+
+  // Tooltips
+  tooltips: {
+    uploadAudio: {
+      "pt-BR": "Arraste um arquivo de áudio ou clique para selecionar",
+      en: "Drag an audio file or click to select",
+      es: "Arrastra un archivo de audio o haz clic para seleccionar",
+    },
+    recordAudio: {
+      "pt-BR": "Clique para gravar um áudio de até 60 segundos",
+      en: "Click to record audio up to 60 seconds",
+      es: "Haz clic para grabar un audio de hasta 60 segundos",
+    },
+    textModeCompact: {
+      "pt-BR": "Mantém o tom original, apenas organiza e divide em slides",
+      en: "Keeps original tone, just organizes and splits into slides",
+      es: "Mantiene el tono original, solo organiza y divide en diapositivas",
+    },
+    textModeCreative: {
+      "pt-BR": "Ajusta tom, ritmo e impacto com técnicas de copywriting",
+      en: "Adjusts tone, rhythm and impact with copywriting techniques",
+      es: "Ajusta tono, ritmo e impacto con técnicas de copywriting",
+    },
+    textModeSingle: {
+      "pt-BR": "Gera um único slide com texto mais longo, estilo post",
+      en: "Generates a single slide with longer text, post style",
+      es: "Genera una sola diapositiva con texto más largo, estilo post",
+    },
+    toneEmotional: {
+      "pt-BR": "Storytelling emocional com gatilhos mentais",
+      en: "Emotional storytelling with mental triggers",
+      es: "Narrativa emocional con gatillos mentales",
+    },
+    toneProfessional: {
+      "pt-BR": "Conteúdo educacional premium com dados e autoridade",
+      en: "Premium educational content with data and authority",
+      es: "Contenido educativo premium con datos y autoridad",
+    },
+    toneProvocative: {
+      "pt-BR": "Provocação inteligente que desafia convenções",
+      en: "Smart provocation that challenges conventions",
+      es: "Provocación inteligente que desafía convenciones",
+    },
+    slideCountAuto: {
+      "pt-BR": "A IA decide o número ideal de slides (4-8)",
+      en: "AI decides the ideal number of slides (4-8)",
+      es: "La IA decide el número ideal de diapositivas (4-8)",
+    },
+    slideCountManual: {
+      "pt-BR": "Você escolhe exatamente quantos slides quer",
+      en: "You choose exactly how many slides you want",
+      es: "Tú eliges exactamente cuántas diapositivas quieres",
+    },
+    templateSolid: {
+      "pt-BR": "Fundo sólido preto ou branco com texto",
+      en: "Solid black or white background with text",
+      es: "Fondo sólido negro o blanco con texto",
+    },
+    templateGradient: {
+      "pt-BR": "Imagem IA de fundo com overlay gradiente",
+      en: "AI background image with gradient overlay",
+      es: "Imagen IA de fondo con superposición degradada",
+    },
+    templateImageTop: {
+      "pt-BR": "Imagem IA no topo e texto na área inferior",
+      en: "AI image on top and text in bottom area",
+      es: "Imagen IA arriba y texto en el área inferior",
+    },
+    avatarPosition: {
+      "pt-BR": "Onde seu avatar e nome aparecem no slide",
+      en: "Where your avatar and name appear on the slide",
+      es: "Dónde aparecen tu avatar y nombre en la diapositiva",
+    },
+    displayMode: {
+      "pt-BR": "O que exibir junto ao seu avatar",
+      en: "What to display next to your avatar",
+      es: "Qué mostrar junto a tu avatar",
+    },
+    watermark: {
+      "pt-BR": "Usuários gratuitos têm marca d'água. Faça upgrade para remover.",
+      en: "Free users have watermark. Upgrade to remove.",
+      es: "Los usuarios gratuitos tienen marca de agua. Mejora para eliminarla.",
+    },
+    dailyLimit: {
+      "pt-BR": "Carrosséis restantes hoje. Reseta à meia-noite.",
+      en: "Carousels remaining today. Resets at midnight.",
+      es: "Carruseles restantes hoy. Se reinicia a medianoche.",
+    },
+    downloadAll: {
+      "pt-BR": "Baixar todos os slides em um arquivo ZIP",
+      en: "Download all slides in a ZIP file",
+      es: "Descargar todas las diapositivas en un archivo ZIP",
+    },
+    regenerate: {
+      "pt-BR": "Gerar novamente com as mesmas configurações",
+      en: "Generate again with the same settings",
+      es: "Generar de nuevo con la misma configuración",
+    },
+  },
+
+  // Success messages
+  success: {
+    carouselCreated: {
+      "pt-BR": "Carrossel criado com sucesso!",
+      en: "Carousel created successfully!",
+      es: "¡Carrusel creado con éxito!",
+    },
+    downloadStarted: {
+      "pt-BR": "Download iniciado...",
+      en: "Download started...",
+      es: "Descarga iniciada...",
+    },
+    profileUpdated: {
+      "pt-BR": "Perfil atualizado com sucesso!",
+      en: "Profile updated successfully!",
+      es: "¡Perfil actualizado con éxito!",
+    },
+    subscriptionActivated: {
+      "pt-BR": "Assinatura ativada! Aproveite os recursos premium.",
+      en: "Subscription activated! Enjoy the premium features.",
+      es: "¡Suscripción activada! Disfruta de las funciones premium.",
+    },
+    watermarkRemoved: {
+      "pt-BR": "Marca d'água removida! Baixe novamente seus carrosséis.",
+      en: "Watermark removed! Download your carousels again.",
+      es: "¡Marca de agua eliminada! Descarga tus carruseles de nuevo.",
+    },
+  },
+
+  // Confirmations
+  confirm: {
+    deleteCarousel: {
+      "pt-BR": "Tem certeza que deseja excluir este carrossel?",
+      en: "Are you sure you want to delete this carousel?",
+      es: "¿Estás seguro de que deseas eliminar este carrusel?",
+    },
+    cancelSubscription: {
+      "pt-BR": "Tem certeza que deseja cancelar sua assinatura?",
+      en: "Are you sure you want to cancel your subscription?",
+      es: "¿Estás seguro de que deseas cancelar tu suscripción?",
+    },
+    logout: {
+      "pt-BR": "Tem certeza que deseja sair?",
+      en: "Are you sure you want to log out?",
+      es: "¿Estás seguro de que deseas cerrar sesión?",
+    },
+  },
+
+  // Avatar position labels (for ProfileIdentitySelector)
+  avatarPositions: {
+    topLeft: {
+      "pt-BR": "Superior esquerdo",
+      en: "Top left",
+      es: "Superior izquierdo",
+    },
+    topRight: {
+      "pt-BR": "Superior direito",
+      en: "Top right",
+      es: "Superior derecho",
+    },
+    bottomLeft: {
+      "pt-BR": "Inferior esquerdo",
+      en: "Bottom left",
+      es: "Inferior izquierdo",
+    },
+    bottomRight: {
+      "pt-BR": "Inferior direito",
+      en: "Bottom right",
+      es: "Inferior derecho",
+    },
+  },
+
+  // Display mode labels
+  displayModes: {
+    nameAndUsername: {
+      "pt-BR": "Nome e @usuário",
+      en: "Name and @username",
+      es: "Nombre y @usuario",
+    },
+    usernameOnly: {
+      "pt-BR": "Apenas @usuário",
+      en: "Username only",
+      es: "Solo @usuario",
+    },
+  },
 } as const;
 
 export type TranslationKey = keyof typeof translations;
