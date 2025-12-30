@@ -75,3 +75,16 @@ export const LANGUAGES = [
   { code: "en" as const, name: "English", flag: "🇺🇸" },
   { code: "es" as const, name: "Español", flag: "🇪🇸" },
 ];
+
+// Hook to get translated text
+export function useTranslation() {
+  const { language } = useLanguage();
+  
+  const translate = (section: string, key: string): string => {
+    // Dynamic import workaround - we'll import the function directly
+    const { t } = require("@/lib/translations");
+    return t(section, key, language);
+  };
+  
+  return { t: translate, language };
+}

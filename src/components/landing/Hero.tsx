@@ -1,8 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Play, Sparkles } from "lucide-react";
+import { useLanguage } from "@/hooks/useLanguage";
+import { t } from "@/lib/translations";
 import { BRAND } from "@/lib/constants";
 
 const Hero = () => {
+  const { language } = useLanguage();
+
   return (
     <section className="relative min-h-screen flex items-center pt-20 overflow-hidden bg-hero-pattern">
       {/* Subtle gradient orbs */}
@@ -17,15 +21,15 @@ const Hero = () => {
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 border border-accent/20 mb-8 animate-slide-up">
             <Sparkles className="w-4 h-4 text-accent" />
             <span className="text-sm font-medium text-accent">
-              Powered by AI — 100% automatizado
+              {t("hero", "badge", language)}
             </span>
           </div>
 
           {/* Headline */}
           <h1 className="text-display-md md:text-display-lg lg:text-display-xl mb-6 animate-slide-up-delay-1">
-            Transforme sua{" "}
+            {t("hero", "titlePart1", language)}{" "}
             <span className="relative inline-block">
-              <span className="text-gradient">voz</span>
+              <span className="text-gradient">{t("hero", "titleHighlight", language)}</span>
               <svg
                 className="absolute -bottom-2 left-0 w-full"
                 viewBox="0 0 200 12"
@@ -46,24 +50,25 @@ const Hero = () => {
                 </defs>
               </svg>
             </span>
-            {" "}em carrosséis profissionais
+            {" "}{t("hero", "titlePart2", language)}
           </h1>
 
           {/* Subheadline */}
           <p className="text-body-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 animate-slide-up-delay-2">
-            Grave um áudio de até 60 segundos. Nossa IA transcreve, roteiriza e gera 
-            carrosséis prontos para o Instagram em segundos.
+            {t("hero", "subtitle", language)}
           </p>
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16 animate-slide-up-delay-3">
-            <Button variant="hero" size="xl" className="group w-full sm:w-auto">
-              Criar meu primeiro carrossel
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            <Button variant="hero" size="xl" className="group w-full sm:w-auto" asChild>
+              <a href="/auth">
+                {t("hero", "cta", language)}
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </a>
             </Button>
             <Button variant="hero-outline" size="xl" className="group w-full sm:w-auto">
               <Play className="w-5 h-5" />
-              Ver como funciona
+              {t("hero", "watchDemo", language)}
             </Button>
           </div>
 
@@ -109,8 +114,8 @@ const Hero = () => {
                   </svg>
                 </div>
                 <div>
-                  <p className="font-semibold text-sm">6 slides gerados</p>
-                  <p className="text-xs text-muted-foreground">em 12 segundos</p>
+                  <p className="font-semibold text-sm">{t("hero", "slidesGenerated", language)}</p>
+                  <p className="text-xs text-muted-foreground">{t("hero", "inSeconds", language)}</p>
                 </div>
               </div>
             </div>
@@ -121,8 +126,8 @@ const Hero = () => {
                   <Sparkles className="w-5 h-5 text-accent" />
                 </div>
                 <div>
-                  <p className="font-semibold text-sm">Tom Profissional</p>
-                  <p className="text-xs text-muted-foreground">IA aplicada</p>
+                  <p className="font-semibold text-sm">{t("hero", "professionalTone", language)}</p>
+                  <p className="text-xs text-muted-foreground">{t("hero", "aiApplied", language)}</p>
                 </div>
               </div>
             </div>
@@ -142,7 +147,7 @@ const Hero = () => {
               ))}
             </div>
             <p className="text-sm text-muted-foreground">
-              <span className="font-semibold text-foreground">2.500+</span> criadores já usam o {BRAND.name}
+              <span className="font-semibold text-foreground">2.500+</span> {t("hero", "creatorsCount", language)} {BRAND.name}
             </p>
           </div>
         </div>
