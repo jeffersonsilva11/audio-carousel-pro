@@ -2213,6 +2213,41 @@ export const translations = {
       en: "View history",
       es: "Ver historial",
     },
+    selectMultiple: {
+      "pt-BR": "Selecionar múltiplos",
+      en: "Select multiple",
+      es: "Seleccionar múltiples",
+    },
+    cancelSelection: {
+      "pt-BR": "Cancelar seleção",
+      en: "Cancel selection",
+      es: "Cancelar selección",
+    },
+    selectAll: {
+      "pt-BR": "Selecionar todos",
+      en: "Select all",
+      es: "Seleccionar todos",
+    },
+    deselectAll: {
+      "pt-BR": "Desmarcar todos",
+      en: "Deselect all",
+      es: "Deseleccionar todos",
+    },
+    downloadSelected: {
+      "pt-BR": "Baixar selecionados",
+      en: "Download selected",
+      es: "Descargar seleccionados",
+    },
+    batchDownloadSuccess: {
+      "pt-BR": "Download em lote concluído!",
+      en: "Batch download completed!",
+      es: "¡Descarga por lotes completada!",
+    },
+    batchDownloadError: {
+      "pt-BR": "Erro no download em lote",
+      en: "Batch download error",
+      es: "Error en la descarga por lotes",
+    },
   },
 } as const;
 
