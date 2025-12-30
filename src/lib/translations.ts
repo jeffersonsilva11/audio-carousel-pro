@@ -1879,6 +1879,16 @@ export const translations = {
       en: "Invalid email.",
       es: "Email inválido.",
     },
+    recaptchaFailed: {
+      "pt-BR": "Verificação de segurança falhou",
+      en: "Security verification failed",
+      es: "Verificación de seguridad fallida",
+    },
+    recaptchaFailedDescription: {
+      "pt-BR": "Por favor, tente novamente. Se o problema persistir, recarregue a página.",
+      en: "Please try again. If the problem persists, reload the page.",
+      es: "Por favor, inténtalo de nuevo. Si el problema persiste, recarga la página.",
+    },
   },
 
   // Tooltips

@@ -1,9 +1,11 @@
 import { useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Mic, Upload, Square, Trash2, Play, Pause } from "lucide-react";
+import { Mic, Upload, Square, Trash2, Play, Pause, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/hooks/useLanguage";
+import { useRecaptcha } from "@/hooks/useRecaptcha";
+import { useToast } from "@/hooks/use-toast";
 
 interface AudioUploaderProps {
   audioFile: File | null;
@@ -23,12 +25,15 @@ const AudioUploader = ({
   setAudioDuration 
 }: AudioUploaderProps) => {
   const { t } = useTranslation();
+  const { verifyRecaptcha, isLoading: recaptchaLoading } = useRecaptcha();
+  const { toast } = useToast();
   
   const [isRecording, setIsRecording] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -60,17 +65,33 @@ const AudioUploader = ({
 
   const handleFileSelect = async (file: File) => {
     setError(null);
+    setIsVerifying(true);
     
-    const validationError = validateFile(file);
-    if (validationError) {
-      setError(validationError);
-      return;
-    }
-
     try {
+      // Verify reCAPTCHA before processing file
+      const recaptchaResult = await verifyRecaptcha('audio_upload');
+      
+      if (!recaptchaResult.success) {
+        toast({
+          title: t("errors", "recaptchaFailed"),
+          description: t("errors", "recaptchaFailedDescription"),
+          variant: "destructive",
+        });
+        setIsVerifying(false);
+        return;
+      }
+
+      const validationError = validateFile(file);
+      if (validationError) {
+        setError(validationError);
+        setIsVerifying(false);
+        return;
+      }
+
       const duration = await getAudioDuration(file);
       if (duration > MAX_DURATION) {
         setError(t("audioUploader", "audioTooLong").replace("{seconds}", String(MAX_DURATION)));
+        setIsVerifying(false);
         return;
       }
       
@@ -78,6 +99,8 @@ const AudioUploader = ({
       setAudioDuration(duration);
     } catch {
       setError(t("audioUploader", "processingError"));
+    } finally {
+      setIsVerifying(false);
     }
   };
 
@@ -100,7 +123,24 @@ const AudioUploader = ({
   }, []);
 
   const startRecording = async () => {
+    setIsVerifying(true);
+    
     try {
+      // Verify reCAPTCHA before recording
+      const recaptchaResult = await verifyRecaptcha('audio_record');
+      
+      if (!recaptchaResult.success) {
+        toast({
+          title: t("errors", "recaptchaFailed"),
+          description: t("errors", "recaptchaFailedDescription"),
+          variant: "destructive",
+        });
+        setIsVerifying(false);
+        return;
+      }
+      
+      setIsVerifying(false);
+      
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mediaRecorder = new MediaRecorder(stream);
       mediaRecorderRef.current = mediaRecorder;
@@ -137,6 +177,7 @@ const AudioUploader = ({
         });
       }, 1000);
     } catch {
+      setIsVerifying(false);
       setError(t("audioUploader", "microphoneError"));
     }
   };

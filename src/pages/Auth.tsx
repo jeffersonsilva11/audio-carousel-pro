@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useRecaptcha } from "@/hooks/useRecaptcha";
 import { t } from "@/lib/translations";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +24,7 @@ const Auth = () => {
   const [errors, setErrors] = useState<{ email?: string; password?: string; name?: string }>({});
   
   const { user, signIn, signUp, signInWithGoogle } = useAuth();
+  const { verifyRecaptcha, isLoading: recaptchaLoading } = useRecaptcha();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -68,6 +70,20 @@ const Auth = () => {
     setIsLoading(true);
     
     try {
+      // Verify reCAPTCHA first
+      const recaptchaAction = isLogin ? 'login' : 'signup';
+      const recaptchaResult = await verifyRecaptcha(recaptchaAction);
+      
+      if (!recaptchaResult.success) {
+        toast({
+          title: t("errors", "recaptchaFailed", language),
+          description: t("errors", "recaptchaFailedDescription", language),
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
       if (isLogin) {
         const { error } = await signIn(email, password);
         if (error) {
@@ -123,6 +139,19 @@ const Auth = () => {
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
     try {
+      // Verify reCAPTCHA first
+      const recaptchaResult = await verifyRecaptcha('google_login');
+      
+      if (!recaptchaResult.success) {
+        toast({
+          title: t("errors", "recaptchaFailed", language),
+          description: t("errors", "recaptchaFailedDescription", language),
+          variant: "destructive",
+        });
+        setIsGoogleLoading(false);
+        return;
+      }
+
       const { error } = await signInWithGoogle();
       if (error) {
         toast({
