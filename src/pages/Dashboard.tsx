@@ -338,7 +338,8 @@ const Dashboard = () => {
               {carousels.map((carousel) => (
                 <Card 
                   key={carousel.id} 
-                  className="group hover:shadow-lg transition-all hover:border-accent/50"
+                  className="group hover:shadow-lg transition-all hover:border-accent/50 cursor-pointer"
+                  onClick={() => navigate(`/carousel/${carousel.id}`)}
                 >
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
