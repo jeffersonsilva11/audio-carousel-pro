@@ -468,13 +468,95 @@ serve(async (req) => {
       });
     }
 
-    const { script, style, format, carouselId, userId, hasWatermark = true, profile, customization } = await req.json();
+    const { 
+      script, 
+      style, 
+      format, 
+      carouselId, 
+      userId, 
+      hasWatermark = true, 
+      profile, 
+      customization,
+      // Single slide regeneration params
+      regenerateSingle = false,
+      slideIndex,
+      totalSlides
+    } = await req.json();
 
     if (!script || !script.slides) {
       await logUsage(supabase, user.id, 'generate_images', carouselId, 'invalid_request', { error: 'No script provided' }, ipAddress);
       throw new Error('No script provided');
     }
 
+    // Handle single slide regeneration
+    if (regenerateSingle && typeof slideIndex === 'number') {
+      logStep(`Regenerating single slide ${slideIndex + 1}`, { 
+        watermark: hasWatermark, 
+        profile: profile?.username 
+      });
+      
+      const slide = script.slides[0]; // Single slide is passed as first element
+      const isSignature = slide.type === 'SIGNATURE';
+      const actualTotalSlides = totalSlides || 6;
+      
+      const svg = generateSlideSVG(
+        slide.text,
+        slideIndex + 1,
+        actualTotalSlides,
+        style as keyof typeof STYLES,
+        format as keyof typeof DIMENSIONS,
+        isSignature,
+        hasWatermark,
+        profile,
+        customization
+      );
+
+      const svgBuffer = new TextEncoder().encode(svg);
+      
+      // Upload to storage with timestamp to bust cache
+      const timestamp = Date.now();
+      const fileName = `${userId}/${carouselId}/slide-${slideIndex + 1}-${timestamp}.svg`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('carousel-images')
+        .upload(fileName, svgBuffer, {
+          contentType: 'image/svg+xml',
+          upsert: true
+        });
+
+      if (uploadError) {
+        logStep('Upload error', { error: uploadError.message });
+        throw uploadError;
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('carousel-images')
+        .getPublicUrl(fileName);
+
+      logStep('Regenerated single slide', { slideIndex, publicUrl });
+      
+      await logUsage(supabase, user.id, 'regenerate_slide', carouselId, 'success', { 
+        slideIndex,
+        hasWatermark,
+        plan
+      }, ipAddress);
+
+      // Return single slide result
+      return new Response(JSON.stringify({ 
+        slides: [{
+          number: slideIndex + 1,
+          type: slide.type,
+          text: slide.text,
+          imageUrl: publicUrl
+        }],
+        imageUrls: [publicUrl]
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Regular full carousel generation
     logStep(`Generating ${script.slides.length} slide images`, { 
       watermark: hasWatermark, 
       profile: profile?.username,
@@ -538,6 +620,23 @@ serve(async (req) => {
       if (updateError) {
         logStep('Update error', { error: updateError.message });
       }
+    }
+
+    // Update daily usage counter (only for full carousel generation, not single slide)
+    const today = new Date().toISOString().split('T')[0];
+    const { error: usageError } = await supabase
+      .from('daily_usage')
+      .upsert({
+        user_id: user.id,
+        usage_date: today,
+        carousels_created: dailyUsed + 1,
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'user_id,usage_date'
+      });
+    
+    if (usageError) {
+      logStep('Usage update error', { error: usageError.message });
     }
 
     const slides = script.slides.map((slide: { type: string; text: string }, index: number) => ({
