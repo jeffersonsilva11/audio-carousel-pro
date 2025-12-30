@@ -112,7 +112,12 @@ export type Database = {
           avatar_position: string | null
           created_at: string | null
           daily_carousels_used: number | null
+          default_creative_tone: string | null
+          default_manual_slide_count: number | null
+          default_slide_count_mode: string | null
           default_style: string | null
+          default_template: string | null
+          default_text_mode: string | null
           default_tone: string | null
           display_mode: string | null
           email: string | null
@@ -131,7 +136,12 @@ export type Database = {
           avatar_position?: string | null
           created_at?: string | null
           daily_carousels_used?: number | null
+          default_creative_tone?: string | null
+          default_manual_slide_count?: number | null
+          default_slide_count_mode?: string | null
           default_style?: string | null
+          default_template?: string | null
+          default_text_mode?: string | null
           default_tone?: string | null
           display_mode?: string | null
           email?: string | null
@@ -150,7 +160,12 @@ export type Database = {
           avatar_position?: string | null
           created_at?: string | null
           daily_carousels_used?: number | null
+          default_creative_tone?: string | null
+          default_manual_slide_count?: number | null
+          default_slide_count_mode?: string | null
           default_style?: string | null
+          default_template?: string | null
+          default_text_mode?: string | null
           default_tone?: string | null
           display_mode?: string | null
           email?: string | null

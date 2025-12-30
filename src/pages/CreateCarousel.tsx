@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useUserPreferences } from "@/hooks/useUserPreferences";
 import { supabase } from "@/integrations/supabase/client";
 import { useCarouselGeneration } from "@/hooks/useCarouselGeneration";
 import { Button } from "@/components/ui/button";
@@ -55,6 +56,7 @@ interface Slide {
 const CreateCarousel = () => {
   const { user, loading } = useAuth();
   const { isPro, createCheckout, loading: subLoading } = useSubscription();
+  const { preferences, loading: prefsLoading, savePreferences } = useUserPreferences();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
@@ -67,16 +69,16 @@ const CreateCarousel = () => {
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [audioDuration, setAudioDuration] = useState<number | null>(null);
 
-  // Profile identity state
+  // Profile identity state - initialized from preferences
   const [profileIdentity, setProfileIdentity] = useState<ProfileIdentity>({
-    name: user?.user_metadata?.full_name || user?.user_metadata?.name || '',
+    name: '',
     username: '',
-    photoUrl: user?.user_metadata?.avatar_url || null,
+    photoUrl: null,
     avatarPosition: 'top-left',
     displayMode: 'name_and_username',
   });
 
-  // Customization state
+  // Customization state - initialized from preferences
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateId>("solid");
   const [selectedTextMode, setSelectedTextMode] = useState<TextModeId>("compact");
   const [creativeTone, setCreativeTone] = useState<CreativeTone>("professional");
@@ -85,6 +87,7 @@ const CreateCarousel = () => {
   const [selectedTone, setSelectedTone] = useState<ToneType>("PROFESSIONAL");
   const [selectedStyle, setSelectedStyle] = useState<StyleType>("BLACK_WHITE");
   const [selectedFormat, setSelectedFormat] = useState<FormatType>("POST_SQUARE");
+  const [prefsInitialized, setPrefsInitialized] = useState(false);
 
   // Processing state
   const [isProcessing, setIsProcessing] = useState(false);
@@ -94,6 +97,48 @@ const CreateCarousel = () => {
   const [carouselCount, setCarouselCount] = useState<number>(0);
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+
+  // Initialize state from preferences when loaded
+  useEffect(() => {
+    if (!prefsLoading && !prefsInitialized) {
+      setProfileIdentity({
+        name: preferences.name,
+        username: preferences.username,
+        photoUrl: preferences.photoUrl,
+        avatarPosition: preferences.avatarPosition,
+        displayMode: preferences.displayMode,
+      });
+      setSelectedTemplate(preferences.defaultTemplate);
+      setSelectedTextMode(preferences.defaultTextMode);
+      setCreativeTone(preferences.defaultCreativeTone);
+      setSlideCountMode(preferences.defaultSlideCountMode);
+      setManualSlideCount(preferences.defaultManualSlideCount);
+      setSelectedTone(preferences.defaultTone as ToneType);
+      setSelectedStyle(preferences.defaultStyle as StyleType);
+      setPrefsInitialized(true);
+    }
+  }, [preferences, prefsLoading, prefsInitialized]);
+
+  // Save preferences when customization step is completed
+  const saveCurrentPreferences = useCallback(() => {
+    savePreferences({
+      name: profileIdentity.name,
+      username: profileIdentity.username,
+      photoUrl: profileIdentity.photoUrl,
+      avatarPosition: profileIdentity.avatarPosition,
+      displayMode: profileIdentity.displayMode,
+      defaultTemplate: selectedTemplate,
+      defaultTextMode: selectedTextMode,
+      defaultCreativeTone: creativeTone,
+      defaultSlideCountMode: slideCountMode,
+      defaultManualSlideCount: manualSlideCount,
+      defaultTone: selectedTone,
+      defaultStyle: selectedStyle,
+    });
+  }, [
+    profileIdentity, selectedTemplate, selectedTextMode, creativeTone,
+    slideCountMode, manualSlideCount, selectedTone, selectedStyle, savePreferences
+  ]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -167,6 +212,8 @@ const CreateCarousel = () => {
         setShowUpgradeDialog(true);
         return;
       }
+      // Save preferences before generating
+      saveCurrentPreferences();
       await startGeneration();
     }
   };
@@ -277,7 +324,7 @@ const CreateCarousel = () => {
     }
   };
 
-  if (loading || subLoading) {
+  if (loading || subLoading || prefsLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-accent" />
