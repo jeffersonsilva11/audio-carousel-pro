@@ -54,9 +54,50 @@ export function useSubscription() {
     try {
       const { data, error } = await supabase.functions.invoke("check-subscription");
       
+      // Handle 401 errors silently (invalid/expired token) - fallback to free plan
       if (error) {
-        console.error("Error checking subscription:", error);
-        setState(prev => ({ ...prev, loading: false }));
+        const errorMessage = error.message?.toLowerCase() || "";
+        const is401 = errorMessage.includes("401") || errorMessage.includes("jwt") || errorMessage.includes("unauthorized");
+        
+        if (is401) {
+          console.log("Auth token issue, using free plan defaults");
+        } else {
+          console.error("Error checking subscription:", error);
+        }
+        
+        // Fallback to free plan on any error
+        setState({
+          subscribed: false,
+          plan: "free",
+          dailyLimit: 1,
+          dailyUsed: 0,
+          hasWatermark: true,
+          hasImageGeneration: false,
+          hasEditor: false,
+          hasHistory: false,
+          hasZipDownload: false,
+          subscriptionEnd: null,
+          loading: false,
+        });
+        return;
+      }
+
+      // Handle error in data response
+      if (data?.error) {
+        console.error("Subscription check returned error:", data.error);
+        setState({
+          subscribed: false,
+          plan: "free",
+          dailyLimit: 1,
+          dailyUsed: 0,
+          hasWatermark: true,
+          hasImageGeneration: false,
+          hasEditor: false,
+          hasHistory: false,
+          hasZipDownload: false,
+          subscriptionEnd: null,
+          loading: false,
+        });
         return;
       }
 
@@ -66,19 +107,32 @@ export function useSubscription() {
       setState({
         subscribed: data.subscribed,
         plan,
-        dailyLimit: planConfig.dailyLimit,
+        dailyLimit: data.daily_limit || planConfig.dailyLimit,
         dailyUsed: data.daily_used || 0,
-        hasWatermark: planConfig.hasWatermark,
-        hasImageGeneration: planConfig.hasImageGeneration,
-        hasEditor: planConfig.hasEditor,
-        hasHistory: planConfig.hasHistory,
+        hasWatermark: data.has_watermark ?? planConfig.hasWatermark,
+        hasImageGeneration: data.has_image_generation ?? planConfig.hasImageGeneration,
+        hasEditor: data.has_editor ?? planConfig.hasEditor,
+        hasHistory: data.has_history ?? planConfig.hasHistory,
         hasZipDownload: planConfig.hasZipDownload,
         subscriptionEnd: data.subscription_end,
         loading: false,
       });
     } catch (error) {
       console.error("Error checking subscription:", error);
-      setState(prev => ({ ...prev, loading: false }));
+      // Fallback to free plan on any error
+      setState({
+        subscribed: false,
+        plan: "free",
+        dailyLimit: 1,
+        dailyUsed: 0,
+        hasWatermark: true,
+        hasImageGeneration: false,
+        hasEditor: false,
+        hasHistory: false,
+        hasZipDownload: false,
+        subscriptionEnd: null,
+        loading: false,
+      });
     }
   }, [user, session]);
 

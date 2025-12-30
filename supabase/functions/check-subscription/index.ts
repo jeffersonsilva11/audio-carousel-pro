@@ -47,6 +47,18 @@ serve(async (req) => {
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
 
+    // Get daily usage from database
+    const today = new Date().toISOString().split('T')[0];
+    const { data: usageData } = await supabaseClient
+      .from("daily_usage")
+      .select("carousels_created")
+      .eq("user_id", user.id)
+      .eq("usage_date", today)
+      .maybeSingle();
+    
+    const dailyUsed = usageData?.carousels_created || 0;
+    logStep("Daily usage fetched", { dailyUsed, date: today });
+
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     
@@ -56,6 +68,7 @@ serve(async (req) => {
         subscribed: false,
         plan: "free",
         daily_limit: 1,
+        daily_used: dailyUsed,
         has_watermark: true,
         has_editor: false,
         has_history: false,
@@ -139,16 +152,36 @@ serve(async (req) => {
       logStep("No active subscription found, using free plan");
     }
 
+    // Check if user is admin (unlimited usage)
+    const { data: roleData } = await supabaseClient
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("role", "admin")
+      .maybeSingle();
+    
+    const isAdmin = !!roleData;
+    if (isAdmin) {
+      logStep("User is admin, granting unlimited access");
+      dailyLimit = 9999;
+      hasWatermark = false;
+      hasEditor = true;
+      hasHistory = true;
+      hasImageGeneration = true;
+    }
+
     return new Response(JSON.stringify({
-      subscribed: hasActiveSub,
-      plan,
+      subscribed: hasActiveSub || isAdmin,
+      plan: isAdmin ? "agency" : plan,
       price_id: priceId,
       subscription_end: subscriptionEnd,
       daily_limit: dailyLimit,
+      daily_used: dailyUsed,
       has_watermark: hasWatermark,
       has_editor: hasEditor,
       has_history: hasHistory,
-      has_image_generation: hasImageGeneration
+      has_image_generation: hasImageGeneration,
+      is_admin: isAdmin
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
