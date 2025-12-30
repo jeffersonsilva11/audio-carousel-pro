@@ -1,60 +1,63 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Heart, Briefcase, Zap, ChevronLeft, ChevronRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
-
-const tones = [
-  {
-    id: "emotional",
-    name: "Emocional",
-    icon: Heart,
-    description: "Storytelling com gatilhos mentais para conexão profunda",
-    color: "bg-rose-500/10 text-rose-500 border-rose-500/20",
-    colorBg: "bg-rose-500",
-    slides: [
-      "Eu tinha tudo para dar certo. Mas não deu.",
-      "Não foi falta de esforço. Foi falta de direção.",
-      "O dia que entendi isso mudou tudo.",
-      "Porque sucesso não é sobre mais horas...",
-      "É sobre as horas certas.",
-      "@seuperfil",
-    ],
-  },
-  {
-    id: "professional",
-    name: "Profissional",
-    icon: Briefcase,
-    description: "Educacional e corporativo com dados e autoridade",
-    color: "bg-blue-500/10 text-blue-500 border-blue-500/20",
-    colorBg: "bg-blue-500",
-    slides: [
-      "87% dos profissionais cometem este erro.",
-      "Produtividade não é sobre fazer mais.",
-      "É sobre eliminar o desnecessário.",
-      "Método em 3 passos: Priorize → Execute → Revise",
-      "Implemente hoje e veja resultados em 7 dias.",
-      "@seuperfil | Consultor de Produtividade",
-    ],
-  },
-  {
-    id: "provocative",
-    name: "Provocador",
-    icon: Zap,
-    description: "Direto, controverso e desconfortável",
-    color: "bg-amber-500/10 text-amber-500 border-amber-500/20",
-    colorBg: "bg-amber-500",
-    slides: [
-      "Você não está ocupado. Você está fugindo.",
-      "O conforto é a prisão mais bonita que existe.",
-      "Enquanto você 'pensa', alguém está fazendo.",
-      "A pergunta não é 'posso?' É 'quero pagar o preço?'",
-      "Desconforto é o preço do crescimento.",
-      "@seuperfil",
-    ],
-  },
-];
+import { useLanguage } from "@/hooks/useLanguage";
+import { t } from "@/lib/translations";
 
 const ToneShowcase = () => {
+  const { language } = useLanguage();
+
+  const tones = [
+    {
+      id: "emotional",
+      name: t("toneShowcase", "emotional", language),
+      icon: Heart,
+      description: t("toneShowcase", "emotionalDesc", language),
+      color: "bg-rose-500/10 text-rose-500 border-rose-500/20",
+      colorBg: "bg-rose-500",
+      slides: [
+        "Eu tinha tudo para dar certo. Mas não deu.",
+        "Não foi falta de esforço. Foi falta de direção.",
+        "O dia que entendi isso mudou tudo.",
+        "Porque sucesso não é sobre mais horas...",
+        "É sobre as horas certas.",
+        "@seuperfil",
+      ],
+    },
+    {
+      id: "professional",
+      name: t("toneShowcase", "professional", language),
+      icon: Briefcase,
+      description: t("toneShowcase", "professionalDesc", language),
+      color: "bg-blue-500/10 text-blue-500 border-blue-500/20",
+      colorBg: "bg-blue-500",
+      slides: [
+        "87% dos profissionais cometem este erro.",
+        "Produtividade não é sobre fazer mais.",
+        "É sobre eliminar o desnecessário.",
+        "Método em 3 passos: Priorize → Execute → Revise",
+        "Implemente hoje e veja resultados em 7 dias.",
+        "@seuperfil | Consultor de Produtividade",
+      ],
+    },
+    {
+      id: "provocative",
+      name: t("toneShowcase", "provocative", language),
+      icon: Zap,
+      description: t("toneShowcase", "provocativeDesc", language),
+      color: "bg-amber-500/10 text-amber-500 border-amber-500/20",
+      colorBg: "bg-amber-500",
+      slides: [
+        "Você não está ocupado. Você está fugindo.",
+        "O conforto é a prisão mais bonita que existe.",
+        "Enquanto você 'pensa', alguém está fazendo.",
+        "A pergunta não é 'posso?' É 'quero pagar o preço?'",
+        "Desconforto é o preço do crescimento.",
+        "@seuperfil",
+      ],
+    },
+  ];
+
   const [activeTone, setActiveTone] = useState(tones[0]);
   const [currentSlide, setCurrentSlide] = useState(0);
 
@@ -66,19 +69,58 @@ const ToneShowcase = () => {
     setCurrentSlide((prev) => (prev - 1 + 6) % 6);
   };
 
+  const getToneTitle = (id: string) => {
+    if (id === "emotional") return t("toneShowcase", "emotionalTitle", language);
+    if (id === "professional") return t("toneShowcase", "professionalTitle", language);
+    if (id === "provocative") return t("toneShowcase", "provocativeTitle", language);
+    return "";
+  };
+
+  const getToneLongDesc = (id: string) => {
+    if (id === "emotional") return t("toneShowcase", "emotionalLong", language);
+    if (id === "professional") return t("toneShowcase", "professionalLong", language);
+    if (id === "provocative") return t("toneShowcase", "provocativeLong", language);
+    return "";
+  };
+
+  const getToneTags = (id: string) => {
+    if (id === "emotional") {
+      return [
+        t("toneShowcase", "storytelling", language),
+        t("toneShowcase", "mentalTriggers", language),
+        t("toneShowcase", "connection", language),
+      ];
+    }
+    if (id === "professional") {
+      return [
+        t("toneShowcase", "data", language),
+        t("toneShowcase", "authority", language),
+        t("toneShowcase", "educational", language),
+      ];
+    }
+    if (id === "provocative") {
+      return [
+        t("toneShowcase", "controversial", language),
+        t("toneShowcase", "direct", language),
+        t("toneShowcase", "impactful", language),
+      ];
+    }
+    return [];
+  };
+
   return (
     <section className="py-24 md:py-32">
       <div className="container mx-auto">
         {/* Section Header */}
         <div className="text-center max-w-2xl mx-auto mb-16">
           <span className="inline-block text-sm font-semibold text-accent mb-4 tracking-wide uppercase">
-            Escolha seu tom
+            {t("toneShowcase", "sectionTitle", language)}
           </span>
           <h2 className="text-display-sm md:text-display-md mb-4">
-            3 estilos de roteirização
+            {t("toneShowcase", "title", language)}
           </h2>
           <p className="text-body-lg text-muted-foreground">
-            Cada tom usa frameworks diferentes de copywriting para maximizar o engajamento
+            {t("toneShowcase", "subtitle", language)}
           </p>
         </div>
 
@@ -98,8 +140,8 @@ const ToneShowcase = () => {
                     : "bg-card border-border hover:border-muted-foreground/30"
                 }`}
               >
-                <div className={`w-10 h-10 rounded-xl ${tone.id === activeTone.id ? tone.colorBg : 'bg-secondary'} flex items-center justify-center transition-colors`}>
-                  <tone.icon className={`w-5 h-5 ${tone.id === activeTone.id ? 'text-white' : 'text-muted-foreground'}`} />
+                <div className={`w-10 h-10 rounded-xl ${tone.id === activeTone.id ? tone.colorBg : "bg-secondary"} flex items-center justify-center transition-colors`}>
+                  <tone.icon className={`w-5 h-5 ${tone.id === activeTone.id ? "text-white" : "text-muted-foreground"}`} />
                 </div>
                 <div className="text-left">
                   <p className="font-semibold">{tone.name}</p>
@@ -173,39 +215,17 @@ const ToneShowcase = () => {
               </div>
               
               <h3 className="text-display-sm">
-                {activeTone.id === "emotional" && "Conecte emocionalmente"}
-                {activeTone.id === "professional" && "Eduque com autoridade"}
-                {activeTone.id === "provocative" && "Provoque reflexão"}
+                {getToneTitle(activeTone.id)}
               </h3>
 
               <p className="text-body-lg text-muted-foreground">
-                {activeTone.id === "emotional" && "Usa a Pirâmide de Freytag e gatilhos de aversão à perda. Perfeito para histórias pessoais, cases de superação e conteúdo inspiracional que gera conexão."}
-                {activeTone.id === "professional" && "Aplica o Círculo Dourado (Why→How→What) com viés de autoridade. Ideal para dicas práticas, tutoriais e conteúdo educacional B2B."}
-                {activeTone.id === "provocative" && "Framework 'O Quê, E Daí, E Agora' com quebra de padrões. Para criadores que querem chamar atenção e provocar discussões."}
+                {getToneLongDesc(activeTone.id)}
               </p>
 
               <div className="flex flex-wrap gap-2">
-                {activeTone.id === "emotional" && (
-                  <>
-                    <span className="px-3 py-1 bg-secondary rounded-full text-sm">Storytelling</span>
-                    <span className="px-3 py-1 bg-secondary rounded-full text-sm">Gatilhos mentais</span>
-                    <span className="px-3 py-1 bg-secondary rounded-full text-sm">Conexão</span>
-                  </>
-                )}
-                {activeTone.id === "professional" && (
-                  <>
-                    <span className="px-3 py-1 bg-secondary rounded-full text-sm">Dados</span>
-                    <span className="px-3 py-1 bg-secondary rounded-full text-sm">Autoridade</span>
-                    <span className="px-3 py-1 bg-secondary rounded-full text-sm">Educacional</span>
-                  </>
-                )}
-                {activeTone.id === "provocative" && (
-                  <>
-                    <span className="px-3 py-1 bg-secondary rounded-full text-sm">Controverso</span>
-                    <span className="px-3 py-1 bg-secondary rounded-full text-sm">Direto</span>
-                    <span className="px-3 py-1 bg-secondary rounded-full text-sm">Impactante</span>
-                  </>
-                )}
+                {getToneTags(activeTone.id).map((tag) => (
+                  <span key={tag} className="px-3 py-1 bg-secondary rounded-full text-sm">{tag}</span>
+                ))}
               </div>
             </div>
           </div>

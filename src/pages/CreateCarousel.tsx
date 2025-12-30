@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useUserPreferences } from "@/hooks/useUserPreferences";
 import { useLanguage, SupportedLanguage } from "@/hooks/useLanguage";
+import { t } from "@/lib/translations";
 import { supabase } from "@/integrations/supabase/client";
 import { useCarouselGeneration } from "@/hooks/useCarouselGeneration";
 import { Button } from "@/components/ui/button";
@@ -41,11 +42,11 @@ import {
 
 type Step = "upload" | "customize" | "processing" | "preview";
 
-const steps: { id: Step; title: string; description: string }[] = [
-  { id: "upload", title: "Áudio", description: "Envie ou grave" },
-  { id: "customize", title: "Personalizar", description: "Tom e estilo" },
-  { id: "processing", title: "Processando", description: "IA trabalhando" },
-  { id: "preview", title: "Pronto", description: "Baixe" },
+const getSteps = (lang: SupportedLanguage) => [
+  { id: "upload" as const, title: t("create", "audioStep", lang), description: t("create", "audioStepDesc", lang) },
+  { id: "customize" as const, title: t("create", "customizeStep", lang), description: t("create", "customizeStepDesc", lang) },
+  { id: "processing" as const, title: t("create", "processingStep", lang), description: t("create", "processingStepDesc", lang) },
+  { id: "preview" as const, title: t("create", "readyStep", lang), description: t("create", "readyStepDesc", lang) },
 ];
 
 interface Slide {
@@ -64,6 +65,9 @@ const CreateCarousel = () => {
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const { status, error, result, generateCarousel } = useCarouselGeneration();
+
+  // Get translated steps
+  const steps = getSteps(siteLanguage);
 
   // Language state for carousel generation (defaults to site language)
   const [carouselLanguage, setCarouselLanguage] = useState<SupportedLanguage>(siteLanguage);
@@ -179,21 +183,21 @@ const CreateCarousel = () => {
       setCurrentStep("preview");
       setIsProcessing(false);
       toast({
-        title: "Carrossel criado!",
+        title: t("create", "carouselCreated", siteLanguage),
         description: isPro 
-          ? "Seu carrossel está pronto para download." 
-          : "Seu carrossel está pronto (com marca d'água).",
+          ? t("create", "readyToDownload", siteLanguage) 
+          : t("create", "readyWithWatermark", siteLanguage),
       });
     } else if (status === "FAILED" && error) {
       toast({
-        title: "Erro ao gerar carrossel",
+        title: t("create", "generationError", siteLanguage),
         description: error,
         variant: "destructive",
       });
       setCurrentStep("customize");
       setIsProcessing(false);
     }
-  }, [status, result, error, toast, isPro]);
+  }, [status, result, error, toast, isPro, siteLanguage]);
 
   const getCurrentStepIndex = () => steps.findIndex(s => s.id === currentStep);
 
@@ -351,44 +355,31 @@ const CreateCarousel = () => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Crown className="w-5 h-5 text-accent" />
-              Limite atingido
+              {t("create", "limitReachedTitle", siteLanguage)}
             </DialogTitle>
             <DialogDescription>
-              Você já criou seu carrossel grátis. Assine o Pro para criar carrosséis ilimitados e sem marca d'água!
+              {t("create", "limitReachedDesc", siteLanguage)}
             </DialogDescription>
           </DialogHeader>
           
           <div className="bg-accent/10 rounded-lg p-4 my-4">
-            <div className="font-semibold text-lg mb-2">Plano Pro</div>
-            <div className="text-2xl font-bold text-accent mb-2">R$ 29,90<span className="text-sm font-normal text-muted-foreground">/mês</span></div>
+            <div className="font-semibold text-lg mb-2">{t("create", "proPlan", siteLanguage)}</div>
+            <div className="text-2xl font-bold text-accent mb-2">R$ 29,90<span className="text-sm font-normal text-muted-foreground">{t("common", "perMonth", siteLanguage)}</span></div>
             <ul className="text-sm space-y-1 text-muted-foreground">
-              <li>✓ Carrosséis ilimitados</li>
-              <li>✓ Sem marca d'água</li>
-              <li>✓ Histórico completo</li>
-              <li>✓ Download em ZIP</li>
+              <li>✓ {t("create", "unlimitedCarousels", siteLanguage)}</li>
+              <li>✓ {t("create", "noWatermark", siteLanguage)}</li>
+              <li>✓ {t("create", "completeHistory", siteLanguage)}</li>
+              <li>✓ {t("create", "zipDownload", siteLanguage)}</li>
             </ul>
           </div>
 
           <DialogFooter className="flex-col sm:flex-row gap-2">
-            <Button 
-              variant="outline" 
-              onClick={() => setShowUpgradeDialog(false)}
-              className="w-full sm:w-auto"
-            >
-              Voltar
+            <Button variant="outline" onClick={() => setShowUpgradeDialog(false)} className="w-full sm:w-auto">
+              {t("common", "back", siteLanguage)}
             </Button>
-            <Button 
-              variant="accent" 
-              onClick={handleUpgrade}
-              disabled={checkoutLoading}
-              className="w-full sm:w-auto"
-            >
-              {checkoutLoading ? (
-                <Loader2 className="w-4 h-4 animate-spin mr-2" />
-              ) : (
-                <Crown className="w-4 h-4 mr-2" />
-              )}
-              Assinar Pro
+            <Button variant="accent" onClick={handleUpgrade} disabled={checkoutLoading} className="w-full sm:w-auto">
+              {checkoutLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Crown className="w-4 h-4 mr-2" />}
+              {t("create", "subscribePro", siteLanguage)}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -486,20 +477,15 @@ const CreateCarousel = () => {
                 <Crown className="w-4 h-4 text-accent" />
               </div>
               <div className="text-sm">
-                <span className="font-medium">Plano Grátis</span>
-                <span className="text-muted-foreground"> • {carouselCount}/1 carrossel usado</span>
+                <span className="font-medium">{t("create", "freePlan", siteLanguage)}</span>
+                <span className="text-muted-foreground"> • {carouselCount}/1 {t("create", "carouselUsed", siteLanguage)}</span>
                 {carouselCount >= 1 && (
-                  <span className="text-destructive ml-1">(limite atingido)</span>
+                  <span className="text-destructive ml-1">({t("create", "limitReached", siteLanguage)})</span>
                 )}
               </div>
             </div>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setShowUpgradeDialog(true)}
-              className="text-xs"
-            >
-              Upgrade Pro
+            <Button variant="outline" size="sm" onClick={() => setShowUpgradeDialog(true)} className="text-xs">
+              {t("create", "upgradePro", siteLanguage)}
             </Button>
           </div>
         )}
@@ -508,11 +494,9 @@ const CreateCarousel = () => {
         <div className="md:hidden mb-6">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm text-muted-foreground">
-              Passo {getCurrentStepIndex() + 1} de {steps.length}
+              {t("create", "step", siteLanguage)} {getCurrentStepIndex() + 1} {t("create", "of", siteLanguage)} {steps.length}
             </span>
-            <span className="text-sm font-medium">
-              {steps[getCurrentStepIndex()]?.title}
-            </span>
+            <span className="text-sm font-medium">{steps[getCurrentStepIndex()]?.title}</span>
           </div>
           <div className="h-1 bg-muted rounded-full overflow-hidden">
             <div 
@@ -527,10 +511,8 @@ const CreateCarousel = () => {
           {currentStep === "upload" && (
             <>
               <div className="text-center mb-8">
-                <h1 className="text-2xl font-bold mb-2">Envie seu áudio</h1>
-                <p className="text-muted-foreground">
-                  Grave ou faça upload de um áudio de até 60 segundos
-                </p>
+                <h1 className="text-2xl font-bold mb-2">{t("create", "uploadAudio", siteLanguage)}</h1>
+                <p className="text-muted-foreground">{t("create", "uploadSubtitle", siteLanguage)}</p>
               </div>
               
               <AudioUploader

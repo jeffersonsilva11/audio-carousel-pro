@@ -5,12 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Check, Sparkles, Zap, Loader2, Crown, Image as ImageIcon } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useLanguage } from "@/hooks/useLanguage";
+import { t } from "@/lib/translations";
 import { PLANS, PLAN_ORDER, PlanTier } from "@/lib/plans";
 
 const Pricing = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { plan: currentPlan, createCheckout } = useSubscription();
+  const { language } = useLanguage();
   const [loading, setLoading] = useState<PlanTier | null>(null);
 
   const handlePlanAction = async (planTier: PlanTier) => {
@@ -41,14 +44,14 @@ const Pricing = () => {
 
   const getPlanIcon = (tier: PlanTier) => {
     switch (tier) {
-      case 'agency': return ImageIcon;
-      case 'creator': return Crown;
-      case 'starter': return Zap;
+      case "agency": return ImageIcon;
+      case "creator": return Crown;
+      case "starter": return Zap;
       default: return Sparkles;
     }
   };
 
-  const getFeaturedPlan = () => 'creator';
+  const getFeaturedPlan = () => "creator";
 
   return (
     <section id="pricing" className="py-24 md:py-32 bg-secondary/30">
@@ -56,13 +59,13 @@ const Pricing = () => {
         {/* Section Header */}
         <div className="text-center max-w-2xl mx-auto mb-16">
           <span className="inline-block text-sm font-semibold text-accent mb-4 tracking-wide uppercase">
-            Planos
+            {t("pricing", "sectionTitle", language)}
           </span>
           <h2 className="text-display-sm md:text-display-md mb-4">
-            Escolha o plano ideal para você
+            {t("pricing", "title", language)}
           </h2>
           <p className="text-body-lg text-muted-foreground">
-            Comece grátis. Escale conforme sua necessidade.
+            {t("pricing", "subtitle", language)}
           </p>
         </div>
 
@@ -84,7 +87,7 @@ const Pricing = () => {
                   <div className="absolute -top-4 left-1/2 -translate-x-1/2">
                     <span className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-accent text-accent-foreground text-sm font-semibold rounded-full shadow-lg">
                       <Sparkles className="w-4 h-4" />
-                      Mais popular
+                      {t("pricing", "mostPopular", language)}
                     </span>
                   </div>
                 )}
@@ -92,7 +95,7 @@ const Pricing = () => {
                 {isCurrentPlan && (
                   <div className="absolute -top-3 right-4">
                     <span className="inline-flex items-center px-3 py-1 bg-green-500 text-white text-xs font-semibold rounded-full">
-                      Seu plano
+                      {t("pricing", "yourPlan", language)}
                     </span>
                   </div>
                 )}
@@ -101,9 +104,7 @@ const Pricing = () => {
                   <div className="mx-auto w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center mb-3">
                     <Icon className={`w-6 h-6 ${isFeatured ? "text-primary-foreground" : "text-accent"}`} />
                   </div>
-                  <CardTitle className="text-xl">
-                    {plan.name}
-                  </CardTitle>
+                  <CardTitle className="text-xl">{plan.name}</CardTitle>
                   <CardDescription className={isFeatured ? "text-primary-foreground/70" : ""}>
                     {plan.description}
                   </CardDescription>
@@ -114,7 +115,7 @@ const Pricing = () => {
                     <span className="text-4xl font-bold">{plan.priceDisplay}</span>
                     {tier !== "free" && (
                       <span className={`text-sm ${isFeatured ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
-                        /mês
+                        {t("common", "perMonth", language)}
                       </span>
                     )}
                   </div>
@@ -153,7 +154,11 @@ const Pricing = () => {
                       <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
                       <>
-                        {isCurrentPlan ? "Seu plano atual" : tier === "free" ? "Testar Grátis" : "Assinar"}
+                        {isCurrentPlan 
+                          ? t("pricing", "currentPlan", language) 
+                          : tier === "free" 
+                            ? t("pricing", "testFree", language) 
+                            : t("pricing", "subscribe", language)}
                       </>
                     )}
                   </Button>
@@ -168,15 +173,15 @@ const Pricing = () => {
           <div className="inline-flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">
             <span className="flex items-center gap-2">
               <Check className="w-4 h-4 text-success" />
-              Pagamento seguro via Stripe
+              {t("pricing", "securePayment", language)}
             </span>
             <span className="flex items-center gap-2">
               <Check className="w-4 h-4 text-success" />
-              Cancele quando quiser
+              {t("pricing", "cancelAnytime", language)}
             </span>
             <span className="flex items-center gap-2">
               <Check className="w-4 h-4 text-success" />
-              Suporte em português
+              {t("pricing", "supportInLanguage", language)}
             </span>
           </div>
         </div>
