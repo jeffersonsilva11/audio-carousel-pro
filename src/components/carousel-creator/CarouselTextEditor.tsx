@@ -1,0 +1,490 @@
+import { useState, useCallback } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
+import { 
+  ChevronLeft, 
+  ChevronRight, 
+  Download, 
+  FolderArchive, 
+  Loader2, 
+  Edit2, 
+  Check, 
+  X, 
+  RotateCcw,
+  Wand2
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
+import JSZip from "jszip";
+import { useTranslation } from "@/hooks/useLanguage";
+import { supabase } from "@/integrations/supabase/client";
+
+interface Slide {
+  number: number;
+  type: string;
+  text: string;
+  imageUrl?: string;
+}
+
+interface CarouselTextEditorProps {
+  slides: Slide[];
+  onSlidesUpdate: (slides: Slide[]) => void;
+  isPro?: boolean;
+  carouselId?: string;
+  style?: string;
+  format?: string;
+}
+
+const CarouselTextEditor = ({ 
+  slides: initialSlides, 
+  onSlidesUpdate, 
+  isPro = false,
+  carouselId,
+  style = 'BLACK_WHITE',
+  format = 'POST_SQUARE'
+}: CarouselTextEditorProps) => {
+  const { t } = useTranslation();
+  const [slides, setSlides] = useState<Slide[]>(initialSlides);
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [editingSlide, setEditingSlide] = useState<number | null>(null);
+  const [editedText, setEditedText] = useState("");
+  const [originalSlides] = useState<Slide[]>(initialSlides);
+  const [isDownloadingZip, setIsDownloadingZip] = useState(false);
+  const [isRegenerating, setIsRegenerating] = useState(false);
+  const { toast } = useToast();
+
+  const goToSlide = (index: number) => {
+    if (index >= 0 && index < slides.length) {
+      if (editingSlide !== null) {
+        cancelEdit();
+      }
+      setCurrentSlide(index);
+    }
+  };
+
+  const startEdit = (slideIndex: number) => {
+    if (!isPro) {
+      toast({
+        title: t("carouselEditor", "proFeature"),
+        description: t("carouselEditor", "editProOnly"),
+        variant: "destructive",
+      });
+      return;
+    }
+    setEditingSlide(slideIndex);
+    setEditedText(slides[slideIndex].text);
+  };
+
+  const saveEdit = useCallback(() => {
+    if (editingSlide === null) return;
+    
+    const updatedSlides = slides.map((slide, index) => 
+      index === editingSlide ? { ...slide, text: editedText } : slide
+    );
+    setSlides(updatedSlides);
+    onSlidesUpdate(updatedSlides);
+    setEditingSlide(null);
+    setEditedText("");
+    
+    toast({
+      title: t("carouselEditor", "textUpdated"),
+      description: t("carouselEditor", "regenerateHint"),
+    });
+  }, [editingSlide, editedText, slides, onSlidesUpdate, toast, t]);
+
+  const cancelEdit = () => {
+    setEditingSlide(null);
+    setEditedText("");
+  };
+
+  const resetSlide = (slideIndex: number) => {
+    const updatedSlides = slides.map((slide, index) => 
+      index === slideIndex ? { ...slide, text: originalSlides[slideIndex].text } : slide
+    );
+    setSlides(updatedSlides);
+    onSlidesUpdate(updatedSlides);
+    toast({
+      title: t("carouselEditor", "slideReset"),
+      description: t("carouselEditor", "textRestored"),
+    });
+  };
+
+  const regenerateSlide = async (slideIndex: number) => {
+    if (!isPro || !carouselId) {
+      toast({
+        title: t("carouselEditor", "proFeature"),
+        description: t("carouselEditor", "regenerateProOnly"),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsRegenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke(
+        "generate-carousel-images",
+        {
+          body: {
+            script: { slides: [slides[slideIndex]] },
+            style,
+            format,
+            carouselId,
+            userId: (await supabase.auth.getUser()).data.user?.id,
+            hasWatermark: false,
+            regenerateSingle: true,
+            slideIndex
+          }
+        }
+      );
+
+      if (error || data?.error) {
+        throw new Error(data?.error || error?.message || "Regeneration failed");
+      }
+
+      const newImageUrl = data.slides?.[0]?.imageUrl;
+      if (newImageUrl) {
+        const updatedSlides = slides.map((slide, index) => 
+          index === slideIndex ? { ...slide, imageUrl: newImageUrl } : slide
+        );
+        setSlides(updatedSlides);
+        onSlidesUpdate(updatedSlides);
+        
+        toast({
+          title: t("carouselEditor", "slideRegenerated"),
+          description: t("carouselEditor", "imageUpdated"),
+        });
+      }
+    } catch (error) {
+      console.error("Regeneration error:", error);
+      toast({
+        title: t("carouselEditor", "regenerateError"),
+        description: t("carouselEditor", "tryAgain"),
+        variant: "destructive",
+      });
+    } finally {
+      setIsRegenerating(false);
+    }
+  };
+
+  const downloadSlide = async (slide: Slide) => {
+    try {
+      if (slide.imageUrl) {
+        const response = await fetch(slide.imageUrl);
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `slide-${slide.number}.svg`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+      
+      toast({
+        title: t("carouselPreview", "downloadStarted"),
+        description: t("carouselPreview", "slideDownloaded").replace("{number}", String(slide.number)),
+      });
+    } catch (error) {
+      toast({
+        title: t("carouselPreview", "downloadError"),
+        description: t("carouselPreview", "couldNotDownload"),
+        variant: "destructive",
+      });
+    }
+  };
+
+  const downloadAsZip = async () => {
+    if (!isPro) {
+      toast({
+        title: t("carouselPreview", "proFeature"),
+        description: t("carouselPreview", "zipProOnly"),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsDownloadingZip(true);
+    try {
+      const zip = new JSZip();
+      const folder = zip.folder("carrossel");
+
+      if (!folder) throw new Error("Could not create folder");
+
+      for (const slide of slides) {
+        if (slide.imageUrl) {
+          try {
+            const response = await fetch(slide.imageUrl);
+            const blob = await response.blob();
+            folder.file(`slide-${slide.number}.svg`, blob);
+          } catch (err) {
+            console.error(`Error fetching slide ${slide.number}:`, err);
+          }
+        }
+      }
+
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "carrossel.zip";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: t("carouselPreview", "downloadComplete"),
+        description: t("carouselPreview", "zipDownloaded").replace("{count}", String(slides.length)),
+      });
+    } catch (error) {
+      console.error("ZIP download error:", error);
+      toast({
+        title: t("carouselPreview", "downloadError"),
+        description: t("carouselPreview", "couldNotCreateZip"),
+        variant: "destructive",
+      });
+    } finally {
+      setIsDownloadingZip(false);
+    }
+  };
+
+  const currentSlideData = slides[currentSlide];
+  const hasChanges = slides[currentSlide]?.text !== originalSlides[currentSlide]?.text;
+
+  return (
+    <div className="space-y-6">
+      {/* Main preview */}
+      <Card className="overflow-hidden bg-muted/30">
+        <CardContent className="p-4 md:p-6">
+          <div className="relative aspect-square max-w-md mx-auto bg-background rounded-lg overflow-hidden shadow-lg">
+            {currentSlideData?.imageUrl ? (
+              <img
+                src={currentSlideData.imageUrl}
+                alt={`${t("carouselPreview", "slide")} ${currentSlide + 1}`}
+                className="w-full h-full object-contain"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                {t("carouselPreview", "loading")}
+              </div>
+            )}
+            
+            {/* Navigation arrows */}
+            <button
+              onClick={() => goToSlide(currentSlide - 1)}
+              disabled={currentSlide === 0}
+              className={cn(
+                "absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-background/80 backdrop-blur flex items-center justify-center transition-opacity",
+                currentSlide === 0 ? "opacity-30 cursor-not-allowed" : "hover:bg-background"
+              )}
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            
+            <button
+              onClick={() => goToSlide(currentSlide + 1)}
+              disabled={currentSlide === slides.length - 1}
+              className={cn(
+                "absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-background/80 backdrop-blur flex items-center justify-center transition-opacity",
+                currentSlide === slides.length - 1 ? "opacity-30 cursor-not-allowed" : "hover:bg-background"
+              )}
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+
+            {/* Edit button overlay */}
+            {isPro && editingSlide === null && (
+              <button
+                onClick={() => startEdit(currentSlide)}
+                className="absolute top-3 right-3 p-2 rounded-full bg-background/80 backdrop-blur hover:bg-background transition-colors"
+                title={t("carouselEditor", "editText")}
+              >
+                <Edit2 className="w-4 h-4" />
+              </button>
+            )}
+
+            {/* Regenerating overlay */}
+            {isRegenerating && (
+              <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center">
+                <div className="text-center">
+                  <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-accent" />
+                  <p className="text-sm">{t("carouselEditor", "regenerating")}</p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Slide info */}
+          <div className="mt-4 text-center">
+            <p className="text-sm text-muted-foreground">
+              <span className="font-medium text-foreground">{t("carouselPreview", "slide")} {currentSlide + 1}</span>
+              {" "}{t("carouselPreview", "of")} {slides.length}
+              {currentSlideData?.type && (
+                <span className="ml-2 text-accent">• {currentSlideData.type}</span>
+              )}
+              {hasChanges && (
+                <span className="ml-2 text-amber-500">• {t("carouselEditor", "modified")}</span>
+              )}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Thumbnail navigation */}
+      <div className="flex gap-2 overflow-x-auto pb-2 justify-center">
+        {slides.map((slide, index) => {
+          const isModified = slide.text !== originalSlides[index]?.text;
+          return (
+            <button
+              key={index}
+              onClick={() => goToSlide(index)}
+              className={cn(
+                "relative shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all",
+                currentSlide === index
+                  ? "border-accent ring-2 ring-accent/20"
+                  : "border-transparent hover:border-muted-foreground/30"
+              )}
+            >
+              {slide.imageUrl ? (
+                <img
+                  src={slide.imageUrl}
+                  alt={`Thumbnail ${index + 1}`}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-muted flex items-center justify-center text-xs text-muted-foreground">
+                  {index + 1}
+                </div>
+              )}
+              {currentSlide === index && (
+                <div className="absolute inset-0 bg-accent/10" />
+              )}
+              {isModified && (
+                <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-500" />
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Text Editor Section */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between mb-2">
+            <h4 className="text-sm font-medium text-muted-foreground">
+              {t("carouselEditor", "slideText").replace("{number}", String(currentSlide + 1))}
+            </h4>
+            {isPro && editingSlide === null && (
+              <div className="flex gap-2">
+                {hasChanges && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => resetSlide(currentSlide)}
+                    className="h-8"
+                  >
+                    <RotateCcw className="w-3 h-3 mr-1" />
+                    {t("carouselEditor", "reset")}
+                  </Button>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => startEdit(currentSlide)}
+                  className="h-8"
+                >
+                  <Edit2 className="w-3 h-3 mr-1" />
+                  {t("carouselEditor", "edit")}
+                </Button>
+              </div>
+            )}
+          </div>
+          
+          {editingSlide === currentSlide ? (
+            <div className="space-y-3">
+              <Textarea
+                value={editedText}
+                onChange={(e) => setEditedText(e.target.value)}
+                className="min-h-[120px] resize-none"
+                placeholder={t("carouselEditor", "enterText")}
+              />
+              <div className="flex gap-2 justify-end">
+                <Button variant="ghost" size="sm" onClick={cancelEdit}>
+                  <X className="w-4 h-4 mr-1" />
+                  {t("common", "cancel")}
+                </Button>
+                <Button variant="accent" size="sm" onClick={saveEdit}>
+                  <Check className="w-4 h-4 mr-1" />
+                  {t("common", "save")}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <p className="text-foreground whitespace-pre-wrap">{currentSlideData?.text}</p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Regenerate Button */}
+      {isPro && hasChanges && editingSlide === null && (
+        <div className="flex justify-center">
+          <Button
+            variant="outline"
+            onClick={() => regenerateSlide(currentSlide)}
+            disabled={isRegenerating}
+            className="gap-2"
+          >
+            {isRegenerating ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Wand2 className="w-4 h-4" />
+            )}
+            {t("carouselEditor", "regenerateImage")}
+          </Button>
+        </div>
+      )}
+
+      {/* Actions */}
+      <div className="flex flex-col sm:flex-row gap-3 justify-center">
+        {isPro ? (
+          <Button 
+            variant="accent" 
+            size="lg" 
+            onClick={downloadAsZip}
+            disabled={isDownloadingZip}
+            className="flex-1 sm:flex-initial"
+          >
+            {isDownloadingZip ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <FolderArchive className="w-4 h-4 mr-2" />
+            )}
+            {isDownloadingZip ? t("carouselPreview", "creatingZip") : t("carouselPreview", "downloadZip").replace("{count}", String(slides.length))}
+          </Button>
+        ) : (
+          <Button 
+            variant="accent" 
+            size="lg" 
+            className="flex-1 sm:flex-initial"
+          >
+            <Download className="w-4 h-4 mr-2" />
+            {t("carouselPreview", "downloadAll").replace("{count}", String(slides.length))}
+          </Button>
+        )}
+        <Button 
+          variant="outline" 
+          size="lg"
+          onClick={() => downloadSlide(currentSlideData)}
+          className="flex-1 sm:flex-initial"
+        >
+          <Download className="w-4 h-4 mr-2" />
+          {t("carouselPreview", "downloadCurrent")}
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+export default CarouselTextEditor;

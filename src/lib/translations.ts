@@ -812,6 +812,26 @@ export const translations = {
       en: "Remove watermark",
       es: "Eliminar marca de agua",
     },
+    carouselReady: {
+      "pt-BR": "Carrossel pronto!",
+      en: "Carousel ready!",
+      es: "¡Carrusel listo!",
+    },
+    generatedSuccess: {
+      "pt-BR": "Seu carrossel foi gerado com sucesso",
+      en: "Your carousel was generated successfully",
+      es: "Tu carrusel fue generado con éxito",
+    },
+    watermarkWarning: {
+      "pt-BR": "Este carrossel contém marca d'água. Assine o Pro para remover.",
+      en: "This carousel contains a watermark. Subscribe to Pro to remove it.",
+      es: "Este carrusel contiene marca de agua. Suscríbete a Pro para eliminarla.",
+    },
+    viewDashboard: {
+      "pt-BR": "Ver no Dashboard",
+      en: "View in Dashboard",
+      es: "Ver en Dashboard",
+    },
     removing: {
       "pt-BR": "Removendo...",
       en: "Removing...",
@@ -2535,6 +2555,129 @@ export const translations = {
       "pt-BR": "Adicione imagens personalizadas",
       en: "Add custom images",
       es: "Agrega imágenes personalizadas",
+    },
+  },
+
+  // Export Format Selector
+  exportFormat: {
+    title: {
+      "pt-BR": "Formato de Exportação",
+      en: "Export Format",
+      es: "Formato de Exportación",
+    },
+    subtitle: {
+      "pt-BR": "Escolha a plataforma e formato para exportar",
+      en: "Choose the platform and format to export",
+      es: "Elige la plataforma y formato para exportar",
+    },
+  },
+
+  // Carousel Text Editor
+  carouselEditor: {
+    proFeature: {
+      "pt-BR": "Recurso Pro",
+      en: "Pro Feature",
+      es: "Función Pro",
+    },
+    editProOnly: {
+      "pt-BR": "A edição de texto está disponível apenas para assinantes Pro.",
+      en: "Text editing is only available for Pro subscribers.",
+      es: "La edición de texto solo está disponible para suscriptores Pro.",
+    },
+    regenerateProOnly: {
+      "pt-BR": "A regeneração de imagens está disponível apenas para assinantes Pro.",
+      en: "Image regeneration is only available for Pro subscribers.",
+      es: "La regeneración de imágenes solo está disponible para suscriptores Pro.",
+    },
+    textUpdated: {
+      "pt-BR": "Texto atualizado",
+      en: "Text updated",
+      es: "Texto actualizado",
+    },
+    regenerateHint: {
+      "pt-BR": "Clique em 'Regenerar Imagem' para aplicar as mudanças.",
+      en: "Click 'Regenerate Image' to apply the changes.",
+      es: "Haz clic en 'Regenerar Imagen' para aplicar los cambios.",
+    },
+    slideReset: {
+      "pt-BR": "Slide restaurado",
+      en: "Slide reset",
+      es: "Slide restaurado",
+    },
+    textRestored: {
+      "pt-BR": "O texto foi restaurado ao original.",
+      en: "The text has been restored to the original.",
+      es: "El texto ha sido restaurado al original.",
+    },
+    slideRegenerated: {
+      "pt-BR": "Slide regenerado",
+      en: "Slide regenerated",
+      es: "Slide regenerado",
+    },
+    imageUpdated: {
+      "pt-BR": "A imagem foi atualizada com o novo texto.",
+      en: "The image has been updated with the new text.",
+      es: "La imagen ha sido actualizada con el nuevo texto.",
+    },
+    regenerateError: {
+      "pt-BR": "Erro ao regenerar",
+      en: "Regeneration error",
+      es: "Error al regenerar",
+    },
+    tryAgain: {
+      "pt-BR": "Tente novamente em alguns instantes.",
+      en: "Please try again in a few moments.",
+      es: "Inténtalo de nuevo en unos momentos.",
+    },
+    editText: {
+      "pt-BR": "Editar texto",
+      en: "Edit text",
+      es: "Editar texto",
+    },
+    regenerating: {
+      "pt-BR": "Regenerando...",
+      en: "Regenerating...",
+      es: "Regenerando...",
+    },
+    modified: {
+      "pt-BR": "Modificado",
+      en: "Modified",
+      es: "Modificado",
+    },
+    slideText: {
+      "pt-BR": "Texto do Slide {number}",
+      en: "Slide {number} Text",
+      es: "Texto del Slide {number}",
+    },
+    reset: {
+      "pt-BR": "Restaurar",
+      en: "Reset",
+      es: "Restaurar",
+    },
+    edit: {
+      "pt-BR": "Editar",
+      en: "Edit",
+      es: "Editar",
+    },
+    enterText: {
+      "pt-BR": "Digite o texto do slide...",
+      en: "Enter slide text...",
+      es: "Ingresa el texto del slide...",
+    },
+    regenerateImage: {
+      "pt-BR": "Regenerar Imagem",
+      en: "Regenerate Image",
+      es: "Regenerar Imagen",
+    },
+    previewTab: {
+      "pt-BR": "Visualizar",
+      en: "Preview",
+      es: "Vista previa",
+    },
+    editTab: {
+      "pt-BR": "Editar",
+      en: "Edit",
+      es: "Editar",
     },
   },
 } as const;
