@@ -133,7 +133,8 @@ const CarouselTextEditor = ({
             userId: (await supabase.auth.getUser()).data.user?.id,
             hasWatermark: false,
             regenerateSingle: true,
-            slideIndex
+            slideIndex,
+            totalSlides: slides.length
           }
         }
       );
