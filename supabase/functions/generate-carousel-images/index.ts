@@ -17,6 +17,30 @@ const STYLES = {
   WHITE_BLACK: { background: '#FFFFFF', text: '#0A0A0A' }
 };
 
+// Available fonts with their families
+const FONTS: Record<string, string> = {
+  'inter': 'Inter, system-ui, sans-serif',
+  'playfair': 'Playfair Display, serif',
+  'roboto': 'Roboto, sans-serif',
+  'montserrat': 'Montserrat, sans-serif',
+  'oswald': 'Oswald, sans-serif',
+  'lora': 'Lora, serif',
+  'bebas': 'Bebas Neue, sans-serif',
+  'poppins': 'Poppins, sans-serif',
+};
+
+// Gradient presets
+const GRADIENT_PRESETS: Record<string, string[] | null> = {
+  'none': null,
+  'sunset': ['#ff6b6b', '#feca57', '#ff9ff3'],
+  'ocean': ['#667eea', '#764ba2', '#f093fb'],
+  'forest': ['#11998e', '#38ef7d'],
+  'night': ['#232526', '#414345'],
+  'fire': ['#f12711', '#f5af19'],
+  'candy': ['#a18cd1', '#fbc2eb'],
+  'custom': null,
+};
+
 // Plan daily limits
 const PLAN_LIMITS: Record<string, number> = {
   'free': 1,
@@ -31,6 +55,13 @@ interface ProfileIdentity {
   photoUrl: string | null;
   avatarPosition: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
   displayMode: 'name_and_username' | 'username_only';
+}
+
+interface TemplateCustomization {
+  fontId?: string;
+  gradientId?: string;
+  customGradientColors?: string[];
+  slideImages?: (string | null)[];
 }
 
 const logStep = (step: string, details?: unknown) => {
@@ -142,7 +173,8 @@ function getInitials(name: string): string {
 function generateProfileIdentitySVG(
   profile: ProfileIdentity,
   style: keyof typeof STYLES,
-  format: keyof typeof DIMENSIONS
+  format: keyof typeof DIMENSIONS,
+  fontFamily: string
 ): string {
   if (!profile.username) return '';
   
@@ -186,7 +218,7 @@ function generateProfileIdentitySVG(
     ? `<clipPath id="avatarClip"><circle cx="${avatarX + avatarSize/2}" cy="${y + avatarSize/2}" r="${avatarSize/2}"/></clipPath>
        <image href="${profile.photoUrl}" x="${avatarX}" y="${y}" width="${avatarSize}" height="${avatarSize}" clip-path="url(#avatarClip)" preserveAspectRatio="xMidYMid slice"/>`
     : `<circle cx="${avatarX + avatarSize/2}" cy="${y + avatarSize/2}" r="${avatarSize/2}" fill="${textColor}" opacity="0.15"/>
-       <text x="${avatarX + avatarSize/2}" y="${y + avatarSize/2 + 8}" text-anchor="middle" fill="${textColor}" font-family="Inter, system-ui, sans-serif" font-size="24" font-weight="600">${initials}</text>`;
+       <text x="${avatarX + avatarSize/2}" y="${y + avatarSize/2 + 8}" text-anchor="middle" fill="${textColor}" font-family="${fontFamily}" font-size="24" font-weight="600">${initials}</text>`;
   
   // Name and username text
   let identityText = '';
@@ -195,13 +227,13 @@ function generateProfileIdentitySVG(
   
   if (profile.displayMode === 'name_and_username' && profile.name) {
     identityText = `
-      <text x="${textX}" y="${nameY}" text-anchor="${textAnchor}" fill="${textColor}" font-family="Inter, system-ui, sans-serif" font-size="18" font-weight="600">${escapeXml(profile.name)}</text>
-      <text x="${textX}" y="${usernameY}" text-anchor="${textAnchor}" fill="${textColor}" opacity="0.7" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="500">@${escapeXml(profile.username)}</text>
+      <text x="${textX}" y="${nameY}" text-anchor="${textAnchor}" fill="${textColor}" font-family="${fontFamily}" font-size="18" font-weight="600">${escapeXml(profile.name)}</text>
+      <text x="${textX}" y="${usernameY}" text-anchor="${textAnchor}" fill="${textColor}" opacity="0.7" font-family="${fontFamily}" font-size="16" font-weight="500">@${escapeXml(profile.username)}</text>
     `;
   } else {
     const singleY = y + avatarSize/2 + 5;
     identityText = `
-      <text x="${textX}" y="${singleY}" text-anchor="${textAnchor}" fill="${textColor}" font-family="Inter, system-ui, sans-serif" font-size="18" font-weight="600">@${escapeXml(profile.username)}</text>
+      <text x="${textX}" y="${singleY}" text-anchor="${textAnchor}" fill="${textColor}" font-family="${fontFamily}" font-size="18" font-weight="600">@${escapeXml(profile.username)}</text>
     `;
   }
   
@@ -210,6 +242,58 @@ function generateProfileIdentitySVG(
       ${avatarElement}
       ${identityText}
     </g>
+  `;
+}
+
+// Generate gradient background SVG
+function generateGradientBackground(
+  width: number,
+  height: number,
+  gradientId: string,
+  customColors?: string[]
+): string {
+  let colors: string[] | null = null;
+  
+  if (gradientId === 'custom' && customColors && customColors.length >= 2) {
+    colors = customColors;
+  } else if (gradientId !== 'none' && GRADIENT_PRESETS[gradientId]) {
+    colors = GRADIENT_PRESETS[gradientId];
+  }
+  
+  if (!colors || colors.length < 2) {
+    return ''; // No gradient
+  }
+  
+  const gradientStops = colors.map((color, index) => {
+    const offset = (index / (colors!.length - 1)) * 100;
+    return `<stop offset="${offset}%" stop-color="${color}"/>`;
+  }).join('\n      ');
+  
+  return `
+    <defs>
+      <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        ${gradientStops}
+      </linearGradient>
+    </defs>
+    <rect width="${width}" height="${height}" fill="url(#bgGradient)"/>
+    <rect width="${width}" height="${height}" fill="rgba(0,0,0,0.4)"/>
+  `;
+}
+
+// Generate slide image background
+function generateSlideImageBackground(
+  imageUrl: string,
+  width: number,
+  height: number
+): string {
+  return `
+    <defs>
+      <clipPath id="imageClip">
+        <rect width="${width}" height="${height}"/>
+      </clipPath>
+    </defs>
+    <image href="${imageUrl}" x="0" y="0" width="${width}" height="${height}" clip-path="url(#imageClip)" preserveAspectRatio="xMidYMid slice"/>
+    <rect width="${width}" height="${height}" fill="rgba(0,0,0,0.5)"/>
   `;
 }
 
@@ -222,10 +306,18 @@ function generateSlideSVG(
   format: keyof typeof DIMENSIONS,
   isSignature: boolean = false,
   hasWatermark: boolean = true,
-  profile?: ProfileIdentity
+  profile?: ProfileIdentity,
+  customization?: TemplateCustomization
 ): string {
   const { width, height } = DIMENSIONS[format];
   const { background, text: textColor } = STYLES[style];
+  
+  // Get font family
+  const fontId = customization?.fontId || 'inter';
+  const fontFamily = FONTS[fontId] || FONTS['inter'];
+  
+  // Get slide-specific image if provided
+  const slideImage = customization?.slideImages?.[slideNumber - 1];
   
   // Calculate font size based on text length and format
   const maxChars = text.length;
@@ -262,24 +354,42 @@ function generateSlideSVG(
   // Generate text elements
   const textElements = lines.map((line, index) => {
     const y = startY + (index * lineHeight);
-    return `<text x="${width / 2}" y="${y}" text-anchor="middle" fill="${textColor}" font-family="Inter, system-ui, sans-serif" font-size="${fontSize}" font-weight="${isSignature ? '700' : '500'}">${escapeXml(line)}</text>`;
+    return `<text x="${width / 2}" y="${y}" text-anchor="middle" fill="${textColor}" font-family="${fontFamily}" font-size="${fontSize}" font-weight="${isSignature ? '700' : '500'}">${escapeXml(line)}</text>`;
   }).join('\n    ');
 
   // Slide counter
-  const counter = `<text x="${width - 60}" y="60" text-anchor="end" fill="${textColor}" opacity="0.5" font-family="Inter, system-ui, sans-serif" font-size="28" font-weight="500">${slideNumber}/${totalSlides}</text>`;
+  const counter = `<text x="${width - 60}" y="60" text-anchor="end" fill="${textColor}" opacity="0.5" font-family="${fontFamily}" font-size="28" font-weight="500">${slideNumber}/${totalSlides}</text>`;
 
   // Profile identity
-  const profileIdentity = profile ? generateProfileIdentitySVG(profile, style, format) : '';
+  const profileIdentity = profile ? generateProfileIdentitySVG(profile, style, format, fontFamily) : '';
 
   // Watermark for free users
   const watermark = hasWatermark ? `
     <g opacity="0.15">
-      <text x="${width / 2}" y="${height - 40}" text-anchor="middle" fill="${textColor}" font-family="Inter, system-ui, sans-serif" font-size="24" font-weight="600">Audisell</text>
+      <text x="${width / 2}" y="${height - 40}" text-anchor="middle" fill="${textColor}" font-family="${fontFamily}" font-size="24" font-weight="600">Audisell</text>
     </g>
     <g opacity="0.08" transform="rotate(-30 ${width / 2} ${height / 2})">
-      <text x="${width / 2}" y="${height / 2 - 100}" text-anchor="middle" fill="${textColor}" font-family="Inter, system-ui, sans-serif" font-size="80" font-weight="700">DEMO</text>
-      <text x="${width / 2}" y="${height / 2 + 50}" text-anchor="middle" fill="${textColor}" font-family="Inter, system-ui, sans-serif" font-size="40" font-weight="500">audisell.com</text>
+      <text x="${width / 2}" y="${height / 2 - 100}" text-anchor="middle" fill="${textColor}" font-family="${fontFamily}" font-size="80" font-weight="700">DEMO</text>
+      <text x="${width / 2}" y="${height / 2 + 50}" text-anchor="middle" fill="${textColor}" font-family="${fontFamily}" font-size="40" font-weight="500">audisell.com</text>
     </g>` : '';
+
+  // Determine background
+  let backgroundElement = `<rect width="${width}" height="${height}" fill="${background}"/>`;
+  
+  // Priority: slide image > gradient > solid
+  if (slideImage) {
+    backgroundElement = generateSlideImageBackground(slideImage, width, height);
+  } else if (customization?.gradientId && customization.gradientId !== 'none') {
+    const gradientBg = generateGradientBackground(
+      width, 
+      height, 
+      customization.gradientId, 
+      customization.customGradientColors
+    );
+    if (gradientBg) {
+      backgroundElement = gradientBg;
+    }
+  }
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
@@ -288,7 +398,7 @@ function generateSlideSVG(
       <circle cx="0" cy="0" r="30"/>
     </clipPath>
   </defs>
-  <rect width="${width}" height="${height}" fill="${background}"/>
+  ${backgroundElement}
   ${counter}
   ${profileIdentity}
   <g>
@@ -358,14 +468,18 @@ serve(async (req) => {
       });
     }
 
-    const { script, style, format, carouselId, userId, hasWatermark = true, profile } = await req.json();
+    const { script, style, format, carouselId, userId, hasWatermark = true, profile, customization } = await req.json();
 
     if (!script || !script.slides) {
       await logUsage(supabase, user.id, 'generate_images', carouselId, 'invalid_request', { error: 'No script provided' }, ipAddress);
       throw new Error('No script provided');
     }
 
-    logStep(`Generating ${script.slides.length} slide images`, { watermark: hasWatermark, profile: profile?.username });
+    logStep(`Generating ${script.slides.length} slide images`, { 
+      watermark: hasWatermark, 
+      profile: profile?.username,
+      customization: customization ? { font: customization.fontId, gradient: customization.gradientId } : null
+    });
 
     const imageUrls: string[] = [];
 
@@ -380,7 +494,8 @@ serve(async (req) => {
         format as keyof typeof DIMENSIONS,
         isSignature,
         hasWatermark,
-        profile
+        profile,
+        customization
       );
 
       // Convert to base64
@@ -437,7 +552,8 @@ serve(async (req) => {
     await logUsage(supabase, user.id, 'generate_images', carouselId, 'success', { 
       slideCount: slides.length,
       hasWatermark,
-      plan
+      plan,
+      customization: customization ? { font: customization.fontId, gradient: customization.gradientId } : null
     }, ipAddress);
 
     return new Response(JSON.stringify({ slides, imageUrls }), {

@@ -61,14 +61,14 @@ export const TEMPLATES = [
     id: 'gradient',
     nameKey: 'gradientName',
     descriptionKey: 'gradientDesc',
-    requiredPlan: 'agency' as const,
+    requiredPlan: 'creator' as const,
     hasImageGeneration: true,
   },
   {
     id: 'image_top',
     nameKey: 'imageTopName',
     descriptionKey: 'imageTopDesc',
-    requiredPlan: 'agency' as const,
+    requiredPlan: 'creator' as const,
     hasImageGeneration: true,
   },
 ] as const;
@@ -87,6 +87,34 @@ export const TEMPLATE_LABELS: Record<string, Record<SupportedLanguage, string>> 
 export function getTemplateLabel(labelKey: string, language: SupportedLanguage): string {
   return TEMPLATE_LABELS[labelKey]?.[language] || TEMPLATE_LABELS[labelKey]?.["pt-BR"] || labelKey;
 }
+
+// Available Fonts for customization
+export const AVAILABLE_FONTS = [
+  { id: 'inter', name: 'Inter', family: 'Inter, system-ui, sans-serif' },
+  { id: 'playfair', name: 'Playfair Display', family: 'Playfair Display, serif' },
+  { id: 'roboto', name: 'Roboto', family: 'Roboto, sans-serif' },
+  { id: 'montserrat', name: 'Montserrat', family: 'Montserrat, sans-serif' },
+  { id: 'oswald', name: 'Oswald', family: 'Oswald, sans-serif' },
+  { id: 'lora', name: 'Lora', family: 'Lora, serif' },
+  { id: 'bebas', name: 'Bebas Neue', family: 'Bebas Neue, sans-serif' },
+  { id: 'poppins', name: 'Poppins', family: 'Poppins, sans-serif' },
+] as const;
+
+export type FontId = typeof AVAILABLE_FONTS[number]['id'];
+
+// Gradient Presets
+export const GRADIENT_PRESETS = [
+  { id: 'none', name: 'Sem Gradiente', colors: null },
+  { id: 'sunset', name: 'Pôr do Sol', colors: ['#ff6b6b', '#feca57', '#ff9ff3'] },
+  { id: 'ocean', name: 'Oceano', colors: ['#667eea', '#764ba2', '#f093fb'] },
+  { id: 'forest', name: 'Floresta', colors: ['#11998e', '#38ef7d'] },
+  { id: 'night', name: 'Noite', colors: ['#232526', '#414345'] },
+  { id: 'fire', name: 'Fogo', colors: ['#f12711', '#f5af19'] },
+  { id: 'candy', name: 'Candy', colors: ['#a18cd1', '#fbc2eb'] },
+  { id: 'custom', name: 'Personalizado', colors: null },
+] as const;
+
+export type GradientId = typeof GRADIENT_PRESETS[number]['id'];
 
 // AI Text Modes
 export const TEXT_MODES = [

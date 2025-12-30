@@ -14,6 +14,9 @@ export interface PlanConfig {
   hasEditor: boolean;
   hasHistory: boolean;
   hasZipDownload: boolean;
+  hasCustomFonts?: boolean;
+  hasGradients?: boolean;
+  hasSlideImages?: boolean;
   templates: ('solid' | 'gradient' | 'image_top')[];
   features: string[];
   limitations: string[];
@@ -80,22 +83,26 @@ export const PLANS: Record<PlanTier, PlanConfig> = {
     dailyLimit: 8,
     monthlyLimit: null, // fair usage
     hasWatermark: false,
-    hasImageGeneration: false,
+    hasImageGeneration: true, // Enabled for Creator
     hasEditor: true,
     hasHistory: true,
     hasZipDownload: true,
-    templates: ['solid', 'gradient'],
+    hasCustomFonts: true,
+    hasGradients: true,
+    hasSlideImages: true,
+    templates: ['solid', 'gradient', 'image_top'],
     features: [
       'Até 8 carrosséis por dia',
       'Uso ilimitado mensal (uso justo)',
       'Sem marca d\'água',
       'Editor visual completo',
-      'Múltiplos templates',
+      'Customização de fontes',
+      'Templates com gradientes',
+      'Upload de imagens por slide',
+      'Geração de imagens com IA',
       'Processamento prioritário',
     ],
-    limitations: [
-      'Sem geração de imagens IA',
-    ],
+    limitations: [],
   },
   agency: {
     id: 'agency',
@@ -110,12 +117,16 @@ export const PLANS: Record<PlanTier, PlanConfig> = {
     hasEditor: true,
     hasHistory: true,
     hasZipDownload: true,
+    hasCustomFonts: true,
+    hasGradients: true,
+    hasSlideImages: true,
     templates: ['solid', 'gradient', 'image_top'],
     features: [
       'Até 20 carrosséis por dia',
       'Uso ilimitado mensal (uso justo)',
       'Sem marca d\'água',
       'Geração de imagens com IA',
+      'Customização avançada',
       'Todos os templates',
       'Processamento prioritário',
       'Suporte premium',
