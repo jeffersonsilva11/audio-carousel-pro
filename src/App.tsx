@@ -12,6 +12,7 @@ import CreateCarousel from "./pages/CreateCarousel";
 import CarouselDetail from "./pages/CarouselDetail";
 import ProfileSettings from "./pages/ProfileSettings";
 import History from "./pages/History";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +33,7 @@ const App = () => (
               <Route path="/carousel/:id" element={<CarouselDetail />} />
               <Route path="/settings/profile" element={<ProfileSettings />} />
               <Route path="/history" element={<History />} />
+              <Route path="/admin" element={<Admin />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
