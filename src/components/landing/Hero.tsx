@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Play, Sparkles } from "lucide-react";
+import { BRAND } from "@/lib/constants";
 
 const Hero = () => {
   return (
@@ -141,7 +142,7 @@ const Hero = () => {
               ))}
             </div>
             <p className="text-sm text-muted-foreground">
-              <span className="font-semibold text-foreground">2.500+</span> criadores já usam o Carrossel AI
+              <span className="font-semibold text-foreground">2.500+</span> criadores já usam o {BRAND.name}
             </p>
           </div>
         </div>

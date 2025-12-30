@@ -1,4 +1,5 @@
 import { Mic2 } from "lucide-react";
+import { BRAND } from "@/lib/constants";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -36,11 +37,11 @@ const Footer = () => {
                 <Mic2 className="w-5 h-5 text-primary-foreground" />
               </div>
               <span className="font-bold text-lg">
-                Carrossel<span className="text-accent">AI</span>
+                {BRAND.name}
               </span>
             </a>
             <p className="text-sm text-muted-foreground mb-4">
-              Transforme sua voz em carrosséis profissionais com IA.
+              {BRAND.tagline}
             </p>
             {/* Language Selector */}
             <select className="text-sm bg-secondary border border-border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent">
@@ -109,7 +110,7 @@ const Footer = () => {
         {/* Bottom Bar */}
         <div className="pt-8 border-t border-border flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-sm text-muted-foreground">
-            © {currentYear} Carrossel AI. Todos os direitos reservados.
+            © {currentYear} {BRAND.name}. Todos os direitos reservados.
           </p>
           <p className="text-sm text-muted-foreground">
             Feito com ❤️ no Brasil

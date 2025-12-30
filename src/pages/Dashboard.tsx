@@ -22,6 +22,8 @@ import {
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
+import { BRAND } from "@/lib/constants";
+import { PLANS } from "@/lib/plans";
 
 interface Carousel {
   id: string;
@@ -37,7 +39,7 @@ interface Carousel {
 
 const Dashboard = () => {
   const { user, loading, signOut } = useAuth();
-  const { isPro, subscribed, subscriptionEnd, createCheckout, openCustomerPortal, loading: subLoading } = useSubscription();
+  const { isPro, plan, dailyUsed, dailyLimit, subscriptionEnd, createCheckout, openCustomerPortal, loading: subLoading, canCreateCarousel, getRemainingCarousels } = useSubscription();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [carousels, setCarousels] = useState<Carousel[]>([]);
@@ -174,7 +176,7 @@ const Dashboard = () => {
                 <Mic2 className="w-5 h-5 text-primary-foreground" />
               </div>
               <span className="font-bold text-lg tracking-tight">
-                Carrossel<span className="text-accent">AI</span>
+                {BRAND.name}
               </span>
             </a>
 
@@ -186,7 +188,7 @@ const Dashboard = () => {
                   {isPro ? (
                     <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-accent/10 text-accent text-sm font-medium rounded-full">
                       <Crown className="w-3.5 h-3.5" />
-                      Pro
+                      {PLANS[plan].name}
                     </span>
                   ) : (
                     <Button 
@@ -246,7 +248,7 @@ const Dashboard = () => {
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="font-semibold">{isPro ? "Plano Pro" : "Plano Gratuito"}</span>
+                    <span className="font-semibold">{PLANS[plan].name}</span>
                     {isPro && subscriptionEnd && (
                       <span className="text-xs text-muted-foreground">
                         até {format(new Date(subscriptionEnd), "d MMM yyyy", { locale: ptBR })}
@@ -255,20 +257,20 @@ const Dashboard = () => {
                   </div>
                   <p className="text-sm text-muted-foreground">
                     {isPro 
-                      ? "Carrosséis ilimitados, sem marca d'água" 
-                      : "1 carrossel grátis com marca d'água"}
+                      ? `${getRemainingCarousels()} de ${dailyLimit} carrosséis restantes hoje` 
+                      : `${dailyUsed}/1 carrossel usado`}
                   </p>
                 </div>
               </div>
               {isPro ? (
-                <Button variant="outline" size="sm" onClick={handleManageSubscription}>
+                <Button variant="outline" size="sm" onClick={openCustomerPortal}>
                   Gerenciar assinatura
                 </Button>
               ) : (
                 <Button 
                   variant="accent" 
                   size="sm" 
-                  onClick={handleUpgrade}
+                  onClick={() => createCheckout("starter")}
                   disabled={checkoutLoading}
                 >
                   {checkoutLoading ? (
@@ -276,7 +278,7 @@ const Dashboard = () => {
                   ) : (
                     <Crown className="w-4 h-4 mr-2" />
                   )}
-                  Assinar Pro - R$ 29,90/mês
+                  Ver planos
                 </Button>
               )}
             </CardContent>
