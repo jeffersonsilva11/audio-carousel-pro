@@ -9,34 +9,13 @@ import {
   Crown
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useLanguage, SupportedLanguage } from "@/hooks/useLanguage";
+import { useLanguage } from "@/hooks/useLanguage";
+import { t } from "@/lib/translations";
 import { AVAILABLE_FONTS, GRADIENT_PRESETS, FontId, GradientId } from "@/lib/constants";
-
-// Translations
-const translations: Record<string, Record<SupportedLanguage, string>> = {
-  customization: { "pt-BR": "Personalização Avançada", en: "Advanced Customization", es: "Personalización Avanzada" },
-  fonts: { "pt-BR": "Fontes", en: "Fonts", es: "Fuentes" },
-  gradients: { "pt-BR": "Gradientes", en: "Gradients", es: "Gradientes" },
-  slideImages: { "pt-BR": "Imagens dos Slides", en: "Slide Images", es: "Imágenes de Slides" },
-  selectFont: { "pt-BR": "Escolha uma fonte para o texto", en: "Choose a font for the text", es: "Elige una fuente para el texto" },
-  selectGradient: { "pt-BR": "Escolha um gradiente de fundo", en: "Choose a background gradient", es: "Elige un gradiente de fondo" },
-  customColors: { "pt-BR": "Cores personalizadas", en: "Custom colors", es: "Colores personalizados" },
-  uploadImage: { "pt-BR": "Upload de imagem", en: "Upload image", es: "Subir imagen" },
-  slide: { "pt-BR": "Slide", en: "Slide", es: "Slide" },
-  removeImage: { "pt-BR": "Remover imagem", en: "Remove image", es: "Eliminar imagen" },
-  noSlides: { "pt-BR": "Gere o carrossel primeiro para adicionar imagens", en: "Generate the carousel first to add images", es: "Genera el carrusel primero para agregar imágenes" },
-  previewMode: { "pt-BR": "Modo de prévia", en: "Preview mode", es: "Modo de vista previa" },
-  creatorFeature: { "pt-BR": "Recurso exclusivo Creator+", en: "Creator+ exclusive feature", es: "Función exclusiva Creator+" },
-  colorStart: { "pt-BR": "Cor inicial", en: "Start color", es: "Color inicial" },
-  colorEnd: { "pt-BR": "Cor final", en: "End color", es: "Color final" },
-};
-
-const t = (key: string, lang: SupportedLanguage) => translations[key]?.[lang] || translations[key]?.["pt-BR"] || key;
 
 export interface TemplateCustomization {
   fontId: FontId;
@@ -67,9 +46,9 @@ const AdvancedTemplateEditor = ({
     return (
       <div className="border border-border/50 rounded-xl p-6 bg-muted/30 text-center">
         <Crown className="w-8 h-8 text-accent mx-auto mb-3" />
-        <h3 className="font-semibold text-lg mb-1">{t("customization", language)}</h3>
+        <h3 className="font-semibold text-lg mb-1">{t("advancedEditor", "customization", language)}</h3>
         <p className="text-sm text-muted-foreground mb-4">
-          {t("creatorFeature", language)}
+          {t("advancedEditor", "creatorFeature", language)}
         </p>
         <Badge variant="secondary">
           <Sparkles className="w-3 h-3 mr-1" />
@@ -143,7 +122,7 @@ const AdvancedTemplateEditor = ({
       <div className="p-4 bg-accent/5 border-b border-border/50">
         <div className="flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-accent" />
-          <h3 className="font-semibold">{t("customization", language)}</h3>
+          <h3 className="font-semibold">{t("advancedEditor", "customization", language)}</h3>
           <Badge variant="secondary" className="text-[10px] ml-auto">Creator+</Badge>
         </div>
       </div>
@@ -152,21 +131,21 @@ const AdvancedTemplateEditor = ({
         <TabsList className="grid w-full grid-cols-3 mb-4">
           <TabsTrigger value="fonts" className="gap-1.5">
             <Type className="w-4 h-4" />
-            <span className="hidden sm:inline">{t("fonts", language)}</span>
+            <span className="hidden sm:inline">{t("advancedEditor", "fonts", language)}</span>
           </TabsTrigger>
           <TabsTrigger value="gradients" className="gap-1.5">
             <Palette className="w-4 h-4" />
-            <span className="hidden sm:inline">{t("gradients", language)}</span>
+            <span className="hidden sm:inline">{t("advancedEditor", "gradients", language)}</span>
           </TabsTrigger>
           <TabsTrigger value="images" className="gap-1.5">
             <ImagePlus className="w-4 h-4" />
-            <span className="hidden sm:inline">{t("slideImages", language)}</span>
+            <span className="hidden sm:inline">{t("advancedEditor", "slideImages", language)}</span>
           </TabsTrigger>
         </TabsList>
 
         {/* Fonts Tab */}
         <TabsContent value="fonts" className="space-y-3">
-          <p className="text-sm text-muted-foreground">{t("selectFont", language)}</p>
+          <p className="text-sm text-muted-foreground">{t("advancedEditor", "selectFont", language)}</p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {AVAILABLE_FONTS.map((font) => (
               <button
@@ -195,7 +174,7 @@ const AdvancedTemplateEditor = ({
 
         {/* Gradients Tab */}
         <TabsContent value="gradients" className="space-y-4">
-          <p className="text-sm text-muted-foreground">{t("selectGradient", language)}</p>
+          <p className="text-sm text-muted-foreground">{t("advancedEditor", "selectGradient", language)}</p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {GRADIENT_PRESETS.map((gradient) => (
               <button
@@ -228,7 +207,7 @@ const AdvancedTemplateEditor = ({
           {customization.gradientId === 'custom' && (
             <div className="flex gap-4 pt-2">
               <div className="flex-1">
-                <Label className="text-xs text-muted-foreground mb-1 block">{t("colorStart", language)}</Label>
+                <Label className="text-xs text-muted-foreground mb-1 block">{t("advancedEditor", "colorStart", language)}</Label>
                 <div className="flex gap-2 items-center">
                   <input
                     type="color"
@@ -245,7 +224,7 @@ const AdvancedTemplateEditor = ({
                 </div>
               </div>
               <div className="flex-1">
-                <Label className="text-xs text-muted-foreground mb-1 block">{t("colorEnd", language)}</Label>
+                <Label className="text-xs text-muted-foreground mb-1 block">{t("advancedEditor", "colorEnd", language)}</Label>
                 <div className="flex gap-2 items-center">
                   <input
                     type="color"
@@ -270,11 +249,11 @@ const AdvancedTemplateEditor = ({
           {slideCount === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <ImagePlus className="w-8 h-8 mx-auto mb-2 opacity-50" />
-              <p className="text-sm">{t("noSlides", language)}</p>
+              <p className="text-sm">{t("advancedEditor", "noSlides", language)}</p>
             </div>
           ) : (
             <>
-              <p className="text-sm text-muted-foreground">{t("uploadImage", language)}</p>
+              <p className="text-sm text-muted-foreground">{t("advancedEditor", "uploadImage", language)}</p>
               <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
                 {Array.from({ length: slideCount }).map((_, index) => {
                   const imageUrl = customization.slideImages[index];
@@ -299,7 +278,7 @@ const AdvancedTemplateEditor = ({
                           >
                             <Upload className="w-4 h-4 text-muted-foreground" />
                             <span className="text-xs text-muted-foreground">
-                              {t("slide", language)} {index + 1}
+                              {t("advancedEditor", "slide", language)} {index + 1}
                             </span>
                           </button>
                         )}

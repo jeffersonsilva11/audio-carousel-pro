@@ -2438,6 +2438,105 @@ export const translations = {
       es: "12 horas",
     },
   },
+
+  // Advanced Template Editor
+  advancedEditor: {
+    customization: {
+      "pt-BR": "Personalização Avançada",
+      en: "Advanced Customization",
+      es: "Personalización Avanzada",
+    },
+    fonts: {
+      "pt-BR": "Fontes",
+      en: "Fonts",
+      es: "Fuentes",
+    },
+    gradients: {
+      "pt-BR": "Gradientes",
+      en: "Gradients",
+      es: "Gradientes",
+    },
+    slideImages: {
+      "pt-BR": "Imagens dos Slides",
+      en: "Slide Images",
+      es: "Imágenes de Slides",
+    },
+    selectFont: {
+      "pt-BR": "Escolha uma fonte para o texto",
+      en: "Choose a font for the text",
+      es: "Elige una fuente para el texto",
+    },
+    selectGradient: {
+      "pt-BR": "Escolha um gradiente de fundo",
+      en: "Choose a background gradient",
+      es: "Elige un gradiente de fondo",
+    },
+    customColors: {
+      "pt-BR": "Cores personalizadas",
+      en: "Custom colors",
+      es: "Colores personalizados",
+    },
+    uploadImage: {
+      "pt-BR": "Upload de imagem para cada slide",
+      en: "Upload image for each slide",
+      es: "Subir imagen para cada slide",
+    },
+    slide: {
+      "pt-BR": "Slide",
+      en: "Slide",
+      es: "Slide",
+    },
+    removeImage: {
+      "pt-BR": "Remover imagem",
+      en: "Remove image",
+      es: "Eliminar imagen",
+    },
+    noSlides: {
+      "pt-BR": "Gere o carrossel primeiro para adicionar imagens",
+      en: "Generate the carousel first to add images",
+      es: "Genera el carrusel primero para agregar imágenes",
+    },
+    previewMode: {
+      "pt-BR": "Modo de prévia",
+      en: "Preview mode",
+      es: "Modo de vista previa",
+    },
+    creatorFeature: {
+      "pt-BR": "Recurso exclusivo Creator+",
+      en: "Creator+ exclusive feature",
+      es: "Función exclusiva Creator+",
+    },
+    colorStart: {
+      "pt-BR": "Cor inicial",
+      en: "Start color",
+      es: "Color inicial",
+    },
+    colorEnd: {
+      "pt-BR": "Cor final",
+      en: "End color",
+      es: "Color final",
+    },
+    unlockFeature: {
+      "pt-BR": "Upgrade para desbloquear",
+      en: "Upgrade to unlock",
+      es: "Mejora para desbloquear",
+    },
+    fontsDesc: {
+      "pt-BR": "Escolha entre 8 fontes profissionais",
+      en: "Choose from 8 professional fonts",
+      es: "Elige entre 8 fuentes profesionales",
+    },
+    gradientsDesc: {
+      "pt-BR": "Aplique gradientes de fundo",
+      en: "Apply background gradients",
+      es: "Aplica gradientes de fondo",
+    },
+    imagesDesc: {
+      "pt-BR": "Adicione imagens personalizadas",
+      en: "Add custom images",
+      es: "Agrega imágenes personalizadas",
+    },
+  },
 } as const;
 
 export type TranslationKey = keyof typeof translations;
