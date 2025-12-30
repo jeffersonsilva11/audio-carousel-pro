@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 export type SupportedLanguage = "pt-BR" | "en" | "es";
 
@@ -42,12 +43,78 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     return detectBrowserLanguage();
   });
 
-  const setLanguage = (lang: SupportedLanguage) => {
+  const [userId, setUserId] = useState<string | null>(null);
+
+  // Fetch user's preferred language from profile
+  const fetchProfileLanguage = useCallback(async (uid: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("preferred_lang")
+        .eq("user_id", uid)
+        .single();
+
+      if (!error && data?.preferred_lang) {
+        const profileLang = data.preferred_lang as SupportedLanguage;
+        if (SUPPORTED_LANGUAGES.includes(profileLang)) {
+          setLanguageState(profileLang);
+          localStorage.setItem(LANGUAGE_KEY, profileLang);
+          document.documentElement.lang = profileLang;
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching profile language:", err);
+    }
+  }, []);
+
+  // Save language to profile
+  const saveProfileLanguage = useCallback(async (uid: string, lang: SupportedLanguage) => {
+    try {
+      await supabase
+        .from("profiles")
+        .update({ preferred_lang: lang })
+        .eq("user_id", uid);
+    } catch (err) {
+      console.error("Error saving profile language:", err);
+    }
+  }, []);
+
+  // Listen to auth state changes
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      const uid = session?.user?.id ?? null;
+      setUserId(uid);
+      
+      // Fetch profile language when user logs in
+      if (uid && (event === "SIGNED_IN" || event === "INITIAL_SESSION")) {
+        setTimeout(() => {
+          fetchProfileLanguage(uid);
+        }, 0);
+      }
+    });
+
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const uid = session?.user?.id ?? null;
+      setUserId(uid);
+      if (uid) {
+        fetchProfileLanguage(uid);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [fetchProfileLanguage]);
+
+  const setLanguage = useCallback((lang: SupportedLanguage) => {
     setLanguageState(lang);
     localStorage.setItem(LANGUAGE_KEY, lang);
-    // Update HTML lang attribute
     document.documentElement.lang = lang;
-  };
+    
+    // Save to profile if user is logged in
+    if (userId) {
+      saveProfileLanguage(userId, lang);
+    }
+  }, [userId, saveProfileLanguage]);
 
   // Set initial HTML lang attribute
   useEffect(() => {
