@@ -14,7 +14,7 @@ import {
 import { toast } from "sonner";
 import { BRAND } from "@/lib/constants";
 import { PLANS } from "@/lib/plans";
-import { formatLocalizedDate, formatSubscriptionDate, formatCount, formatInteger } from "@/lib/localization";
+import { formatLocalizedDate, formatSubscriptionDate, formatCount, formatInteger, formatRelativeTime } from "@/lib/localization";
 import {
   Select,
   SelectContent,
@@ -376,9 +376,9 @@ const Dashboard = () => {
                     </div>
                   </CardHeader>
                   <CardContent className="pt-0 space-y-3">
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground" title={formatLocalizedDate(carousel.created_at, language, "withTime")}>
                       <Calendar className="w-3 h-3" />
-                      {formatLocalizedDate(carousel.created_at, language, "medium")}
+                      {formatRelativeTime(carousel.created_at, language)}
                     </div>
                     
                     {carousel.has_watermark && carousel.status === "COMPLETED" && isPro && (
