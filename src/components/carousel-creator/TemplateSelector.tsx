@@ -13,14 +13,14 @@ interface TemplateSelectorProps {
 }
 
 const TemplateSelector = ({ selectedTemplate, setSelectedTemplate }: TemplateSelectorProps) => {
-  const { isAgency } = useSubscription();
+  const { isCreator, isAgency } = useSubscription();
   const { language } = useLanguage();
 
   const canSelectTemplate = (templateId: TemplateId) => {
     const template = TEMPLATES.find(t => t.id === templateId);
     if (!template) return false;
     if (template.requiredPlan === 'free') return true;
-    if (template.requiredPlan === 'agency') return isAgency;
+    if (template.requiredPlan === 'creator') return isCreator || isAgency;
     return true;
   };
 
@@ -43,7 +43,7 @@ const TemplateSelector = ({ selectedTemplate, setSelectedTemplate }: TemplateSel
         {TEMPLATES.map((template) => {
           const isSelected = selectedTemplate === template.id;
           const canSelect = canSelectTemplate(template.id);
-          const isPremium = template.requiredPlan === 'agency';
+          const isPremium = template.requiredPlan === 'creator';
 
           return (
             <button
@@ -79,7 +79,7 @@ const TemplateSelector = ({ selectedTemplate, setSelectedTemplate }: TemplateSel
                   {isPremium && (
                     <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
                       <Sparkles className="w-2.5 h-2.5 mr-0.5" />
-                      Agency
+                      Creator+
                     </Badge>
                   )}
                 </div>
@@ -100,9 +100,9 @@ const TemplateSelector = ({ selectedTemplate, setSelectedTemplate }: TemplateSel
       </div>
 
       {/* Info about premium templates */}
-      {!isAgency && (
+      {!isCreator && !isAgency && (
         <p className="text-xs text-muted-foreground text-center">
-          {t("templateSelector", "premiumInfo", language).replace("{price}", getPlanPrice("agency", language))}
+          {t("templateSelector", "premiumInfo", language).replace("{price}", getPlanPrice("creator", language))}
         </p>
       )}
     </div>

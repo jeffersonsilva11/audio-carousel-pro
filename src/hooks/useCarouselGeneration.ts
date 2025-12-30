@@ -51,6 +51,12 @@ export interface CarouselGenerationOptions {
   isPro?: boolean;
   language?: string;
   profile?: ProfileIdentity;
+  customization?: {
+    fontId?: string;
+    gradientId?: string;
+    customGradientColors?: string[];
+    slideImages?: (string | null)[];
+  };
 }
 
 export function useCarouselGeneration() {
@@ -72,7 +78,8 @@ export function useCarouselGeneration() {
       userId,
       isPro = false,
       language = 'pt-BR',
-      profile
+      profile,
+      customization
     } = options;
     setError(null);
     
@@ -140,7 +147,8 @@ export function useCarouselGeneration() {
             carouselId, 
             userId,
             hasWatermark,
-            profile
+            profile,
+            customization
           }
         }
       );
