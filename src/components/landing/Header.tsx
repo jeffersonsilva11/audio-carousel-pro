@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Menu, X, Mic2 } from "lucide-react";
+import { BRAND } from "@/lib/constants";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -21,7 +22,7 @@ const Header = () => {
               <Mic2 className="w-5 h-5 text-primary-foreground" />
             </div>
             <span className="font-bold text-lg tracking-tight">
-              Carrossel<span className="text-accent">AI</span>
+              {BRAND.name}
             </span>
           </a>
 
