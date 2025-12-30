@@ -7,6 +7,13 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Plan price mapping (in cents BRL)
+const PRICE_TO_PLAN: Record<number, string> = {
+  2990: "starter",   // R$ 29,90
+  9990: "creator",   // R$ 99,90
+  19990: "agency",   // R$ 199,90
+};
+
 const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
   console.log(`[CHECK-SUBSCRIPTION] ${step}${detailsStr}`);
@@ -44,10 +51,15 @@ serve(async (req) => {
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     
     if (customers.data.length === 0) {
-      logStep("No customer found");
+      logStep("No customer found, returning free plan");
       return new Response(JSON.stringify({ 
         subscribed: false,
-        plan: "free"
+        plan: "free",
+        daily_limit: 1,
+        has_watermark: true,
+        has_editor: false,
+        has_history: false,
+        has_image_generation: false
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
@@ -64,23 +76,79 @@ serve(async (req) => {
     });
 
     const hasActiveSub = subscriptions.data.length > 0;
+    let plan = "free";
     let subscriptionEnd = null;
+    let priceId = null;
+    let dailyLimit = 1;
+    let hasWatermark = true;
+    let hasEditor = false;
+    let hasHistory = false;
+    let hasImageGeneration = false;
 
     if (hasActiveSub) {
       const subscription = subscriptions.data[0];
       subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
+      
+      // Get the price from the subscription
+      const price = subscription.items.data[0]?.price;
+      priceId = price?.id;
+      const unitAmount = price?.unit_amount;
+      
       logStep("Active subscription found", { 
         subscriptionId: subscription.id, 
-        endDate: subscriptionEnd 
+        endDate: subscriptionEnd,
+        priceId,
+        unitAmount
       });
+
+      // Determine plan tier based on price amount
+      if (unitAmount && PRICE_TO_PLAN[unitAmount]) {
+        plan = PRICE_TO_PLAN[unitAmount];
+      } else {
+        // Fallback: check if it's any paid subscription
+        plan = "starter";
+      }
+
+      // Set features based on plan
+      switch (plan) {
+        case "starter":
+          dailyLimit = 1;
+          hasWatermark = false;
+          hasEditor = true;
+          hasHistory = true;
+          hasImageGeneration = false;
+          break;
+        case "creator":
+          dailyLimit = 8;
+          hasWatermark = false;
+          hasEditor = true;
+          hasHistory = true;
+          hasImageGeneration = false;
+          break;
+        case "agency":
+          dailyLimit = 20;
+          hasWatermark = false;
+          hasEditor = true;
+          hasHistory = true;
+          hasImageGeneration = true;
+          break;
+      }
+
+      logStep("Determined plan tier", { plan, dailyLimit, hasImageGeneration });
     } else {
-      logStep("No active subscription found");
+      logStep("No active subscription found, using free plan");
     }
 
     return new Response(JSON.stringify({
       subscribed: hasActiveSub,
-      plan: hasActiveSub ? "pro" : "free",
-      subscription_end: subscriptionEnd
+      plan,
+      price_id: priceId,
+      subscription_end: subscriptionEnd,
+      daily_limit: dailyLimit,
+      has_watermark: hasWatermark,
+      has_editor: hasEditor,
+      has_history: hasHistory,
+      has_image_generation: hasImageGeneration
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,

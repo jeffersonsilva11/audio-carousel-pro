@@ -7,6 +7,25 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Plan configurations (prices in cents BRL)
+const PLAN_CONFIGS: Record<string, { name: string; description: string; price: number }> = {
+  starter: {
+    name: "Audisell Starter",
+    description: "1 carrossel/dia, sem marca d'água, editor visual, histórico",
+    price: 2990, // R$ 29,90
+  },
+  creator: {
+    name: "Audisell Creator",
+    description: "8 carrosséis/dia, todos os templates, editor completo, prioridade",
+    price: 9990, // R$ 99,90
+  },
+  agency: {
+    name: "Audisell Agency",
+    description: "20 carrosséis/dia, geração de imagens AI, todos os recursos premium",
+    price: 19990, // R$ 199,90
+  },
+};
+
 const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
   console.log(`[CREATE-CHECKOUT] ${step}${detailsStr}`);
@@ -24,6 +43,17 @@ serve(async (req) => {
 
   try {
     logStep("Function started");
+
+    // Parse request body to get the plan tier
+    const { planTier = "starter" } = await req.json().catch(() => ({ planTier: "starter" }));
+    logStep("Requested plan", { planTier });
+
+    // Validate plan tier
+    if (!PLAN_CONFIGS[planTier]) {
+      throw new Error(`Invalid plan tier: ${planTier}. Valid options: starter, creator, agency`);
+    }
+
+    const planConfig = PLAN_CONFIGS[planTier];
 
     const authHeader = req.headers.get("Authorization")!;
     const token = authHeader.replace("Bearer ", "");
@@ -44,7 +74,7 @@ serve(async (req) => {
       logStep("Found existing customer", { customerId });
     }
 
-    // Get or create Pro price (R$ 29,90/month)
+    // Find or create the price for this plan
     const prices = await stripe.prices.list({
       active: true,
       type: "recurring",
@@ -52,20 +82,20 @@ serve(async (req) => {
     });
     
     let priceId = prices.data.find((p: { unit_amount: number | null; currency: string; recurring?: { interval: string } | null }) => 
-      p.unit_amount === 2990 && 
+      p.unit_amount === planConfig.price && 
       p.currency === "brl" && 
       p.recurring?.interval === "month"
     )?.id;
 
     if (!priceId) {
-      logStep("Creating new Pro price");
+      logStep("Creating new price for plan", { planTier, price: planConfig.price });
       const price = await stripe.prices.create({
-        unit_amount: 2990,
+        unit_amount: planConfig.price,
         currency: "brl",
         recurring: { interval: "month" },
         product_data: {
-          name: "Carrossel AI Pro",
-          description: "Carrosséis ilimitados, sem marca d'água, histórico completo",
+          name: planConfig.name,
+          description: planConfig.description,
         },
       });
       priceId = price.id;
@@ -87,9 +117,13 @@ serve(async (req) => {
       mode: "subscription",
       success_url: `${origin}/dashboard?subscription=success`,
       cancel_url: `${origin}/dashboard?subscription=canceled`,
+      metadata: {
+        plan_tier: planTier,
+        user_id: user.id,
+      },
     });
 
-    logStep("Checkout session created", { sessionId: session.id });
+    logStep("Checkout session created", { sessionId: session.id, planTier });
 
     return new Response(JSON.stringify({ url: session.url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
