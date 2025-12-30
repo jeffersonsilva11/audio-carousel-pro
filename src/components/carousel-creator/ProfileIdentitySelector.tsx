@@ -280,29 +280,71 @@ const ProfileIdentitySelector = ({ profile, setProfile }: ProfileIdentitySelecto
         </RadioGroup>
       </div>
 
-      {/* Preview */}
+      {/* Live Slide Preview */}
       {(profile.name || profile.username) && (
-        <div className="p-4 bg-muted/50 rounded-lg">
-          <p className="text-xs text-muted-foreground mb-2">Preview:</p>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full overflow-hidden bg-muted flex items-center justify-center">
-              {profile.photoUrl ? (
-                <img src={profile.photoUrl} alt="" className="w-full h-full object-cover" />
-              ) : profile.name ? (
-                <span className="text-sm font-bold text-muted-foreground">
-                  {getInitials(profile.name)}
-                </span>
-              ) : (
-                <User className="w-5 h-5 text-muted-foreground" />
-              )}
+        <div className="space-y-3">
+          <p className="text-xs text-muted-foreground">Preview ao vivo:</p>
+          <div className="grid grid-cols-2 gap-3">
+            {/* Dark preview */}
+            <div className="relative aspect-square rounded-lg overflow-hidden bg-[#0A0A0A]">
+              <div className="absolute top-3 right-3 text-white/50 text-[8px] font-medium">1/6</div>
+              <div className={cn(
+                "absolute flex items-center gap-1.5",
+                profile.avatarPosition === 'top-left' && "top-2 left-2",
+                profile.avatarPosition === 'top-right' && "top-2 right-2 flex-row-reverse",
+                profile.avatarPosition === 'bottom-left' && "bottom-2 left-2",
+                profile.avatarPosition === 'bottom-right' && "bottom-2 right-2 flex-row-reverse"
+              )}>
+                <div className="w-6 h-6 rounded-full overflow-hidden bg-white/15 flex items-center justify-center">
+                  {profile.photoUrl ? (
+                    <img src={profile.photoUrl} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-[8px] font-bold text-white">{getInitials(profile.name)}</span>
+                  )}
+                </div>
+                <div className={cn("text-left", profile.avatarPosition.includes('right') && "text-right")}>
+                  {profile.displayMode === 'name_and_username' && profile.name && (
+                    <p className="font-semibold text-[7px] text-white leading-tight">{profile.name}</p>
+                  )}
+                  {profile.username && (
+                    <p className="text-[6px] text-white/70 leading-tight">@{profile.username}</p>
+                  )}
+                </div>
+              </div>
+              <div className="absolute inset-0 flex items-center justify-center text-white/40 text-[8px]">
+                Conteúdo
+              </div>
             </div>
-            <div>
-              {profile.displayMode === 'name_and_username' && profile.name && (
-                <p className="font-semibold text-sm">{profile.name}</p>
-              )}
-              {profile.username && (
-                <p className="text-sm text-muted-foreground">@{profile.username}</p>
-              )}
+            
+            {/* Light preview */}
+            <div className="relative aspect-square rounded-lg overflow-hidden bg-white border">
+              <div className="absolute top-3 right-3 text-[#0A0A0A]/50 text-[8px] font-medium">1/6</div>
+              <div className={cn(
+                "absolute flex items-center gap-1.5",
+                profile.avatarPosition === 'top-left' && "top-2 left-2",
+                profile.avatarPosition === 'top-right' && "top-2 right-2 flex-row-reverse",
+                profile.avatarPosition === 'bottom-left' && "bottom-2 left-2",
+                profile.avatarPosition === 'bottom-right' && "bottom-2 right-2 flex-row-reverse"
+              )}>
+                <div className="w-6 h-6 rounded-full overflow-hidden bg-[#0A0A0A]/10 flex items-center justify-center">
+                  {profile.photoUrl ? (
+                    <img src={profile.photoUrl} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-[8px] font-bold text-[#0A0A0A]">{getInitials(profile.name)}</span>
+                  )}
+                </div>
+                <div className={cn("text-left", profile.avatarPosition.includes('right') && "text-right")}>
+                  {profile.displayMode === 'name_and_username' && profile.name && (
+                    <p className="font-semibold text-[7px] text-[#0A0A0A] leading-tight">{profile.name}</p>
+                  )}
+                  {profile.username && (
+                    <p className="text-[6px] text-[#0A0A0A]/70 leading-tight">@{profile.username}</p>
+                  )}
+                </div>
+              </div>
+              <div className="absolute inset-0 flex items-center justify-center text-[#0A0A0A]/40 text-[8px]">
+                Conteúdo
+              </div>
             </div>
           </div>
         </div>

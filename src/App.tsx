@@ -10,6 +10,7 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import CreateCarousel from "./pages/CreateCarousel";
 import CarouselDetail from "./pages/CarouselDetail";
+import ProfileSettings from "./pages/ProfileSettings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/create" element={<CreateCarousel />} />
               <Route path="/carousel/:id" element={<CarouselDetail />} />
+              <Route path="/settings/profile" element={<ProfileSettings />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
