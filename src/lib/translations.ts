@@ -1656,6 +1656,131 @@ export const translations = {
       en: "Language changed successfully",
       es: "Idioma cambiado con éxito",
     },
+    profile: {
+      "pt-BR": "Configurações",
+      en: "Settings",
+      es: "Configuración",
+    },
+    profileTitle: {
+      "pt-BR": "Configurações do Perfil",
+      en: "Profile Settings",
+      es: "Configuración del Perfil",
+    },
+    profileSubtitle: {
+      "pt-BR": "Configure sua identidade e preferências",
+      en: "Set up your identity and preferences",
+      es: "Configura tu identidad y preferencias",
+    },
+    identity: {
+      "pt-BR": "Identidade",
+      en: "Identity",
+      es: "Identidad",
+    },
+    identityDesc: {
+      "pt-BR": "Informações exibidas nos seus carrosséis",
+      en: "Information displayed on your carousels",
+      es: "Información mostrada en tus carruseles",
+    },
+    name: {
+      "pt-BR": "Nome",
+      en: "Name",
+      es: "Nombre",
+    },
+    instagram: {
+      "pt-BR": "Instagram",
+      en: "Instagram",
+      es: "Instagram",
+    },
+    tiktok: {
+      "pt-BR": "TikTok",
+      en: "TikTok",
+      es: "TikTok",
+    },
+    slidePosition: {
+      "pt-BR": "Posição no slide",
+      en: "Position on slide",
+      es: "Posición en el slide",
+    },
+    displayMode: {
+      "pt-BR": "Exibir",
+      en: "Display",
+      es: "Mostrar",
+    },
+    preview: {
+      "pt-BR": "Pré-visualização",
+      en: "Preview",
+      es: "Vista previa",
+    },
+    dateTime: {
+      "pt-BR": "Data e Hora",
+      en: "Date and Time",
+      es: "Fecha y Hora",
+    },
+    dateTimeDesc: {
+      "pt-BR": "Preferências de formatação",
+      en: "Formatting preferences",
+      es: "Preferencias de formato",
+    },
+    dateFormat: {
+      "pt-BR": "Formato de data",
+      en: "Date format",
+      es: "Formato de fecha",
+    },
+    timeFormat: {
+      "pt-BR": "Formato de hora",
+      en: "Time format",
+      es: "Formato de hora",
+    },
+    relativeTime: {
+      "pt-BR": "Exibir tempo relativo",
+      en: "Show relative time",
+      es: "Mostrar tiempo relativo",
+    },
+    relativeTimeDesc: {
+      "pt-BR": 'Ex: "há 2 dias" em vez de data completa',
+      en: 'E.g. "2 days ago" instead of full date',
+      es: 'Ej: "hace 2 días" en lugar de fecha completa',
+    },
+    saved: {
+      "pt-BR": "Configurações salvas",
+      en: "Settings saved",
+      es: "Configuración guardada",
+    },
+    savedDesc: {
+      "pt-BR": "Suas preferências foram atualizadas.",
+      en: "Your preferences have been updated.",
+      es: "Tus preferencias han sido actualizadas.",
+    },
+    dateShort: {
+      "pt-BR": "Curto",
+      en: "Short",
+      es: "Corto",
+    },
+    dateMedium: {
+      "pt-BR": "Médio",
+      en: "Medium",
+      es: "Medio",
+    },
+    dateLong: {
+      "pt-BR": "Completo",
+      en: "Full",
+      es: "Completo",
+    },
+    dateWithTime: {
+      "pt-BR": "Com hora",
+      en: "With time",
+      es: "Con hora",
+    },
+    time24h: {
+      "pt-BR": "24 horas",
+      en: "24 hours",
+      es: "24 horas",
+    },
+    time12h: {
+      "pt-BR": "12 horas",
+      en: "12 hours",
+      es: "12 horas",
+    },
   },
 
   // Template Selector
