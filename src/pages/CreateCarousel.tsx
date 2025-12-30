@@ -612,6 +612,7 @@ const CreateCarousel = () => {
                     setCustomization={setTemplateCustomization}
                     slideCount={manualSlideCount}
                     isCreator={isCreator}
+                    userId={user?.id}
                   />
                 </div>
               </div>
