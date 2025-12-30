@@ -6,7 +6,9 @@ import {
   X,
   Upload,
   Sparkles,
-  Crown
+  Crown,
+  Eye,
+  Loader2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -15,13 +17,22 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLanguage } from "@/hooks/useLanguage";
 import { t } from "@/lib/translations";
-import { AVAILABLE_FONTS, GRADIENT_PRESETS, FontId, GradientId } from "@/lib/constants";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { 
+  AVAILABLE_FONTS, 
+  GRADIENT_PRESETS, 
+  GRADIENT_CATEGORY_LABELS,
+  FontId, 
+  GradientId,
+  GradientCategory 
+} from "@/lib/constants";
 
 export interface TemplateCustomization {
   fontId: FontId;
   gradientId: GradientId;
   customGradientColors?: string[];
-  slideImages: (string | null)[]; // Array of image URLs per slide
+  slideImages: (string | null)[]; // Array of storage URLs per slide
 }
 
 interface AdvancedTemplateEditorProps {
@@ -29,18 +40,25 @@ interface AdvancedTemplateEditorProps {
   setCustomization: (customization: TemplateCustomization) => void;
   slideCount: number;
   isCreator: boolean;
+  userId?: string;
 }
+
+const GRADIENT_CATEGORIES: GradientCategory[] = ['warm', 'cool', 'nature', 'dark', 'pastel', 'bold'];
 
 const AdvancedTemplateEditor = ({
   customization,
   setCustomization,
   slideCount,
-  isCreator
+  isCreator,
+  userId
 }: AdvancedTemplateEditorProps) => {
   const { language } = useLanguage();
+  const { toast } = useToast();
   const fileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const [customColor1, setCustomColor1] = useState("#667eea");
   const [customColor2, setCustomColor2] = useState("#764ba2");
+  const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
+  const [activeGradientCategory, setActiveGradientCategory] = useState<GradientCategory | 'basic'>('warm');
 
   if (!isCreator) {
     return (
@@ -89,32 +107,120 @@ const AdvancedTemplateEditor = ({
 
   const handleImageUpload = async (slideIndex: number, file: File) => {
     // Validate file
-    if (!file.type.startsWith('image/')) return;
-    if (file.size > 5 * 1024 * 1024) return; // 5MB limit
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Arquivo inválido",
+        description: "Por favor, envie uma imagem.",
+        variant: "destructive"
+      });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "Arquivo muito grande",
+        description: "Máximo 5MB por imagem.",
+        variant: "destructive"
+      });
+      return;
+    }
 
-    // Convert to base64 for preview (in production, upload to storage)
-    const reader = new FileReader();
-    reader.onload = (e) => {
+    if (!userId) {
+      toast({
+        title: "Erro",
+        description: "Usuário não autenticado.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setUploadingIndex(slideIndex);
+
+    try {
+      // Generate unique filename
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${userId}/${Date.now()}-slide-${slideIndex}.${fileExt}`;
+
+      // Upload to Supabase Storage
+      const { data, error } = await supabase.storage
+        .from('slide-images')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (error) throw error;
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('slide-images')
+        .getPublicUrl(data.path);
+
+      // Update customization with new URL
       const newSlideImages = [...customization.slideImages];
-      // Ensure array is long enough
       while (newSlideImages.length < slideCount) {
         newSlideImages.push(null);
       }
-      newSlideImages[slideIndex] = e.target?.result as string;
+      newSlideImages[slideIndex] = urlData.publicUrl;
       setCustomization({ ...customization, slideImages: newSlideImages });
-    };
-    reader.readAsDataURL(file);
+
+      toast({
+        title: "Upload concluído",
+        description: `Imagem do slide ${slideIndex + 1} enviada.`
+      });
+
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast({
+        title: "Erro no upload",
+        description: "Não foi possível enviar a imagem.",
+        variant: "destructive"
+      });
+    } finally {
+      setUploadingIndex(null);
+    }
   };
 
-  const handleRemoveImage = (slideIndex: number) => {
+  const handleRemoveImage = async (slideIndex: number) => {
+    const imageUrl = customization.slideImages[slideIndex];
+    
+    // Try to delete from storage if it's a storage URL
+    if (imageUrl && imageUrl.includes('slide-images') && userId) {
+      try {
+        const path = imageUrl.split('slide-images/')[1];
+        if (path) {
+          await supabase.storage.from('slide-images').remove([path]);
+        }
+      } catch (error) {
+        console.error("Error deleting image:", error);
+      }
+    }
+
     const newSlideImages = [...customization.slideImages];
     newSlideImages[slideIndex] = null;
     setCustomization({ ...customization, slideImages: newSlideImages });
   };
 
-  const getGradientStyle = (colors: string[] | null) => {
+  const getGradientStyle = (colors: readonly string[] | null) => {
     if (!colors || colors.length < 2) return 'transparent';
     return `linear-gradient(135deg, ${colors.join(', ')})`;
+  };
+
+  const getCurrentGradientColors = () => {
+    if (customization.gradientId === 'none') return null;
+    if (customization.gradientId === 'custom') return customization.customGradientColors || [customColor1, customColor2];
+    const gradient = GRADIENT_PRESETS.find(g => g.id === customization.gradientId);
+    return gradient?.colors ? [...gradient.colors] : null;
+  };
+
+  const selectedFont = AVAILABLE_FONTS.find(f => f.id === customization.fontId);
+  const currentGradientColors = getCurrentGradientColors();
+
+  // Filter gradients by category
+  const getFilteredGradients = () => {
+    if (activeGradientCategory === 'basic') {
+      return GRADIENT_PRESETS.filter(g => g.category === 'basic');
+    }
+    return GRADIENT_PRESETS.filter(g => g.category === activeGradientCategory);
   };
 
   return (
@@ -124,6 +230,49 @@ const AdvancedTemplateEditor = ({
           <Sparkles className="w-4 h-4 text-accent" />
           <h3 className="font-semibold">{t("advancedEditor", "customization", language)}</h3>
           <Badge variant="secondary" className="text-[10px] ml-auto">Creator+</Badge>
+        </div>
+      </div>
+
+      {/* Live Preview Section */}
+      <div className="p-4 border-b border-border/50 bg-muted/20">
+        <div className="flex items-center gap-2 mb-3">
+          <Eye className="w-4 h-4 text-muted-foreground" />
+          <span className="text-sm font-medium">{t("advancedEditor", "previewMode", language)}</span>
+        </div>
+        <div 
+          className="relative aspect-square max-w-[200px] mx-auto rounded-lg overflow-hidden shadow-lg"
+          style={{
+            background: currentGradientColors 
+              ? getGradientStyle(currentGradientColors)
+              : 'hsl(var(--background))'
+          }}
+        >
+          <div className="absolute inset-0 flex items-center justify-center p-4">
+            <p 
+              className="text-center text-foreground leading-relaxed"
+              style={{ 
+                fontFamily: selectedFont?.family || 'Inter, sans-serif',
+                fontSize: '16px',
+                color: currentGradientColors ? '#ffffff' : 'hsl(var(--foreground))',
+                textShadow: currentGradientColors ? '0 1px 3px rgba(0,0,0,0.3)' : 'none'
+              }}
+            >
+              Exemplo de texto com a fonte {selectedFont?.name || 'Inter'}
+            </p>
+          </div>
+          {/* Profile indicator */}
+          <div className="absolute top-2 left-2 flex items-center gap-1.5">
+            <div className="w-6 h-6 rounded-full bg-white/20 backdrop-blur-sm" />
+            <span 
+              className="text-[10px] font-medium"
+              style={{ 
+                fontFamily: selectedFont?.family,
+                color: currentGradientColors ? '#ffffff' : 'hsl(var(--foreground))'
+              }}
+            >
+              @usuario
+            </span>
+          </div>
         </div>
       </div>
 
@@ -175,20 +324,50 @@ const AdvancedTemplateEditor = ({
         {/* Gradients Tab */}
         <TabsContent value="gradients" className="space-y-4">
           <p className="text-sm text-muted-foreground">{t("advancedEditor", "selectGradient", language)}</p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            {GRADIENT_PRESETS.map((gradient) => (
+          
+          {/* Category Tabs */}
+          <div className="flex flex-wrap gap-1 mb-3">
+            <button
+              onClick={() => setActiveGradientCategory('basic')}
+              className={cn(
+                "px-2 py-1 text-xs rounded-md transition-colors",
+                activeGradientCategory === 'basic'
+                  ? "bg-accent text-accent-foreground"
+                  : "bg-muted hover:bg-muted/80"
+              )}
+            >
+              {GRADIENT_CATEGORY_LABELS.basic[language]}
+            </button>
+            {GRADIENT_CATEGORIES.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setActiveGradientCategory(cat)}
+                className={cn(
+                  "px-2 py-1 text-xs rounded-md transition-colors",
+                  activeGradientCategory === cat
+                    ? "bg-accent text-accent-foreground"
+                    : "bg-muted hover:bg-muted/80"
+                )}
+              >
+                {GRADIENT_CATEGORY_LABELS[cat][language]}
+              </button>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+            {getFilteredGradients().map((gradient) => (
               <button
                 key={gradient.id}
                 onClick={() => handleGradientChange(gradient.id)}
                 className={cn(
-                  "p-3 rounded-lg border-2 transition-all",
+                  "p-2 rounded-lg border-2 transition-all",
                   customization.gradientId === gradient.id
                     ? "border-accent"
                     : "border-border hover:border-accent/50"
                 )}
               >
                 <div 
-                  className="w-full h-12 rounded-md mb-2"
+                  className="w-full h-10 rounded-md mb-1"
                   style={{ 
                     background: gradient.colors 
                       ? getGradientStyle(gradient.colors) 
@@ -198,7 +377,7 @@ const AdvancedTemplateEditor = ({
                     border: gradient.id === 'none' ? '2px dashed hsl(var(--border))' : 'none'
                   }}
                 />
-                <span className="text-xs font-medium truncate block">{gradient.name}</span>
+                <span className="text-[10px] font-medium truncate block">{gradient.name}</span>
               </button>
             ))}
           </div>
@@ -257,15 +436,22 @@ const AdvancedTemplateEditor = ({
               <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
                 {Array.from({ length: slideCount }).map((_, index) => {
                   const imageUrl = customization.slideImages[index];
+                  const isUploading = uploadingIndex === index;
+                  
                   return (
                     <div key={index} className="relative">
                       <div 
                         className={cn(
                           "aspect-square rounded-lg border-2 border-dashed overflow-hidden transition-all",
-                          imageUrl ? "border-accent" : "border-border hover:border-accent/50"
+                          imageUrl ? "border-accent" : "border-border hover:border-accent/50",
+                          isUploading && "opacity-50"
                         )}
                       >
-                        {imageUrl ? (
+                        {isUploading ? (
+                          <div className="w-full h-full flex items-center justify-center bg-muted/50">
+                            <Loader2 className="w-6 h-6 animate-spin text-accent" />
+                          </div>
+                        ) : imageUrl ? (
                           <img 
                             src={imageUrl} 
                             alt={`Slide ${index + 1}`}
@@ -285,7 +471,7 @@ const AdvancedTemplateEditor = ({
                       </div>
                       
                       {/* Remove button */}
-                      {imageUrl && (
+                      {imageUrl && !isUploading && (
                         <button
                           onClick={() => handleRemoveImage(index)}
                           className="absolute -top-2 -right-2 w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-transform"

@@ -102,19 +102,70 @@ export const AVAILABLE_FONTS = [
 
 export type FontId = typeof AVAILABLE_FONTS[number]['id'];
 
-// Gradient Presets
+// Gradient Presets - Organized by category
 export const GRADIENT_PRESETS = [
-  { id: 'none', name: 'Sem Gradiente', colors: null },
-  { id: 'sunset', name: 'Pôr do Sol', colors: ['#ff6b6b', '#feca57', '#ff9ff3'] },
-  { id: 'ocean', name: 'Oceano', colors: ['#667eea', '#764ba2', '#f093fb'] },
-  { id: 'forest', name: 'Floresta', colors: ['#11998e', '#38ef7d'] },
-  { id: 'night', name: 'Noite', colors: ['#232526', '#414345'] },
-  { id: 'fire', name: 'Fogo', colors: ['#f12711', '#f5af19'] },
-  { id: 'candy', name: 'Candy', colors: ['#a18cd1', '#fbc2eb'] },
-  { id: 'custom', name: 'Personalizado', colors: null },
+  // None/Custom
+  { id: 'none', name: 'Sem Gradiente', colors: null, category: 'basic' },
+  { id: 'custom', name: 'Personalizado', colors: null, category: 'basic' },
+  
+  // Warm tones
+  { id: 'sunset', name: 'Pôr do Sol', colors: ['#ff6b6b', '#feca57'], category: 'warm' },
+  { id: 'fire', name: 'Fogo', colors: ['#f12711', '#f5af19'], category: 'warm' },
+  { id: 'peach', name: 'Pêssego', colors: ['#ffecd2', '#fcb69f'], category: 'warm' },
+  { id: 'coral', name: 'Coral', colors: ['#ff9a9e', '#fad0c4'], category: 'warm' },
+  { id: 'mango', name: 'Manga', colors: ['#ffe259', '#ffa751'], category: 'warm' },
+  
+  // Cool tones
+  { id: 'ocean', name: 'Oceano', colors: ['#667eea', '#764ba2'], category: 'cool' },
+  { id: 'frost', name: 'Gelo', colors: ['#c2e9fb', '#a1c4fd'], category: 'cool' },
+  { id: 'sky', name: 'Céu', colors: ['#56ccf2', '#2f80ed'], category: 'cool' },
+  { id: 'electric', name: 'Elétrico', colors: ['#4776e6', '#8e54e9'], category: 'cool' },
+  { id: 'midnight', name: 'Meia-Noite', colors: ['#0f2027', '#203a43', '#2c5364'], category: 'cool' },
+  
+  // Nature tones
+  { id: 'forest', name: 'Floresta', colors: ['#11998e', '#38ef7d'], category: 'nature' },
+  { id: 'meadow', name: 'Prado', colors: ['#a8e063', '#56ab2f'], category: 'nature' },
+  { id: 'mint', name: 'Menta', colors: ['#00b09b', '#96c93d'], category: 'nature' },
+  { id: 'aurora', name: 'Aurora', colors: ['#7f7fd5', '#86a8e7', '#91eae4'], category: 'nature' },
+  
+  // Dark/Professional
+  { id: 'night', name: 'Noite', colors: ['#232526', '#414345'], category: 'dark' },
+  { id: 'charcoal', name: 'Carvão', colors: ['#3a3a3a', '#1a1a1a'], category: 'dark' },
+  { id: 'slate', name: 'Ardósia', colors: ['#373b44', '#4286f4'], category: 'dark' },
+  { id: 'noir', name: 'Noir', colors: ['#000000', '#434343'], category: 'dark' },
+  
+  // Pastel/Soft
+  { id: 'candy', name: 'Candy', colors: ['#a18cd1', '#fbc2eb'], category: 'pastel' },
+  { id: 'lavender', name: 'Lavanda', colors: ['#e0c3fc', '#8ec5fc'], category: 'pastel' },
+  { id: 'cotton', name: 'Algodão', colors: ['#ffecd2', '#fcb69f'], category: 'pastel' },
+  { id: 'rose', name: 'Rosa', colors: ['#ff9a9e', '#fecfef'], category: 'pastel' },
+  { id: 'blush', name: 'Blush', colors: ['#fbc2eb', '#a6c1ee'], category: 'pastel' },
+  
+  // Bold/Vibrant
+  { id: 'neon', name: 'Neon', colors: ['#00f260', '#0575e6'], category: 'bold' },
+  { id: 'rave', name: 'Rave', colors: ['#fc466b', '#3f5efb'], category: 'bold' },
+  { id: 'cyber', name: 'Cyber', colors: ['#00d9ff', '#9d00ff'], category: 'bold' },
+  { id: 'magma', name: 'Magma', colors: ['#f857a6', '#ff5858'], category: 'bold' },
 ] as const;
 
 export type GradientId = typeof GRADIENT_PRESETS[number]['id'];
+export type GradientCategory = 'basic' | 'warm' | 'cool' | 'nature' | 'dark' | 'pastel' | 'bold';
+
+// Get gradients by category
+export function getGradientsByCategory(category: GradientCategory) {
+  return GRADIENT_PRESETS.filter(g => g.category === category);
+}
+
+// Category labels for UI
+export const GRADIENT_CATEGORY_LABELS: Record<GradientCategory, Record<SupportedLanguage, string>> = {
+  basic: { "pt-BR": "Básico", en: "Basic", es: "Básico" },
+  warm: { "pt-BR": "Quentes", en: "Warm", es: "Cálidos" },
+  cool: { "pt-BR": "Frios", en: "Cool", es: "Fríos" },
+  nature: { "pt-BR": "Natureza", en: "Nature", es: "Naturaleza" },
+  dark: { "pt-BR": "Escuros", en: "Dark", es: "Oscuros" },
+  pastel: { "pt-BR": "Pastéis", en: "Pastel", es: "Pasteles" },
+  bold: { "pt-BR": "Vibrantes", en: "Bold", es: "Vibrantes" },
+};
 
 // AI Text Modes
 export const TEXT_MODES = [
