@@ -32,6 +32,8 @@ import TemplateSelector from "@/components/carousel-creator/TemplateSelector";
 import TextModeSelector, { CreativeTone } from "@/components/carousel-creator/TextModeSelector";
 import SlideCountSelector from "@/components/carousel-creator/SlideCountSelector";
 import LanguageSelector from "@/components/carousel-creator/LanguageSelector";
+import AdvancedTemplateEditor, { TemplateCustomization } from "@/components/carousel-creator/AdvancedTemplateEditor";
+import { FontId, GradientId } from "@/lib/constants";
 import {
   Dialog,
   DialogContent,
@@ -59,7 +61,7 @@ interface Slide {
 
 const CreateCarousel = () => {
   const { user, loading } = useAuth();
-  const { isPro, createCheckout, loading: subLoading } = useSubscription();
+  const { isPro, isCreator, createCheckout, loading: subLoading } = useSubscription();
   const { preferences, loading: prefsLoading, savePreferences } = useUserPreferences();
   const { language: siteLanguage } = useLanguage();
   const navigate = useNavigate();
@@ -99,6 +101,14 @@ const CreateCarousel = () => {
   const [selectedStyle, setSelectedStyle] = useState<StyleType>("BLACK_WHITE");
   const [selectedFormat, setSelectedFormat] = useState<FormatType>("POST_SQUARE");
   const [prefsInitialized, setPrefsInitialized] = useState(false);
+  
+  // Advanced template customization (Creator+ only)
+  const [templateCustomization, setTemplateCustomization] = useState<TemplateCustomization>({
+    fontId: 'inter' as FontId,
+    gradientId: 'none' as GradientId,
+    customGradientColors: undefined,
+    slideImages: [],
+  });
 
   // Processing state
   const [isProcessing, setIsProcessing] = useState(false);
@@ -274,7 +284,13 @@ const CreateCarousel = () => {
         userId: user.id,
         isPro,
         language: carouselLanguage,
-        profile: profileIdentity.username ? profileIdentity : undefined
+        profile: profileIdentity.username ? profileIdentity : undefined,
+        customization: isCreator ? {
+          fontId: templateCustomization.fontId,
+          gradientId: templateCustomization.gradientId,
+          customGradientColors: templateCustomization.customGradientColors,
+          slideImages: templateCustomization.slideImages,
+        } : undefined
       });
 
     } catch (err: unknown) {
@@ -588,6 +604,16 @@ const CreateCarousel = () => {
                   selectedFormat={selectedFormat} 
                   setSelectedFormat={setSelectedFormat} 
                 />
+                
+                {/* Advanced Template Editor - Creator+ only */}
+                <div className="border-t border-border pt-8">
+                  <AdvancedTemplateEditor
+                    customization={templateCustomization}
+                    setCustomization={setTemplateCustomization}
+                    slideCount={manualSlideCount}
+                    isCreator={isCreator}
+                  />
+                </div>
               </div>
             </>
           )}
