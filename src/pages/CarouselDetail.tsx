@@ -29,7 +29,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import JSZip from "jszip";
-import { formatLocalizedDate, formatDuration, formatInteger, formatFileSize } from "@/lib/localization";
+import { formatLocalizedDate, formatDuration, formatInteger, formatFileSize, formatRelativeTime } from "@/lib/localization";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -408,8 +408,8 @@ const CarouselDetail = () => {
                   <Calendar className="w-5 h-5 text-muted-foreground" />
                   <div>
                     <p className="text-xs text-muted-foreground">{t("carouselDetail", "createdAt")}</p>
-                    <p className="text-sm font-medium">
-                      {formatLocalizedDate(carousel.created_at, language, "withTime")}
+                    <p className="text-sm font-medium" title={formatLocalizedDate(carousel.created_at, language, "withTime")}>
+                      {formatRelativeTime(carousel.created_at, language)}
                     </p>
                   </div>
                 </CardContent>

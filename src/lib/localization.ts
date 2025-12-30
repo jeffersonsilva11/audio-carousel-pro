@@ -1,6 +1,6 @@
 import { SupportedLanguage } from "@/hooks/useLanguage";
 import { ptBR, enUS, es } from "date-fns/locale";
-import { format as formatDate, Locale } from "date-fns";
+import { format as formatDate, Locale, formatDistanceToNow, isToday, isYesterday, differenceInMinutes, differenceInHours, differenceInDays } from "date-fns";
 
 // Currency configuration per language/region
 interface CurrencyConfig {
@@ -353,4 +353,101 @@ export function formatCount(
   language: SupportedLanguage
 ): string {
   return formatInteger(count, language);
+}
+
+// ============================================
+// RELATIVE TIME FORMATTING
+// ============================================
+
+/**
+ * Relative time labels per language
+ */
+const RELATIVE_TIME_LABELS: Record<SupportedLanguage, {
+  justNow: string;
+  minutesAgo: (n: number) => string;
+  hoursAgo: (n: number) => string;
+  today: string;
+  yesterday: string;
+}> = {
+  "pt-BR": {
+    justNow: "agora mesmo",
+    minutesAgo: (n) => n === 1 ? "há 1 minuto" : `há ${n} minutos`,
+    hoursAgo: (n) => n === 1 ? "há 1 hora" : `há ${n} horas`,
+    today: "hoje",
+    yesterday: "ontem",
+  },
+  en: {
+    justNow: "just now",
+    minutesAgo: (n) => n === 1 ? "1 minute ago" : `${n} minutes ago`,
+    hoursAgo: (n) => n === 1 ? "1 hour ago" : `${n} hours ago`,
+    today: "today",
+    yesterday: "yesterday",
+  },
+  es: {
+    justNow: "ahora mismo",
+    minutesAgo: (n) => n === 1 ? "hace 1 minuto" : `hace ${n} minutos`,
+    hoursAgo: (n) => n === 1 ? "hace 1 hora" : `hace ${n} horas`,
+    today: "hoy",
+    yesterday: "ayer",
+  },
+};
+
+/**
+ * Format a date as relative time (e.g., "2 hours ago", "yesterday")
+ */
+export function formatRelativeTime(
+  date: Date | string,
+  language: SupportedLanguage
+): string {
+  const dateObj = toLocalTimezone(date);
+  const now = new Date();
+  const labels = RELATIVE_TIME_LABELS[language];
+  
+  const minutesDiff = differenceInMinutes(now, dateObj);
+  const hoursDiff = differenceInHours(now, dateObj);
+  const daysDiff = differenceInDays(now, dateObj);
+  
+  // Less than 1 minute
+  if (minutesDiff < 1) {
+    return labels.justNow;
+  }
+  
+  // Less than 60 minutes
+  if (minutesDiff < 60) {
+    return labels.minutesAgo(minutesDiff);
+  }
+  
+  // Less than 24 hours
+  if (hoursDiff < 24 && isToday(dateObj)) {
+    return labels.hoursAgo(hoursDiff);
+  }
+  
+  // Yesterday
+  if (isYesterday(dateObj)) {
+    return labels.yesterday;
+  }
+  
+  // Less than 7 days - use date-fns relative formatting
+  if (daysDiff < 7) {
+    return formatDistanceToNow(dateObj, { 
+      addSuffix: true, 
+      locale: getDateFnsLocale(language) 
+    });
+  }
+  
+  // Older than 7 days - use formatted date
+  return formatLocalizedDate(dateObj, language, "medium");
+}
+
+/**
+ * Format a date as relative time with optional full date tooltip text
+ */
+export function formatRelativeTimeWithDate(
+  date: Date | string,
+  language: SupportedLanguage
+): { relative: string; full: string } {
+  return {
+    relative: formatRelativeTime(date, language),
+    full: formatLocalizedDate(date, language, "withTime"),
+  };
 }
