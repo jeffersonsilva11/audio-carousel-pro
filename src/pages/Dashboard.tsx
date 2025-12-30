@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   Mic2, Plus, LogOut, Loader2, Image as ImageIcon, Calendar,
-  Sparkles, FolderOpen, Crown, CreditCard, RefreshCw, AlertTriangle, Globe, Settings
+  Sparkles, FolderOpen, Crown, CreditCard, RefreshCw, AlertTriangle, Globe, Settings, History
 } from "lucide-react";
 import { toast } from "sonner";
 import { BRAND } from "@/lib/constants";
@@ -321,9 +321,17 @@ const Dashboard = () => {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold">{t("dashboard", "yourCarousels", language)}</h2>
-            <span className="text-sm text-muted-foreground">
-              {formatCount(carousels.length, language)} {carousels.length !== 1 ? t("dashboard", "carouselsCount", language) : t("dashboard", "carouselCount", language)}
-            </span>
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-muted-foreground">
+                {formatCount(carousels.length, language)} {carousels.length !== 1 ? t("dashboard", "carouselsCount", language) : t("dashboard", "carouselCount", language)}
+              </span>
+              {isPro && carousels.length > 0 && (
+                <Button variant="outline" size="sm" onClick={() => navigate("/history")}>
+                  <History className="w-4 h-4 mr-2" />
+                  {t("history", "viewHistory", language)}
+                </Button>
+              )}
+            </div>
           </div>
 
           {loadingCarousels ? (

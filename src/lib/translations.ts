@@ -2110,6 +2110,110 @@ export const translations = {
       es: "Solo @usuario",
     },
   },
+
+  // History page
+  history: {
+    title: {
+      "pt-BR": "Histórico de Carrosséis",
+      en: "Carousel History",
+      es: "Historial de Carruseles",
+    },
+    subtitle: {
+      "pt-BR": "Todos os seus carrosséis em um só lugar",
+      en: "All your carousels in one place",
+      es: "Todos tus carruseles en un solo lugar",
+    },
+    searchPlaceholder: {
+      "pt-BR": "Buscar por conteúdo...",
+      en: "Search by content...",
+      es: "Buscar por contenido...",
+    },
+    filterTone: {
+      "pt-BR": "Tom",
+      en: "Tone",
+      es: "Tono",
+    },
+    filterStyle: {
+      "pt-BR": "Estilo",
+      en: "Style",
+      es: "Estilo",
+    },
+    filterFormat: {
+      "pt-BR": "Formato",
+      en: "Format",
+      es: "Formato",
+    },
+    filterStatus: {
+      "pt-BR": "Status",
+      en: "Status",
+      es: "Estado",
+    },
+    allTones: {
+      "pt-BR": "Todos os tons",
+      en: "All tones",
+      es: "Todos los tonos",
+    },
+    allStyles: {
+      "pt-BR": "Todos os estilos",
+      en: "All styles",
+      es: "Todos los estilos",
+    },
+    allFormats: {
+      "pt-BR": "Todos os formatos",
+      en: "All formats",
+      es: "Todos los formatos",
+    },
+    allStatuses: {
+      "pt-BR": "Todos os status",
+      en: "All statuses",
+      es: "Todos los estados",
+    },
+    blackWhite: {
+      "pt-BR": "Preto/Branco",
+      en: "Black/White",
+      es: "Negro/Blanco",
+    },
+    whiteBlack: {
+      "pt-BR": "Branco/Preto",
+      en: "White/Black",
+      es: "Blanco/Negro",
+    },
+    newest: {
+      "pt-BR": "Mais recentes",
+      en: "Newest",
+      es: "Más recientes",
+    },
+    oldest: {
+      "pt-BR": "Mais antigos",
+      en: "Oldest",
+      es: "Más antiguos",
+    },
+    clearFilters: {
+      "pt-BR": "Limpar filtros",
+      en: "Clear filters",
+      es: "Limpiar filtros",
+    },
+    filtered: {
+      "pt-BR": "filtrado",
+      en: "filtered",
+      es: "filtrado",
+    },
+    noResults: {
+      "pt-BR": "Nenhum carrossel encontrado",
+      en: "No carousels found",
+      es: "No se encontraron carruseles",
+    },
+    tryDifferentFilters: {
+      "pt-BR": "Tente ajustar os filtros ou a busca",
+      en: "Try adjusting filters or search",
+      es: "Intenta ajustar los filtros o la búsqueda",
+    },
+    viewHistory: {
+      "pt-BR": "Ver histórico",
+      en: "View history",
+      es: "Ver historial",
+    },
+  },
 } as const;
 
 export type TranslationKey = keyof typeof translations;
