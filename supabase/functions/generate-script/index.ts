@@ -117,9 +117,9 @@ serve(async (req) => {
       throw new Error('No transcription provided');
     }
 
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY is not configured');
+    const GOOGLE_GEMINI_KEY = Deno.env.get('GOOGLE_GEMINI');
+    if (!GOOGLE_GEMINI_KEY) {
+      throw new Error('GOOGLE_GEMINI is not configured');
     }
 
     // Determine actual slide count
@@ -186,24 +186,29 @@ Você deve retornar APENAS um JSON válido no seguinte formato (sem markdown, se
       ? `Transforme esta transcrição em exatamente ${actualSlideCount} slide${actualSlideCount > 1 ? 's' : ''} seguindo as regras acima:\n\nTRANSCRIÇÃO:\n${transcription}`
       : `Transforme esta transcrição em um carrossel seguindo as regras acima. Decida o número ideal de slides (entre 4 e 8):\n\nTRANSCRIÇÃO:\n${transcription}`;
 
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    // Use Google Gemini API directly
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GOOGLE_GEMINI_KEY}`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
+        contents: [
+          {
+            role: 'user',
+            parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }]
+          }
         ],
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 2048,
+        }
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Script generation API error:', response.status, errorText);
+      console.error('Gemini API error:', response.status, errorText);
       
       if (response.status === 429) {
         return new Response(JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }), {
@@ -211,9 +216,9 @@ Você deve retornar APENAS um JSON válido no seguinte formato (sem markdown, se
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: 'Payment required. Please add credits to your workspace.' }), {
-          status: 402,
+      if (response.status === 401 || response.status === 403) {
+        return new Response(JSON.stringify({ error: 'API key error. Please check your Google Gemini API key.' }), {
+          status: response.status,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
@@ -222,7 +227,7 @@ Você deve retornar APENAS um JSON válido no seguinte formato (sem markdown, se
     }
 
     const data = await response.json();
-    let scriptText = data.choices?.[0]?.message?.content || '';
+    let scriptText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
     console.log('Raw script response:', scriptText.substring(0, 300) + '...');
 
