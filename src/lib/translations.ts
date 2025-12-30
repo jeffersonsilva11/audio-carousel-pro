@@ -1574,9 +1574,9 @@ export const translations = {
       es: "Descarga ZIP, sin marca de agua y carruseles ilimitados",
     },
     subscribePro: {
-      "pt-BR": "Assinar Pro - R$ 29,90/mês",
-      en: "Subscribe Pro - $9.90/mo",
-      es: "Suscribir Pro - $9.90/mes",
+      "pt-BR": "Assinar Pro",
+      en: "Subscribe Pro",
+      es: "Suscribir Pro",
     },
     transcription: {
       "pt-BR": "Transcrição",
@@ -1655,6 +1655,15 @@ export const translations = {
       "pt-BR": "Idioma alterado com sucesso",
       en: "Language changed successfully",
       es: "Idioma cambiado con éxito",
+    },
+  },
+
+  // Template Selector
+  templateSelector: {
+    premiumInfo: {
+      "pt-BR": "Templates com imagem IA estão disponíveis no plano Agency ({price}/mês)",
+      en: "AI image templates are available on the Agency plan ({price}/month)",
+      es: "Las plantillas con imagen IA están disponibles en el plan Agency ({price}/mes)",
     },
   },
 } as const;

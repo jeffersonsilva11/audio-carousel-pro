@@ -27,10 +27,9 @@ import {
   Share2,
   Trash2
 } from "lucide-react";
-import { format } from "date-fns";
-import { enUS, es, ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import JSZip from "jszip";
+import { formatLocalizedDate } from "@/lib/localization";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -73,11 +72,6 @@ const CarouselDetail = () => {
   const [deleting, setDeleting] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
 
-  const getDateLocale = () => {
-    if (language === "en") return enUS;
-    if (language === "es") return es;
-    return ptBR;
-  };
 
   useEffect(() => {
     if (!loading && !user) {
@@ -415,7 +409,7 @@ const CarouselDetail = () => {
                   <div>
                     <p className="text-xs text-muted-foreground">{t("carouselDetail", "createdAt")}</p>
                     <p className="text-sm font-medium">
-                      {format(new Date(carousel.created_at), "d MMM yyyy, HH:mm", { locale: getDateLocale() })}
+                      {formatLocalizedDate(carousel.created_at, language, "withTime")}
                     </p>
                   </div>
                 </CardContent>
