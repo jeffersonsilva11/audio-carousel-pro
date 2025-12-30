@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Mic, Upload, Square, Trash2, Play, Pause } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/hooks/useLanguage";
 
 interface AudioUploaderProps {
   audioFile: File | null;
@@ -21,6 +22,8 @@ const AudioUploader = ({
   audioDuration, 
   setAudioDuration 
 }: AudioUploaderProps) => {
+  const { t } = useTranslation();
+  
   const [isRecording, setIsRecording] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
@@ -35,13 +38,13 @@ const AudioUploader = ({
 
   const validateFile = useCallback((file: File): string | null => {
     if (!ALLOWED_TYPES.includes(file.type)) {
-      return "Formato não suportado. Use MP3, WAV ou M4A.";
+      return t("audioUploader", "unsupportedFormat");
     }
     if (file.size > MAX_SIZE) {
-      return "Arquivo muito grande. Máximo 10MB.";
+      return t("audioUploader", "fileTooLarge");
     }
     return null;
-  }, []);
+  }, [t]);
 
   const getAudioDuration = useCallback((file: File): Promise<number> => {
     return new Promise((resolve, reject) => {
@@ -51,9 +54,9 @@ const AudioUploader = ({
         URL.revokeObjectURL(audio.src);
         resolve(audio.duration);
       };
-      audio.onerror = () => reject(new Error("Não foi possível ler o áudio"));
+      audio.onerror = () => reject(new Error(t("audioUploader", "couldNotReadAudio")));
     });
-  }, []);
+  }, [t]);
 
   const handleFileSelect = async (file: File) => {
     setError(null);
@@ -67,14 +70,14 @@ const AudioUploader = ({
     try {
       const duration = await getAudioDuration(file);
       if (duration > MAX_DURATION) {
-        setError(`Áudio muito longo. Máximo ${MAX_DURATION} segundos.`);
+        setError(t("audioUploader", "audioTooLong").replace("{seconds}", String(MAX_DURATION)));
         return;
       }
       
       setAudioFile(file);
       setAudioDuration(duration);
     } catch {
-      setError("Erro ao processar o áudio.");
+      setError(t("audioUploader", "processingError"));
     }
   };
 
@@ -134,7 +137,7 @@ const AudioUploader = ({
         });
       }, 1000);
     } catch {
-      setError("Não foi possível acessar o microfone.");
+      setError(t("audioUploader", "microphoneError"));
     }
   };
 
@@ -259,19 +262,19 @@ const AudioUploader = ({
             
             {isRecording ? (
               <>
-                <p className="font-semibold text-destructive">Gravando...</p>
+                <p className="font-semibold text-destructive">{t("audioUploader", "recording")}</p>
                 <p className="text-2xl font-mono font-bold">
                   {formatTime(recordingTime)}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  Máximo {MAX_DURATION}s • Clique para parar
+                  {t("audioUploader", "maxDuration").replace("{seconds}", String(MAX_DURATION))}
                 </p>
               </>
             ) : (
               <>
-                <p className="font-semibold">Gravar áudio</p>
+                <p className="font-semibold">{t("audioUploader", "recordAudio")}</p>
                 <p className="text-sm text-muted-foreground">
-                  Clique para começar a gravar
+                  {t("audioUploader", "clickToRecord")}
                 </p>
               </>
             )}
@@ -282,7 +285,7 @@ const AudioUploader = ({
       {/* Divider */}
       <div className="flex items-center gap-4">
         <div className="flex-1 h-px bg-border" />
-        <span className="text-sm text-muted-foreground">ou</span>
+        <span className="text-sm text-muted-foreground">{t("common", "or")}</span>
         <div className="flex-1 h-px bg-border" />
       </div>
 
@@ -303,10 +306,10 @@ const AudioUploader = ({
               <Upload className="w-6 h-6 text-muted-foreground" />
             </div>
             <p className="font-semibold mb-1">
-              Arraste seu arquivo ou clique para selecionar
+              {t("audioUploader", "dragOrClick")}
             </p>
             <p className="text-sm text-muted-foreground">
-              MP3, WAV, M4A • Máximo {MAX_DURATION}s • Máximo 10MB
+              {t("audioUploader", "fileTypes").replace("{seconds}", String(MAX_DURATION))}
             </p>
           </div>
           

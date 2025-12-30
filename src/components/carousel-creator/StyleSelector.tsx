@@ -1,5 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/hooks/useLanguage";
 
 export type StyleType = "BLACK_WHITE" | "WHITE_BLACK";
 
@@ -8,34 +9,36 @@ interface StyleSelectorProps {
   setSelectedStyle: (style: StyleType) => void;
 }
 
-const styles = [
-  {
-    id: "BLACK_WHITE" as StyleType,
-    name: "Escuro",
-    description: "Fundo preto com texto branco",
-    preview: {
-      bg: "bg-[#0A0A0A]",
-      text: "text-white",
-    },
-  },
-  {
-    id: "WHITE_BLACK" as StyleType,
-    name: "Claro",
-    description: "Fundo branco com texto preto",
-    preview: {
-      bg: "bg-white",
-      text: "text-[#0A0A0A]",
-    },
-  },
-];
-
 const StyleSelector = ({ selectedStyle, setSelectedStyle }: StyleSelectorProps) => {
+  const { t } = useTranslation();
+
+  const styles = [
+    {
+      id: "BLACK_WHITE" as StyleType,
+      name: t("styleSelector", "dark"),
+      description: t("styleSelector", "darkDesc"),
+      preview: {
+        bg: "bg-[#0A0A0A]",
+        text: "text-white",
+      },
+    },
+    {
+      id: "WHITE_BLACK" as StyleType,
+      name: t("styleSelector", "light"),
+      description: t("styleSelector", "lightDesc"),
+      preview: {
+        bg: "bg-white",
+        text: "text-[#0A0A0A]",
+      },
+    },
+  ];
+
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-lg font-semibold mb-1">Estilo Visual</h3>
+        <h3 className="text-lg font-semibold mb-1">{t("styleSelector", "title")}</h3>
         <p className="text-sm text-muted-foreground">
-          Escolha as cores do seu carrossel
+          {t("styleSelector", "subtitle")}
         </p>
       </div>
 
@@ -64,8 +67,8 @@ const StyleSelector = ({ selectedStyle, setSelectedStyle }: StyleSelectorProps) 
                     "text-center",
                     style.preview.text
                   )}>
-                    <p className="text-xs font-medium mb-1">Slide de exemplo</p>
-                    <p className="text-[10px] opacity-70">Seu texto aqui</p>
+                    <p className="text-xs font-medium mb-1">{t("styleSelector", "sampleSlide")}</p>
+                    <p className="text-[10px] opacity-70">{t("styleSelector", "yourTextHere")}</p>
                   </div>
                 </div>
 

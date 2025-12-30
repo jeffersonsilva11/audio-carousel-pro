@@ -3,40 +3,42 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Mic2, FileText, Sparkles, Image, Check, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/hooks/useLanguage";
 
 interface ProcessingStatusProps {
   status: string;
 }
 
-const steps = [
-  { 
-    id: "TRANSCRIBING", 
-    name: "Transcrevendo",
-    description: "Convertendo áudio em texto...",
-    icon: Mic2
-  },
-  { 
-    id: "SCRIPTING", 
-    name: "Roteirizando",
-    description: "Criando roteiro com IA...",
-    icon: FileText
-  },
-  { 
-    id: "GENERATING", 
-    name: "Gerando slides",
-    description: "Criando imagens do carrossel...",
-    icon: Image
-  },
-  { 
-    id: "COMPLETED", 
-    name: "Concluído",
-    description: "Seu carrossel está pronto!",
-    icon: Check
-  },
-];
-
 const ProcessingStatus = ({ status }: ProcessingStatusProps) => {
+  const { t } = useTranslation();
   const [progress, setProgress] = useState(0);
+
+  const steps = [
+    { 
+      id: "TRANSCRIBING", 
+      name: t("processingStatus", "transcribing"),
+      description: t("processingStatus", "transcribingDesc"),
+      icon: Mic2
+    },
+    { 
+      id: "SCRIPTING", 
+      name: t("processingStatus", "scripting"),
+      description: t("processingStatus", "scriptingDesc"),
+      icon: FileText
+    },
+    { 
+      id: "GENERATING", 
+      name: t("processingStatus", "generating"),
+      description: t("processingStatus", "generatingDesc"),
+      icon: Image
+    },
+    { 
+      id: "COMPLETED", 
+      name: t("processingStatus", "completed"),
+      description: t("processingStatus", "completedDesc"),
+      icon: Check
+    },
+  ];
   
   const currentStepIndex = steps.findIndex(s => s.id === status);
   const progressPerStep = 100 / (steps.length - 1);
@@ -82,16 +84,16 @@ const ProcessingStatus = ({ status }: ProcessingStatusProps) => {
           </div>
 
           <h3 className="text-xl font-semibold mb-2">
-            {steps[currentStepIndex]?.name || "Processando"}
+            {steps[currentStepIndex]?.name || t("processingStatus", "processing")}
           </h3>
           <p className="text-muted-foreground">
-            {steps[currentStepIndex]?.description || "Aguarde..."}
+            {steps[currentStepIndex]?.description || t("processingStatus", "pleaseWait")}
           </p>
 
           <div className="w-full max-w-xs mt-6">
             <Progress value={progress} className="h-2" />
             <p className="text-sm text-muted-foreground mt-2">
-              {Math.round(progress)}% concluído
+              {t("processingStatus", "percentComplete").replace("{percent}", String(Math.round(progress)))}
             </p>
           </div>
         </CardContent>

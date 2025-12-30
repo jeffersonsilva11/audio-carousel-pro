@@ -1066,6 +1066,355 @@ export const translations = {
       es: "Agency",
     },
   },
+
+  // Audio Uploader
+  audioUploader: {
+    unsupportedFormat: {
+      "pt-BR": "Formato não suportado. Use MP3, WAV ou M4A.",
+      en: "Unsupported format. Use MP3, WAV, or M4A.",
+      es: "Formato no soportado. Usa MP3, WAV o M4A.",
+    },
+    fileTooLarge: {
+      "pt-BR": "Arquivo muito grande. Máximo 10MB.",
+      en: "File too large. Maximum 10MB.",
+      es: "Archivo muy grande. Máximo 10MB.",
+    },
+    audioTooLong: {
+      "pt-BR": "Áudio muito longo. Máximo {seconds} segundos.",
+      en: "Audio too long. Maximum {seconds} seconds.",
+      es: "Audio muy largo. Máximo {seconds} segundos.",
+    },
+    processingError: {
+      "pt-BR": "Erro ao processar o áudio.",
+      en: "Error processing audio.",
+      es: "Error al procesar el audio.",
+    },
+    couldNotReadAudio: {
+      "pt-BR": "Não foi possível ler o áudio",
+      en: "Could not read audio",
+      es: "No se pudo leer el audio",
+    },
+    microphoneError: {
+      "pt-BR": "Não foi possível acessar o microfone.",
+      en: "Could not access microphone.",
+      es: "No se pudo acceder al micrófono.",
+    },
+    recording: {
+      "pt-BR": "Gravando...",
+      en: "Recording...",
+      es: "Grabando...",
+    },
+    maxDuration: {
+      "pt-BR": "Máximo {seconds}s • Clique para parar",
+      en: "Maximum {seconds}s • Click to stop",
+      es: "Máximo {seconds}s • Haz clic para parar",
+    },
+    recordAudio: {
+      "pt-BR": "Gravar áudio",
+      en: "Record audio",
+      es: "Grabar audio",
+    },
+    clickToRecord: {
+      "pt-BR": "Clique para começar a gravar",
+      en: "Click to start recording",
+      es: "Haz clic para empezar a grabar",
+    },
+    dragOrClick: {
+      "pt-BR": "Arraste seu arquivo ou clique para selecionar",
+      en: "Drag your file or click to select",
+      es: "Arrastra tu archivo o haz clic para seleccionar",
+    },
+    fileTypes: {
+      "pt-BR": "MP3, WAV, M4A • Máximo {seconds}s • Máximo 10MB",
+      en: "MP3, WAV, M4A • Maximum {seconds}s • Maximum 10MB",
+      es: "MP3, WAV, M4A • Máximo {seconds}s • Máximo 10MB",
+    },
+  },
+
+  // Tone Selector
+  toneSelector: {
+    title: {
+      "pt-BR": "Tom de Voz",
+      en: "Voice Tone",
+      es: "Tono de Voz",
+    },
+    subtitle: {
+      "pt-BR": "Escolha como a IA vai transformar seu conteúdo",
+      en: "Choose how AI will transform your content",
+      es: "Elige cómo la IA transformará tu contenido",
+    },
+    selected: {
+      "pt-BR": "Selecionado",
+      en: "Selected",
+      es: "Seleccionado",
+    },
+    emotional: {
+      "pt-BR": "Emocional",
+      en: "Emotional",
+      es: "Emocional",
+    },
+    emotionalDesc: {
+      "pt-BR": "Storytelling com gatilhos mentais. Conexão profunda com o público.",
+      en: "Storytelling with mental triggers. Deep connection with the audience.",
+      es: "Storytelling con disparadores mentales. Conexión profunda con el público.",
+    },
+    professional: {
+      "pt-BR": "Profissional",
+      en: "Professional",
+      es: "Profesional",
+    },
+    professionalDesc: {
+      "pt-BR": "Educacional e corporativo. Dados e insights acionáveis.",
+      en: "Educational and corporate. Data and actionable insights.",
+      es: "Educativo y corporativo. Datos e insights accionables.",
+    },
+    provocative: {
+      "pt-BR": "Provocador",
+      en: "Provocative",
+      es: "Provocador",
+    },
+    provocativeDesc: {
+      "pt-BR": "Direto e desconfortável. Quebra de padrões e verdades cruas.",
+      en: "Direct and uncomfortable. Pattern breaking and raw truths.",
+      es: "Directo e incómodo. Ruptura de patrones y verdades crudas.",
+    },
+  },
+
+  // Style Selector
+  styleSelector: {
+    title: {
+      "pt-BR": "Estilo Visual",
+      en: "Visual Style",
+      es: "Estilo Visual",
+    },
+    subtitle: {
+      "pt-BR": "Escolha as cores do seu carrossel",
+      en: "Choose the colors for your carousel",
+      es: "Elige los colores de tu carrusel",
+    },
+    dark: {
+      "pt-BR": "Escuro",
+      en: "Dark",
+      es: "Oscuro",
+    },
+    darkDesc: {
+      "pt-BR": "Fundo preto com texto branco",
+      en: "Black background with white text",
+      es: "Fondo negro con texto blanco",
+    },
+    light: {
+      "pt-BR": "Claro",
+      en: "Light",
+      es: "Claro",
+    },
+    lightDesc: {
+      "pt-BR": "Fundo branco com texto preto",
+      en: "White background with black text",
+      es: "Fondo blanco con texto negro",
+    },
+    sampleSlide: {
+      "pt-BR": "Slide de exemplo",
+      en: "Sample slide",
+      es: "Diapositiva de ejemplo",
+    },
+    yourTextHere: {
+      "pt-BR": "Seu texto aqui",
+      en: "Your text here",
+      es: "Tu texto aquí",
+    },
+  },
+
+  // Format Selector
+  formatSelector: {
+    title: {
+      "pt-BR": "Formato",
+      en: "Format",
+      es: "Formato",
+    },
+    subtitle: {
+      "pt-BR": "Escolha o tamanho do seu carrossel",
+      en: "Choose your carousel size",
+      es: "Elige el tamaño de tu carrusel",
+    },
+    squarePost: {
+      "pt-BR": "Post Quadrado",
+      en: "Square Post",
+      es: "Post Cuadrado",
+    },
+    squareDesc: {
+      "pt-BR": "Ideal para feed",
+      en: "Ideal for feed",
+      es: "Ideal para feed",
+    },
+    portraitPost: {
+      "pt-BR": "Post Retrato",
+      en: "Portrait Post",
+      es: "Post Retrato",
+    },
+    portraitDesc: {
+      "pt-BR": "Mais espaço vertical",
+      en: "More vertical space",
+      es: "Más espacio vertical",
+    },
+    stories: {
+      "pt-BR": "Stories",
+      en: "Stories",
+      es: "Stories",
+    },
+    storiesDesc: {
+      "pt-BR": "Para stories/reels",
+      en: "For stories/reels",
+      es: "Para stories/reels",
+    },
+  },
+
+  // Processing Status
+  processingStatus: {
+    transcribing: {
+      "pt-BR": "Transcrevendo",
+      en: "Transcribing",
+      es: "Transcribiendo",
+    },
+    transcribingDesc: {
+      "pt-BR": "Convertendo áudio em texto...",
+      en: "Converting audio to text...",
+      es: "Convirtiendo audio a texto...",
+    },
+    scripting: {
+      "pt-BR": "Roteirizando",
+      en: "Scripting",
+      es: "Guionizando",
+    },
+    scriptingDesc: {
+      "pt-BR": "Criando roteiro com IA...",
+      en: "Creating script with AI...",
+      es: "Creando guión con IA...",
+    },
+    generating: {
+      "pt-BR": "Gerando slides",
+      en: "Generating slides",
+      es: "Generando diapositivas",
+    },
+    generatingDesc: {
+      "pt-BR": "Criando imagens do carrossel...",
+      en: "Creating carousel images...",
+      es: "Creando imágenes del carrusel...",
+    },
+    completed: {
+      "pt-BR": "Concluído",
+      en: "Completed",
+      es: "Completado",
+    },
+    completedDesc: {
+      "pt-BR": "Seu carrossel está pronto!",
+      en: "Your carousel is ready!",
+      es: "¡Tu carrusel está listo!",
+    },
+    processing: {
+      "pt-BR": "Processando",
+      en: "Processing",
+      es: "Procesando",
+    },
+    pleaseWait: {
+      "pt-BR": "Aguarde...",
+      en: "Please wait...",
+      es: "Espera...",
+    },
+    percentComplete: {
+      "pt-BR": "{percent}% concluído",
+      en: "{percent}% complete",
+      es: "{percent}% completado",
+    },
+  },
+
+  // Carousel Preview
+  carouselPreview: {
+    loading: {
+      "pt-BR": "Carregando...",
+      en: "Loading...",
+      es: "Cargando...",
+    },
+    slide: {
+      "pt-BR": "Slide",
+      en: "Slide",
+      es: "Diapositiva",
+    },
+    of: {
+      "pt-BR": "de",
+      en: "of",
+      es: "de",
+    },
+    downloadStarted: {
+      "pt-BR": "Download iniciado",
+      en: "Download started",
+      es: "Descarga iniciada",
+    },
+    slideDownloaded: {
+      "pt-BR": "Slide {number} baixado com sucesso.",
+      en: "Slide {number} downloaded successfully.",
+      es: "Diapositiva {number} descargada con éxito.",
+    },
+    downloadError: {
+      "pt-BR": "Erro no download",
+      en: "Download error",
+      es: "Error de descarga",
+    },
+    couldNotDownload: {
+      "pt-BR": "Não foi possível baixar o slide.",
+      en: "Could not download slide.",
+      es: "No se pudo descargar la diapositiva.",
+    },
+    proFeature: {
+      "pt-BR": "Recurso Pro",
+      en: "Pro Feature",
+      es: "Función Pro",
+    },
+    zipProOnly: {
+      "pt-BR": "Download em ZIP está disponível apenas para assinantes Pro.",
+      en: "ZIP download is only available for Pro subscribers.",
+      es: "La descarga en ZIP solo está disponible para suscriptores Pro.",
+    },
+    downloadComplete: {
+      "pt-BR": "Download concluído",
+      en: "Download complete",
+      es: "Descarga completa",
+    },
+    zipDownloaded: {
+      "pt-BR": "ZIP com {count} slides baixado com sucesso.",
+      en: "ZIP with {count} slides downloaded successfully.",
+      es: "ZIP con {count} diapositivas descargado con éxito.",
+    },
+    couldNotCreateZip: {
+      "pt-BR": "Não foi possível criar o arquivo ZIP.",
+      en: "Could not create ZIP file.",
+      es: "No se pudo crear el archivo ZIP.",
+    },
+    creatingZip: {
+      "pt-BR": "Criando ZIP...",
+      en: "Creating ZIP...",
+      es: "Creando ZIP...",
+    },
+    downloadZip: {
+      "pt-BR": "Baixar ZIP ({count} slides)",
+      en: "Download ZIP ({count} slides)",
+      es: "Descargar ZIP ({count} diapositivas)",
+    },
+    downloadAll: {
+      "pt-BR": "Baixar todas ({count} slides)",
+      en: "Download all ({count} slides)",
+      es: "Descargar todo ({count} diapositivas)",
+    },
+    downloadCurrent: {
+      "pt-BR": "Baixar slide atual",
+      en: "Download current slide",
+      es: "Descargar diapositiva actual",
+    },
+    slideText: {
+      "pt-BR": "Texto do slide {number}:",
+      en: "Slide {number} text:",
+      es: "Texto de la diapositiva {number}:",
+    },
+  },
 } as const;
 
 export type TranslationKey = keyof typeof translations;

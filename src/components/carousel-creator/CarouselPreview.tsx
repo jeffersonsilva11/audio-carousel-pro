@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, Download, FolderArchive, Loader2 } from "luc
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import JSZip from "jszip";
+import { useTranslation } from "@/hooks/useLanguage";
 
 interface Slide {
   number: number;
@@ -20,6 +21,7 @@ interface CarouselPreviewProps {
 }
 
 const CarouselPreview = ({ slides, onDownloadAll, isPro = false }: CarouselPreviewProps) => {
+  const { t } = useTranslation();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isDownloadingZip, setIsDownloadingZip] = useState(false);
   const { toast } = useToast();
@@ -46,13 +48,13 @@ const CarouselPreview = ({ slides, onDownloadAll, isPro = false }: CarouselPrevi
       }
       
       toast({
-        title: "Download iniciado",
-        description: `Slide ${slide.number} baixado com sucesso.`,
+        title: t("carouselPreview", "downloadStarted"),
+        description: t("carouselPreview", "slideDownloaded").replace("{number}", String(slide.number)),
       });
     } catch (error) {
       toast({
-        title: "Erro no download",
-        description: "Não foi possível baixar o slide.",
+        title: t("carouselPreview", "downloadError"),
+        description: t("carouselPreview", "couldNotDownload"),
         variant: "destructive",
       });
     }
@@ -61,8 +63,8 @@ const CarouselPreview = ({ slides, onDownloadAll, isPro = false }: CarouselPrevi
   const downloadAsZip = async () => {
     if (!isPro) {
       toast({
-        title: "Recurso Pro",
-        description: "Download em ZIP está disponível apenas para assinantes Pro.",
+        title: t("carouselPreview", "proFeature"),
+        description: t("carouselPreview", "zipProOnly"),
         variant: "destructive",
       });
       return;
@@ -100,14 +102,14 @@ const CarouselPreview = ({ slides, onDownloadAll, isPro = false }: CarouselPrevi
       URL.revokeObjectURL(url);
 
       toast({
-        title: "Download concluído",
-        description: `ZIP com ${slides.length} slides baixado com sucesso.`,
+        title: t("carouselPreview", "downloadComplete"),
+        description: t("carouselPreview", "zipDownloaded").replace("{count}", String(slides.length)),
       });
     } catch (error) {
       console.error("ZIP download error:", error);
       toast({
-        title: "Erro no download",
-        description: "Não foi possível criar o arquivo ZIP.",
+        title: t("carouselPreview", "downloadError"),
+        description: t("carouselPreview", "couldNotCreateZip"),
         variant: "destructive",
       });
     } finally {
@@ -126,12 +128,12 @@ const CarouselPreview = ({ slides, onDownloadAll, isPro = false }: CarouselPrevi
             {currentSlideData?.imageUrl ? (
               <img
                 src={currentSlideData.imageUrl}
-                alt={`Slide ${currentSlide + 1}`}
+                alt={`${t("carouselPreview", "slide")} ${currentSlide + 1}`}
                 className="w-full h-full object-contain"
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                Carregando...
+                {t("carouselPreview", "loading")}
               </div>
             )}
             
@@ -162,8 +164,8 @@ const CarouselPreview = ({ slides, onDownloadAll, isPro = false }: CarouselPrevi
           {/* Slide info */}
           <div className="mt-4 text-center">
             <p className="text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">Slide {currentSlide + 1}</span>
-              {" "}de {slides.length}
+              <span className="font-medium text-foreground">{t("carouselPreview", "slide")} {currentSlide + 1}</span>
+              {" "}{t("carouselPreview", "of")} {slides.length}
               {currentSlideData?.type && (
                 <span className="ml-2 text-accent">• {currentSlideData.type}</span>
               )}
@@ -218,7 +220,7 @@ const CarouselPreview = ({ slides, onDownloadAll, isPro = false }: CarouselPrevi
             ) : (
               <FolderArchive className="w-4 h-4 mr-2" />
             )}
-            {isDownloadingZip ? "Criando ZIP..." : `Baixar ZIP (${slides.length} slides)`}
+            {isDownloadingZip ? t("carouselPreview", "creatingZip") : t("carouselPreview", "downloadZip").replace("{count}", String(slides.length))}
           </Button>
         ) : (
           <Button 
@@ -228,7 +230,7 @@ const CarouselPreview = ({ slides, onDownloadAll, isPro = false }: CarouselPrevi
             className="flex-1 sm:flex-initial"
           >
             <Download className="w-4 h-4 mr-2" />
-            Baixar todas ({slides.length} slides)
+            {t("carouselPreview", "downloadAll").replace("{count}", String(slides.length))}
           </Button>
         )}
         <Button 
@@ -238,7 +240,7 @@ const CarouselPreview = ({ slides, onDownloadAll, isPro = false }: CarouselPrevi
           className="flex-1 sm:flex-initial"
         >
           <Download className="w-4 h-4 mr-2" />
-          Baixar slide atual
+          {t("carouselPreview", "downloadCurrent")}
         </Button>
       </div>
 
@@ -246,7 +248,7 @@ const CarouselPreview = ({ slides, onDownloadAll, isPro = false }: CarouselPrevi
       <Card>
         <CardContent className="p-4">
           <h4 className="text-sm font-medium text-muted-foreground mb-2">
-            Texto do slide {currentSlide + 1}:
+            {t("carouselPreview", "slideText").replace("{number}", String(currentSlide + 1))}
           </h4>
           <p className="text-foreground">{currentSlideData?.text}</p>
         </CardContent>
