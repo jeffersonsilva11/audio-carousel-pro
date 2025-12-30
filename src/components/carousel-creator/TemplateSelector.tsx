@@ -3,6 +3,9 @@ import { cn } from "@/lib/utils";
 import { TEMPLATES, TemplateId } from "@/lib/constants";
 import { useSubscription } from "@/hooks/useSubscription";
 import { Badge } from "@/components/ui/badge";
+import { useLanguage } from "@/hooks/useLanguage";
+import { t } from "@/lib/translations";
+import { getPlanPrice } from "@/lib/localization";
 
 interface TemplateSelectorProps {
   selectedTemplate: TemplateId;
@@ -11,6 +14,7 @@ interface TemplateSelectorProps {
 
 const TemplateSelector = ({ selectedTemplate, setSelectedTemplate }: TemplateSelectorProps) => {
   const { isAgency } = useSubscription();
+  const { language } = useLanguage();
 
   const canSelectTemplate = (templateId: TemplateId) => {
     const template = TEMPLATES.find(t => t.id === templateId);
@@ -98,7 +102,7 @@ const TemplateSelector = ({ selectedTemplate, setSelectedTemplate }: TemplateSel
       {/* Info about premium templates */}
       {!isAgency && (
         <p className="text-xs text-muted-foreground text-center">
-          Templates com imagem IA estão disponíveis no plano Agency (R$ 199,90/mês)
+          {t("templateSelector", "premiumInfo", language).replace("{price}", getPlanPrice("agency", language))}
         </p>
       )}
     </div>

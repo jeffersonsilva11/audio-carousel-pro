@@ -5,6 +5,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { useUserPreferences } from "@/hooks/useUserPreferences";
 import { useLanguage, SupportedLanguage } from "@/hooks/useLanguage";
 import { t } from "@/lib/translations";
+import { getPlanPrice } from "@/lib/localization";
 import { supabase } from "@/integrations/supabase/client";
 import { useCarouselGeneration } from "@/hooks/useCarouselGeneration";
 import { Button } from "@/components/ui/button";
@@ -364,7 +365,7 @@ const CreateCarousel = () => {
           
           <div className="bg-accent/10 rounded-lg p-4 my-4">
             <div className="font-semibold text-lg mb-2">{t("create", "proPlan", siteLanguage)}</div>
-            <div className="text-2xl font-bold text-accent mb-2">R$ 29,90<span className="text-sm font-normal text-muted-foreground">{t("common", "perMonth", siteLanguage)}</span></div>
+            <div className="text-2xl font-bold text-accent mb-2">{getPlanPrice("starter", siteLanguage)}<span className="text-sm font-normal text-muted-foreground">{t("common", "perMonth", siteLanguage)}</span></div>
             <ul className="text-sm space-y-1 text-muted-foreground">
               <li>✓ {t("create", "unlimitedCarousels", siteLanguage)}</li>
               <li>✓ {t("create", "noWatermark", siteLanguage)}</li>

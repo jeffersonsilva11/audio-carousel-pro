@@ -8,6 +8,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { useLanguage } from "@/hooks/useLanguage";
 import { t } from "@/lib/translations";
 import { PLANS, PLAN_ORDER, PlanTier } from "@/lib/plans";
+import { getPlanPrice } from "@/lib/localization";
 
 const Pricing = () => {
   const navigate = useNavigate();
@@ -112,7 +113,7 @@ const Pricing = () => {
 
                 <CardContent className="text-center">
                   <div className="mb-6">
-                    <span className="text-4xl font-bold">{plan.priceDisplay}</span>
+                    <span className="text-4xl font-bold">{getPlanPrice(tier, language)}</span>
                     {tier !== "free" && (
                       <span className={`text-sm ${isFeatured ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
                         {t("common", "perMonth", language)}

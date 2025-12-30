@@ -11,11 +11,10 @@ import {
   Mic2, Plus, LogOut, Loader2, Image as ImageIcon, Calendar,
   Sparkles, FolderOpen, Crown, CreditCard, RefreshCw, AlertTriangle, Globe
 } from "lucide-react";
-import { format } from "date-fns";
-import { enUS, es, ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { BRAND } from "@/lib/constants";
 import { PLANS } from "@/lib/plans";
+import { formatLocalizedDate, formatSubscriptionDate } from "@/lib/localization";
 import {
   Select,
   SelectContent,
@@ -47,11 +46,6 @@ const Dashboard = () => {
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [regeneratingId, setRegeneratingId] = useState<string | null>(null);
 
-  const getDateLocale = () => {
-    if (language === "en") return enUS;
-    if (language === "es") return es;
-    return ptBR;
-  };
 
   // Handle subscription callback
   useEffect(() => {
@@ -276,7 +270,7 @@ const Dashboard = () => {
                     <span className="font-semibold">{PLANS[plan].name}</span>
                     {isPro && subscriptionEnd && (
                       <span className="text-xs text-muted-foreground">
-                        {t("dashboard", "until", language)} {format(new Date(subscriptionEnd), "d MMM yyyy", { locale: getDateLocale() })}
+                        {t("dashboard", "until", language)} {formatSubscriptionDate(subscriptionEnd, language)}
                       </span>
                     )}
                   </div>
@@ -384,7 +378,7 @@ const Dashboard = () => {
                   <CardContent className="pt-0 space-y-3">
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <Calendar className="w-3 h-3" />
-                      {format(new Date(carousel.created_at), "d 'de' MMM, yyyy", { locale: getDateLocale() })}
+                      {formatLocalizedDate(carousel.created_at, language, "medium")}
                     </div>
                     
                     {carousel.has_watermark && carousel.status === "COMPLETED" && isPro && (
