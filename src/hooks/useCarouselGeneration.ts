@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { ToneType } from "@/components/carousel-creator/ToneSelector";
-import { StyleType } from "@/components/carousel-creator/StyleSelector";
-import { FormatType } from "@/components/carousel-creator/FormatSelector";
+import { TextModeId } from "@/lib/constants";
+import { CreativeTone } from "@/components/carousel-creator/TextModeSelector";
 
 export type ProcessingStatus = 
   | "QUEUED" 
@@ -22,11 +21,27 @@ interface Slide {
 interface GenerationResult {
   transcription: string;
   script: {
-    tone: string;
+    textMode: string;
+    creativeTone: string;
     slides: Slide[];
     total_slides: number;
   };
   slides: Slide[];
+}
+
+export interface CarouselGenerationOptions {
+  audioFile: File;
+  textMode: TextModeId;
+  creativeTone: CreativeTone;
+  slideCountMode: 'auto' | 'manual';
+  slideCount: number;
+  template: string;
+  style: string;
+  format: string;
+  carouselId: string;
+  userId: string;
+  isPro?: boolean;
+  language?: string;
 }
 
 export function useCarouselGeneration() {
@@ -34,15 +49,21 @@ export function useCarouselGeneration() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<GenerationResult | null>(null);
 
-  const generateCarousel = async (
-    audioFile: File,
-    tone: ToneType,
-    style: StyleType,
-    format: FormatType,
-    carouselId: string,
-    userId: string,
-    isPro: boolean = false
-  ): Promise<GenerationResult | null> => {
+  const generateCarousel = async (options: CarouselGenerationOptions): Promise<GenerationResult | null> => {
+    const {
+      audioFile,
+      textMode,
+      creativeTone,
+      slideCountMode,
+      slideCount,
+      template,
+      style,
+      format,
+      carouselId,
+      userId,
+      isPro = false,
+      language = 'pt-BR'
+    } = options;
     setError(null);
     
     try {
@@ -74,7 +95,15 @@ export function useCarouselGeneration() {
       const { data: scriptData, error: scriptError } = await supabase.functions.invoke(
         "generate-script",
         {
-          body: { transcription, tone, language: "pt-BR" }
+          body: { 
+            transcription, 
+            textMode,
+            creativeTone,
+            slideCount,
+            slideCountMode,
+            template,
+            language 
+          }
         }
       );
 
