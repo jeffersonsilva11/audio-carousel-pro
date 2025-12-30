@@ -1,5 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/hooks/useLanguage";
 
 export type FormatType = "POST_SQUARE" | "POST_PORTRAIT" | "STORY";
 
@@ -8,40 +9,42 @@ interface FormatSelectorProps {
   setSelectedFormat: (format: FormatType) => void;
 }
 
-const formats = [
-  {
-    id: "POST_SQUARE" as FormatType,
-    name: "Post Quadrado",
-    ratio: "1:1",
-    dimensions: "1080 × 1080",
-    aspectClass: "aspect-square",
-    description: "Ideal para feed",
-  },
-  {
-    id: "POST_PORTRAIT" as FormatType,
-    name: "Post Retrato",
-    ratio: "4:5",
-    dimensions: "1080 × 1350",
-    aspectClass: "aspect-[4/5]",
-    description: "Mais espaço vertical",
-  },
-  {
-    id: "STORY" as FormatType,
-    name: "Stories",
-    ratio: "9:16",
-    dimensions: "1080 × 1920",
-    aspectClass: "aspect-[9/16]",
-    description: "Para stories/reels",
-  },
-];
-
 const FormatSelector = ({ selectedFormat, setSelectedFormat }: FormatSelectorProps) => {
+  const { t } = useTranslation();
+
+  const formats = [
+    {
+      id: "POST_SQUARE" as FormatType,
+      name: t("formatSelector", "squarePost"),
+      ratio: "1:1",
+      dimensions: "1080 × 1080",
+      aspectClass: "aspect-square",
+      description: t("formatSelector", "squareDesc"),
+    },
+    {
+      id: "POST_PORTRAIT" as FormatType,
+      name: t("formatSelector", "portraitPost"),
+      ratio: "4:5",
+      dimensions: "1080 × 1350",
+      aspectClass: "aspect-[4/5]",
+      description: t("formatSelector", "portraitDesc"),
+    },
+    {
+      id: "STORY" as FormatType,
+      name: t("formatSelector", "stories"),
+      ratio: "9:16",
+      dimensions: "1080 × 1920",
+      aspectClass: "aspect-[9/16]",
+      description: t("formatSelector", "storiesDesc"),
+    },
+  ];
+
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-lg font-semibold mb-1">Formato</h3>
+        <h3 className="text-lg font-semibold mb-1">{t("formatSelector", "title")}</h3>
         <p className="text-sm text-muted-foreground">
-          Escolha o tamanho do seu carrossel
+          {t("formatSelector", "subtitle")}
         </p>
       </div>
 
