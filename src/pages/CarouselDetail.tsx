@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useTranslation, useLanguage } from "@/hooks/useLanguage";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,7 +28,7 @@ import {
   Trash2
 } from "lucide-react";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { enUS, es, ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import JSZip from "jszip";
 import {
@@ -62,6 +63,8 @@ const CarouselDetail = () => {
   const { id } = useParams<{ id: string }>();
   const { user, loading } = useAuth();
   const { isPro, createCheckout } = useSubscription();
+  const { t } = useTranslation();
+  const { language } = useLanguage();
   const navigate = useNavigate();
   const [carousel, setCarousel] = useState<CarouselData | null>(null);
   const [loadingCarousel, setLoadingCarousel] = useState(true);
@@ -69,6 +72,12 @@ const CarouselDetail = () => {
   const [downloading, setDownloading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
+
+  const getDateLocale = () => {
+    if (language === "en") return enUS;
+    if (language === "es") return es;
+    return ptBR;
+  };
 
   useEffect(() => {
     if (!loading && !user) {
@@ -92,14 +101,14 @@ const CarouselDetail = () => {
 
       if (error) throw error;
       if (!data) {
-        toast.error("Carrossel não encontrado");
+        toast.error(t("carouselDetail", "carouselNotFound"));
         navigate("/dashboard");
         return;
       }
       setCarousel(data);
     } catch (error) {
       console.error("Error fetching carousel:", error);
-      toast.error("Erro ao carregar carrossel");
+      toast.error(t("carouselDetail", "loadError"));
       navigate("/dashboard");
     } finally {
       setLoadingCarousel(false);
@@ -116,14 +125,14 @@ const CarouselDetail = () => {
       });
 
       if (error || data?.error) {
-        throw new Error(data?.error || error?.message || "Erro ao regenerar");
+        throw new Error(data?.error || error?.message || "Error");
       }
 
-      toast.success("Marca d'água removida com sucesso!");
+      toast.success(t("carouselDetail", "watermarkRemoved"));
       await fetchCarousel();
     } catch (error) {
       console.error("Regeneration error:", error);
-      toast.error("Erro ao remover marca d'água");
+      toast.error(t("carouselDetail", "watermarkError"));
     } finally {
       setRegenerating(false);
     }
@@ -141,7 +150,7 @@ const CarouselDetail = () => {
       document.body.removeChild(link);
       URL.revokeObjectURL(link.href);
     } catch (error) {
-      toast.error("Erro ao baixar imagem");
+      toast.error(t("carouselDetail", "downloadError"));
     }
   };
 
@@ -169,9 +178,9 @@ const CarouselDetail = () => {
       document.body.removeChild(link);
       URL.revokeObjectURL(link.href);
       
-      toast.success("Download iniciado!");
+      toast.success(t("carouselDetail", "downloadStarted"));
     } catch (error) {
-      toast.error("Erro ao criar arquivo ZIP");
+      toast.error(t("carouselDetail", "zipError"));
     } finally {
       setDownloading(false);
     }
@@ -189,11 +198,11 @@ const CarouselDetail = () => {
 
       if (error) throw error;
 
-      toast.success("Carrossel excluído");
+      toast.success(t("carouselDetail", "carouselDeleted"));
       navigate("/dashboard");
     } catch (error) {
       console.error("Delete error:", error);
-      toast.error("Erro ao excluir carrossel");
+      toast.error(t("carouselDetail", "deleteError"));
     } finally {
       setDeleting(false);
     }
@@ -204,37 +213,43 @@ const CarouselDetail = () => {
 
     try {
       await navigator.clipboard.writeText(carousel.image_urls[0]);
-      toast.success("Link copiado para a área de transferência");
+      toast.success(t("carouselDetail", "linkCopied"));
     } catch {
-      toast.error("Erro ao copiar link");
+      toast.error(t("carouselDetail", "copyError"));
     }
   };
 
   const getToneLabel = (tone: string) => {
     const tones: Record<string, string> = {
-      EMOTIONAL: "Emocional",
-      PROFESSIONAL: "Profissional",
-      PROVOCATIVE: "Provocador"
+      EMOTIONAL: t("toneShowcase", "emotional"),
+      PROFESSIONAL: t("toneShowcase", "professional"),
+      PROVOCATIVE: t("toneShowcase", "provocative")
     };
     return tones[tone] || tone;
   };
 
   const getStyleLabel = (style: string) => {
     const styles: Record<string, string> = {
-      BLACK_WHITE: "Preto & Branco",
-      GRADIENT: "Gradiente",
-      COLORFUL: "Colorido"
+      BLACK_WHITE: t("carouselDetail", "blackWhite"),
+      GRADIENT: t("carouselDetail", "gradient"),
+      COLORFUL: t("carouselDetail", "colorful")
     };
     return styles[style] || style;
   };
 
   const getFormatLabel = (format: string) => {
     const formats: Record<string, string> = {
-      POST_SQUARE: "Post Quadrado",
-      STORY_VERTICAL: "Story Vertical",
-      REELS_VERTICAL: "Reels Vertical"
+      POST_SQUARE: t("carouselDetail", "squarePost"),
+      STORY_VERTICAL: t("carouselDetail", "storyVertical"),
+      REELS_VERTICAL: t("carouselDetail", "reelsVertical")
     };
     return formats[format] || format;
+  };
+
+  const getStatusLabel = (status: string) => {
+    if (status === "COMPLETED") return t("carouselDetail", "ready");
+    if (status === "PROCESSING") return t("carouselDetail", "processing");
+    return t("carouselDetail", "errorStatus");
   };
 
   if (loading || loadingCarousel) {
@@ -258,7 +273,7 @@ const CarouselDetail = () => {
             <div className="flex items-center gap-4">
               <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard")}>
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                Voltar
+                {t("carouselDetail", "back")}
               </Button>
               <div className="h-6 w-px bg-border hidden sm:block" />
               <a href="/" className="hidden sm:flex items-center gap-2">
@@ -282,19 +297,19 @@ const CarouselDetail = () => {
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Excluir carrossel?</AlertDialogTitle>
+                    <AlertDialogTitle>{t("carouselDetail", "deleteCarousel")}</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Esta ação não pode ser desfeita. O carrossel e todas as imagens serão permanentemente excluídos.
+                      {t("carouselDetail", "deleteConfirmation")}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogCancel>{t("common", "cancel")}</AlertDialogCancel>
                     <AlertDialogAction
                       onClick={handleDelete}
                       disabled={deleting}
                       className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                     >
-                      {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Excluir"}
+                      {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : t("carouselDetail", "delete")}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
@@ -331,7 +346,7 @@ const CarouselDetail = () => {
                       <CarouselNext className="right-2" />
                     </Carousel>
                     <div className="text-center mt-4 text-sm text-muted-foreground">
-                      {carousel.image_urls.length} slides
+                      {carousel.image_urls.length} {t("carouselDetail", "slides")}
                     </div>
                   </div>
                 ) : (
@@ -339,7 +354,7 @@ const CarouselDetail = () => {
                     <div className="text-center">
                       <ImageIcon className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
                       <p className="text-sm text-muted-foreground">
-                        {carousel.status === "PROCESSING" ? "Processando..." : "Sem imagens"}
+                        {carousel.status === "PROCESSING" ? t("carouselDetail", "processingStatus") : t("carouselDetail", "noImages")}
                       </p>
                     </div>
                   </div>
@@ -355,7 +370,7 @@ const CarouselDetail = () => {
                     key={index}
                     className="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 border-transparent hover:border-accent/50 transition-colors"
                     onClick={() => handleDownloadSingle(url, index)}
-                    title={`Baixar slide ${index + 1}`}
+                    title={`${t("carouselDetail", "downloadSlide")} ${index + 1}`}
                   >
                     <img
                       src={url}
@@ -379,8 +394,7 @@ const CarouselDetail = () => {
                   carousel.status === "PROCESSING" ? "bg-yellow-500/10 text-yellow-500" :
                   "bg-red-500/10 text-red-500"
                 }`}>
-                  {carousel.status === "COMPLETED" ? "Pronto" : 
-                   carousel.status === "PROCESSING" ? "Processando" : "Erro"}
+                  {getStatusLabel(carousel.status)}
                 </span>
                 {carousel.has_watermark && (
                   <span className="text-xs px-2 py-1 rounded-full bg-amber-500/10 text-amber-500">
@@ -389,7 +403,7 @@ const CarouselDetail = () => {
                 )}
               </div>
               <p className="text-muted-foreground">
-                {getStyleLabel(carousel.style)} • {getFormatLabel(carousel.format)} • {carousel.slide_count} slides
+                {getStyleLabel(carousel.style)} • {getFormatLabel(carousel.format)} • {carousel.slide_count} {t("carouselDetail", "slides")}
               </p>
             </div>
 
@@ -399,9 +413,9 @@ const CarouselDetail = () => {
                 <CardContent className="flex items-center gap-3 p-4">
                   <Calendar className="w-5 h-5 text-muted-foreground" />
                   <div>
-                    <p className="text-xs text-muted-foreground">Criado em</p>
+                    <p className="text-xs text-muted-foreground">{t("carouselDetail", "createdAt")}</p>
                     <p className="text-sm font-medium">
-                      {format(new Date(carousel.created_at), "d MMM yyyy, HH:mm", { locale: ptBR })}
+                      {format(new Date(carousel.created_at), "d MMM yyyy, HH:mm", { locale: getDateLocale() })}
                     </p>
                   </div>
                 </CardContent>
@@ -411,7 +425,7 @@ const CarouselDetail = () => {
                   <CardContent className="flex items-center gap-3 p-4">
                     <Clock className="w-5 h-5 text-muted-foreground" />
                     <div>
-                      <p className="text-xs text-muted-foreground">Tempo de processamento</p>
+                      <p className="text-xs text-muted-foreground">{t("carouselDetail", "processingTime")}</p>
                       <p className="text-sm font-medium">
                         {Math.round(carousel.processing_time)}s
                       </p>
@@ -424,7 +438,7 @@ const CarouselDetail = () => {
             {/* Actions */}
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">Ações</CardTitle>
+                <CardTitle className="text-base">{t("carouselDetail", "actions")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 {/* Download All */}
@@ -442,7 +456,7 @@ const CarouselDetail = () => {
                         ) : (
                           <FileArchive className="w-4 h-4 mr-2" />
                         )}
-                        Baixar Todas (ZIP)
+                        {t("carouselDetail", "downloadAllZip")}
                       </Button>
                     ) : (
                       <Button 
@@ -451,7 +465,7 @@ const CarouselDetail = () => {
                         onClick={() => carousel.image_urls && handleDownloadSingle(carousel.image_urls[0], 0)}
                       >
                         <Download className="w-4 h-4 mr-2" />
-                        Baixar Primeira Imagem
+                        {t("carouselDetail", "downloadFirst")}
                       </Button>
                     )}
                   </>
@@ -471,7 +485,7 @@ const CarouselDetail = () => {
                       ) : (
                         <RefreshCw className="w-4 h-4 mr-2" />
                       )}
-                      Remover Marca d'água
+                      {t("carouselDetail", "removeWatermark")}
                     </Button>
                   ) : (
                     <Button
@@ -480,7 +494,7 @@ const CarouselDetail = () => {
                       onClick={() => createCheckout()}
                     >
                       <Crown className="w-4 h-4 mr-2" />
-                      Upgrade Pro para Remover Watermark
+                      {t("carouselDetail", "upgradeProWatermark")}
                     </Button>
                   )
                 )}
@@ -489,12 +503,12 @@ const CarouselDetail = () => {
                 {!isPro && carousel.status === "COMPLETED" && (
                   <div className="text-center p-4 rounded-lg bg-accent/5 border border-accent/20">
                     <Crown className="w-6 h-6 text-accent mx-auto mb-2" />
-                    <p className="text-sm font-medium mb-1">Assine Pro para mais recursos</p>
+                    <p className="text-sm font-medium mb-1">{t("carouselDetail", "subscribeProFeatures")}</p>
                     <p className="text-xs text-muted-foreground mb-3">
-                      Download em ZIP, sem marca d'água e carrosséis ilimitados
+                      {t("carouselDetail", "proFeaturesDesc")}
                     </p>
                     <Button variant="accent" size="sm" onClick={() => createCheckout()}>
-                      Assinar Pro - R$ 29,90/mês
+                      {t("carouselDetail", "subscribePro")}
                     </Button>
                   </div>
                 )}
@@ -505,8 +519,8 @@ const CarouselDetail = () => {
             {carousel.transcription && (
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Transcrição</CardTitle>
-                  <CardDescription>Texto extraído do áudio</CardDescription>
+                  <CardTitle className="text-base">{t("carouselDetail", "transcription")}</CardTitle>
+                  <CardDescription>{t("carouselDetail", "transcriptionDesc")}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground whitespace-pre-wrap">

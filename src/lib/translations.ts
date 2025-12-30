@@ -1415,6 +1415,248 @@ export const translations = {
       es: "Texto de la diapositiva {number}:",
     },
   },
+
+  // Carousel Detail
+  carouselDetail: {
+    back: {
+      "pt-BR": "Voltar",
+      en: "Back",
+      es: "Volver",
+    },
+    carouselNotFound: {
+      "pt-BR": "Carrossel não encontrado",
+      en: "Carousel not found",
+      es: "Carrusel no encontrado",
+    },
+    loadError: {
+      "pt-BR": "Erro ao carregar carrossel",
+      en: "Error loading carousel",
+      es: "Error al cargar carrusel",
+    },
+    watermarkRemoved: {
+      "pt-BR": "Marca d'água removida com sucesso!",
+      en: "Watermark removed successfully!",
+      es: "¡Marca de agua eliminada con éxito!",
+    },
+    watermarkError: {
+      "pt-BR": "Erro ao remover marca d'água",
+      en: "Error removing watermark",
+      es: "Error al eliminar marca de agua",
+    },
+    downloadError: {
+      "pt-BR": "Erro ao baixar imagem",
+      en: "Error downloading image",
+      es: "Error al descargar imagen",
+    },
+    downloadStarted: {
+      "pt-BR": "Download iniciado!",
+      en: "Download started!",
+      es: "¡Descarga iniciada!",
+    },
+    zipError: {
+      "pt-BR": "Erro ao criar arquivo ZIP",
+      en: "Error creating ZIP file",
+      es: "Error al crear archivo ZIP",
+    },
+    carouselDeleted: {
+      "pt-BR": "Carrossel excluído",
+      en: "Carousel deleted",
+      es: "Carrusel eliminado",
+    },
+    deleteError: {
+      "pt-BR": "Erro ao excluir carrossel",
+      en: "Error deleting carousel",
+      es: "Error al eliminar carrusel",
+    },
+    linkCopied: {
+      "pt-BR": "Link copiado para a área de transferência",
+      en: "Link copied to clipboard",
+      es: "Enlace copiado al portapapeles",
+    },
+    copyError: {
+      "pt-BR": "Erro ao copiar link",
+      en: "Error copying link",
+      es: "Error al copiar enlace",
+    },
+    deleteCarousel: {
+      "pt-BR": "Excluir carrossel?",
+      en: "Delete carousel?",
+      es: "¿Eliminar carrusel?",
+    },
+    deleteConfirmation: {
+      "pt-BR": "Esta ação não pode ser desfeita. O carrossel e todas as imagens serão permanentemente excluídos.",
+      en: "This action cannot be undone. The carousel and all images will be permanently deleted.",
+      es: "Esta acción no se puede deshacer. El carrusel y todas las imágenes se eliminarán permanentemente.",
+    },
+    delete: {
+      "pt-BR": "Excluir",
+      en: "Delete",
+      es: "Eliminar",
+    },
+    slides: {
+      "pt-BR": "slides",
+      en: "slides",
+      es: "diapositivas",
+    },
+    processingStatus: {
+      "pt-BR": "Processando...",
+      en: "Processing...",
+      es: "Procesando...",
+    },
+    noImages: {
+      "pt-BR": "Sem imagens",
+      en: "No images",
+      es: "Sin imágenes",
+    },
+    downloadSlide: {
+      "pt-BR": "Baixar slide",
+      en: "Download slide",
+      es: "Descargar diapositiva",
+    },
+    ready: {
+      "pt-BR": "Pronto",
+      en: "Ready",
+      es: "Listo",
+    },
+    processing: {
+      "pt-BR": "Processando",
+      en: "Processing",
+      es: "Procesando",
+    },
+    errorStatus: {
+      "pt-BR": "Erro",
+      en: "Error",
+      es: "Error",
+    },
+    createdAt: {
+      "pt-BR": "Criado em",
+      en: "Created on",
+      es: "Creado el",
+    },
+    processingTime: {
+      "pt-BR": "Tempo de processamento",
+      en: "Processing time",
+      es: "Tiempo de procesamiento",
+    },
+    actions: {
+      "pt-BR": "Ações",
+      en: "Actions",
+      es: "Acciones",
+    },
+    downloadAllZip: {
+      "pt-BR": "Baixar Todas (ZIP)",
+      en: "Download All (ZIP)",
+      es: "Descargar Todo (ZIP)",
+    },
+    downloadFirst: {
+      "pt-BR": "Baixar Primeira Imagem",
+      en: "Download First Image",
+      es: "Descargar Primera Imagen",
+    },
+    removeWatermark: {
+      "pt-BR": "Remover Marca d'água",
+      en: "Remove Watermark",
+      es: "Eliminar Marca de Agua",
+    },
+    upgradeProWatermark: {
+      "pt-BR": "Upgrade Pro para Remover Watermark",
+      en: "Upgrade to Pro to Remove Watermark",
+      es: "Actualiza a Pro para Eliminar Marca de Agua",
+    },
+    subscribeProFeatures: {
+      "pt-BR": "Assine Pro para mais recursos",
+      en: "Subscribe to Pro for more features",
+      es: "Suscríbete a Pro para más funciones",
+    },
+    proFeaturesDesc: {
+      "pt-BR": "Download em ZIP, sem marca d'água e carrosséis ilimitados",
+      en: "ZIP download, no watermark, and unlimited carousels",
+      es: "Descarga ZIP, sin marca de agua y carruseles ilimitados",
+    },
+    subscribePro: {
+      "pt-BR": "Assinar Pro - R$ 29,90/mês",
+      en: "Subscribe Pro - $9.90/mo",
+      es: "Suscribir Pro - $9.90/mes",
+    },
+    transcription: {
+      "pt-BR": "Transcrição",
+      en: "Transcription",
+      es: "Transcripción",
+    },
+    transcriptionDesc: {
+      "pt-BR": "Texto extraído do áudio",
+      en: "Text extracted from audio",
+      es: "Texto extraído del audio",
+    },
+    blackWhite: {
+      "pt-BR": "Preto & Branco",
+      en: "Black & White",
+      es: "Blanco y Negro",
+    },
+    gradient: {
+      "pt-BR": "Gradiente",
+      en: "Gradient",
+      es: "Gradiente",
+    },
+    colorful: {
+      "pt-BR": "Colorido",
+      en: "Colorful",
+      es: "Colorido",
+    },
+    squarePost: {
+      "pt-BR": "Post Quadrado",
+      en: "Square Post",
+      es: "Post Cuadrado",
+    },
+    storyVertical: {
+      "pt-BR": "Story Vertical",
+      en: "Vertical Story",
+      es: "Story Vertical",
+    },
+    reelsVertical: {
+      "pt-BR": "Reels Vertical",
+      en: "Vertical Reels",
+      es: "Reels Vertical",
+    },
+  },
+
+  // Not Found
+  notFound: {
+    title: {
+      "pt-BR": "404",
+      en: "404",
+      es: "404",
+    },
+    message: {
+      "pt-BR": "Ops! Página não encontrada",
+      en: "Oops! Page not found",
+      es: "¡Ups! Página no encontrada",
+    },
+    backHome: {
+      "pt-BR": "Voltar ao início",
+      en: "Return to Home",
+      es: "Volver al inicio",
+    },
+  },
+
+  // Settings / Language
+  settings: {
+    language: {
+      "pt-BR": "Idioma",
+      en: "Language",
+      es: "Idioma",
+    },
+    languageDesc: {
+      "pt-BR": "Escolha o idioma da interface",
+      en: "Choose the interface language",
+      es: "Elige el idioma de la interfaz",
+    },
+    languageChanged: {
+      "pt-BR": "Idioma alterado com sucesso",
+      en: "Language changed successfully",
+      es: "Idioma cambiado con éxito",
+    },
+  },
 } as const;
 
 export type TranslationKey = keyof typeof translations;

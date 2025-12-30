@@ -2,20 +2,27 @@ import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
-import { useLanguage } from "@/hooks/useLanguage";
+import { useLanguage, LANGUAGES } from "@/hooks/useLanguage";
 import { t } from "@/lib/translations";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   Mic2, Plus, LogOut, Loader2, Image as ImageIcon, Calendar,
-  Sparkles, FolderOpen, Crown, CreditCard, RefreshCw, AlertTriangle
+  Sparkles, FolderOpen, Crown, CreditCard, RefreshCw, AlertTriangle, Globe
 } from "lucide-react";
 import { format } from "date-fns";
 import { enUS, es, ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { BRAND } from "@/lib/constants";
 import { PLANS } from "@/lib/plans";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Carousel {
   id: string;
@@ -32,7 +39,7 @@ interface Carousel {
 const Dashboard = () => {
   const { user, loading, signOut } = useAuth();
   const { isPro, plan, dailyUsed, dailyLimit, subscriptionEnd, createCheckout, openCustomerPortal, loading: subLoading, getRemainingCarousels } = useSubscription();
-  const { language } = useLanguage();
+  const { language, setLanguage } = useLanguage();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [carousels, setCarousels] = useState<Carousel[]>([]);
@@ -128,6 +135,11 @@ const Dashboard = () => {
     }
   };
 
+  const handleLanguageChange = (newLang: string) => {
+    setLanguage(newLang as "pt-BR" | "en" | "es");
+    toast.success(t("settings", "languageChanged", newLang as "pt-BR" | "en" | "es"));
+  };
+
   const getToneLabel = (tone: string) => {
     const tones: Record<string, string> = {
       EMOTIONAL: t("toneShowcase", "emotional", language),
@@ -220,6 +232,36 @@ const Dashboard = () => {
           </h1>
           <p className="text-muted-foreground">{t("dashboard", "manageCarousels", language)}</p>
         </div>
+
+        {/* Language Settings Card */}
+        <Card className="mb-6">
+          <CardContent className="flex items-center justify-between gap-4 p-4">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
+                <Globe className="w-5 h-5 text-muted-foreground" />
+              </div>
+              <div>
+                <p className="font-semibold">{t("settings", "language", language)}</p>
+                <p className="text-sm text-muted-foreground">{t("settings", "languageDesc", language)}</p>
+              </div>
+            </div>
+            <Select value={language} onValueChange={handleLanguageChange}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {LANGUAGES.map((lang) => (
+                  <SelectItem key={lang.code} value={lang.code}>
+                    <span className="flex items-center gap-2">
+                      <span>{lang.flag}</span>
+                      <span>{lang.name}</span>
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </CardContent>
+        </Card>
 
         {/* Subscription status card */}
         {!subLoading && (
