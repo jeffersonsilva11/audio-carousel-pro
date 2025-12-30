@@ -1,8 +1,22 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+// Plan daily limits
+const PLAN_LIMITS: Record<string, number> = {
+  'free': 1,
+  'starter': 1,
+  'creator': 8,
+  'agency': 20,
+};
+
+const logStep = (step: string, details?: unknown) => {
+  const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
+  console.log(`[GENERATE-SCRIPT] ${step}${detailsStr}`);
 };
 
 // Creative tone prompts for "creative" text mode
@@ -97,12 +111,143 @@ function getWordsPerSlide(slideCount: number, textMode: string): string {
   return '10-30 palavras por slide';
 }
 
+// Get user's current plan from Stripe
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function getUserPlan(supabase: any, userId: string, email: string): Promise<{ plan: string; dailyUsed: number; dailyLimit: number; isAdmin: boolean }> {
+  const today = new Date().toISOString().split('T')[0];
+  
+  // Get daily usage
+  const { data: usageData } = await supabase
+    .from("daily_usage")
+    .select("carousels_created")
+    .eq("user_id", userId)
+    .eq("usage_date", today)
+    .maybeSingle();
+  
+  const dailyUsed = (usageData as { carousels_created?: number })?.carousels_created || 0;
+  
+  // Check if admin
+  const { data: roleData } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId)
+    .eq("role", "admin")
+    .maybeSingle();
+  
+  if (roleData) {
+    return { plan: 'agency', dailyUsed, dailyLimit: 9999, isAdmin: true };
+  }
+  
+  // Check Stripe subscription
+  const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+  if (!stripeKey) {
+    return { plan: 'free', dailyUsed, dailyLimit: PLAN_LIMITS['free'], isAdmin: false };
+  }
+  
+  try {
+    const { default: Stripe } = await import("https://esm.sh/stripe@18.5.0");
+    const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
+    
+    const customers = await stripe.customers.list({ email, limit: 1 });
+    if (customers.data.length === 0) {
+      return { plan: 'free', dailyUsed, dailyLimit: PLAN_LIMITS['free'], isAdmin: false };
+    }
+    
+    const subscriptions = await stripe.subscriptions.list({
+      customer: customers.data[0].id,
+      status: "active",
+      limit: 1,
+    });
+    
+    if (subscriptions.data.length === 0) {
+      return { plan: 'free', dailyUsed, dailyLimit: PLAN_LIMITS['free'], isAdmin: false };
+    }
+    
+    const price = subscriptions.data[0].items.data[0]?.price;
+    const unitAmount = price?.unit_amount || 0;
+    
+    let plan = 'starter';
+    if (unitAmount >= 19990) plan = 'agency';
+    else if (unitAmount >= 9990) plan = 'creator';
+    
+    return { plan, dailyUsed, dailyLimit: PLAN_LIMITS[plan], isAdmin: false };
+  } catch (error) {
+    logStep('Error checking subscription', { error: String(error) });
+    return { plan: 'free', dailyUsed, dailyLimit: PLAN_LIMITS['free'], isAdmin: false };
+  }
+}
+
+// Log usage
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function logUsage(
+  supabase: any,
+  userId: string | null,
+  action: string,
+  resource: string | null,
+  status: string,
+  metadata: Record<string, unknown>,
+  ipAddress: string | null
+) {
+  try {
+    await supabase.from('usage_logs').insert({
+      user_id: userId,
+      action,
+      resource,
+      status,
+      metadata,
+      ip_address: ipAddress
+    });
+  } catch (error) {
+    logStep('Failed to log usage', { error: String(error) });
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Initialize Supabase client
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  
+  const ipAddress = req.headers.get('x-forwarded-for')?.split(',')[0] || req.headers.get('cf-connecting-ip') || null;
+
   try {
+    // Authenticate user
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      await logUsage(supabase, null, 'generate_script', null, 'unauthorized', {}, ipAddress);
+      throw new Error("Authentication required");
+    }
+    
+    const token = authHeader.replace("Bearer ", "");
+    const { data: userData, error: userError } = await supabase.auth.getUser(token);
+    if (userError || !userData.user) {
+      await logUsage(supabase, null, 'generate_script', null, 'unauthorized', { error: userError?.message }, ipAddress);
+      throw new Error("Invalid authentication");
+    }
+    
+    const user = userData.user;
+    logStep('User authenticated', { userId: user.id });
+    
+    // Check rate limits
+    const { plan, dailyUsed, dailyLimit, isAdmin } = await getUserPlan(supabase, user.id, user.email || '');
+    logStep('Plan checked', { plan, dailyUsed, dailyLimit, isAdmin });
+    
+    if (!isAdmin && dailyUsed >= dailyLimit) {
+      await logUsage(supabase, user.id, 'generate_script', null, 'rate_limited', { plan, dailyUsed, dailyLimit }, ipAddress);
+      return new Response(JSON.stringify({ 
+        error: 'Daily limit reached',
+        code: 'RATE_LIMIT_EXCEEDED',
+        details: { plan, dailyUsed, dailyLimit }
+      }), {
+        status: 429,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const { 
       transcription, 
       textMode = 'compact',
@@ -110,10 +255,12 @@ serve(async (req) => {
       slideCount = 6,
       slideCountMode = 'auto',
       template = 'solid',
-      language = 'pt-BR' 
+      language = 'pt-BR',
+      carouselId = null
     } = await req.json();
 
     if (!transcription) {
+      await logUsage(supabase, user.id, 'generate_script', carouselId, 'invalid_request', { error: 'No transcription provided' }, ipAddress);
       throw new Error('No transcription provided');
     }
 
@@ -154,7 +301,7 @@ serve(async (req) => {
       ? 'Os slides terão imagem IA no topo e texto na área inferior.'
       : 'Os slides terão fundo sólido (preto ou branco).';
 
-    console.log(`Generating script: mode=${textMode}, tone=${creativeTone}, slides=${actualSlideCount}, template=${template}`);
+    logStep(`Generating script`, { mode: textMode, tone: creativeTone, slides: actualSlideCount, template });
 
     const systemPrompt = `Você é um especialista em criação de carrosséis para Instagram.
 
@@ -208,7 +355,9 @@ Você deve retornar APENAS um JSON válido no seguinte formato (sem markdown, se
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Gemini API error:', response.status, errorText);
+      logStep('Gemini API error', { status: response.status, error: errorText });
+      
+      await logUsage(supabase, user.id, 'generate_script', carouselId, 'api_error', { status: response.status }, ipAddress);
       
       if (response.status === 429) {
         return new Response(JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }), {
@@ -229,7 +378,7 @@ Você deve retornar APENAS um JSON válido no seguinte formato (sem markdown, se
     const data = await response.json();
     let scriptText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
-    console.log('Raw script response:', scriptText.substring(0, 300) + '...');
+    logStep('Raw script response', { preview: scriptText.substring(0, 200) });
 
     // Clean up the response - remove markdown code blocks if present
     scriptText = scriptText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
@@ -238,7 +387,7 @@ Você deve retornar APENAS um JSON válido no seguinte formato (sem markdown, se
     try {
       script = JSON.parse(scriptText);
     } catch (parseError) {
-      console.error('Failed to parse script JSON:', parseError);
+      logStep('Failed to parse script JSON', { error: String(parseError) });
       // Create a fallback script structure
       const fallbackSlideCount = typeof actualSlideCount === 'number' ? actualSlideCount : 6;
       script = {
@@ -255,13 +404,19 @@ Você deve retornar APENAS um JSON válido no seguinte formato (sem markdown, se
       };
     }
 
-    console.log('Script generated successfully with', script.slides?.length || 0, 'slides');
+    logStep('Script generated successfully', { slideCount: script.slides?.length });
+    
+    await logUsage(supabase, user.id, 'generate_script', carouselId, 'success', { 
+      slideCount: script.slides?.length,
+      textMode,
+      plan
+    }, ipAddress);
 
     return new Response(JSON.stringify({ script }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error: unknown) {
-    console.error('Error in generate-script function:', error);
+    logStep('Error in generate-script function', { error: String(error) });
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(JSON.stringify({ error: errorMessage }), {
       status: 500,

@@ -191,6 +191,33 @@ export type Database = {
         }
         Relationships: []
       }
+      stripe_events: {
+        Row: {
+          created_at: string
+          data: Json
+          event_id: string
+          event_type: string
+          id: string
+          processed: boolean | null
+        }
+        Insert: {
+          created_at?: string
+          data: Json
+          event_id: string
+          event_type: string
+          id?: string
+          processed?: boolean | null
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          event_id?: string
+          event_type?: string
+          id?: string
+          processed?: boolean | null
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           created_at: string
@@ -248,6 +275,39 @@ export type Database = {
           stripe_subscription_id?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      usage_logs: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          resource: string | null
+          status: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          resource?: string | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          resource?: string | null
+          status?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
