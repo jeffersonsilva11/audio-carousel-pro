@@ -11,6 +11,7 @@ import Dashboard from "./pages/Dashboard";
 import CreateCarousel from "./pages/CreateCarousel";
 import CarouselDetail from "./pages/CarouselDetail";
 import ProfileSettings from "./pages/ProfileSettings";
+import History from "./pages/History";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
               <Route path="/create" element={<CreateCarousel />} />
               <Route path="/carousel/:id" element={<CarouselDetail />} />
               <Route path="/settings/profile" element={<ProfileSettings />} />
+              <Route path="/history" element={<History />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
