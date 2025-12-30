@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { BRAND } from "@/lib/constants";
 
 import AudioUploader from "@/components/carousel-creator/AudioUploader";
 import ToneSelector, { ToneType } from "@/components/carousel-creator/ToneSelector";
@@ -22,6 +23,7 @@ import StyleSelector, { StyleType } from "@/components/carousel-creator/StyleSel
 import FormatSelector, { FormatType } from "@/components/carousel-creator/FormatSelector";
 import ProcessingStatus from "@/components/carousel-creator/ProcessingStatus";
 import CarouselPreview from "@/components/carousel-creator/CarouselPreview";
+import ProfileIdentitySelector, { ProfileIdentity } from "@/components/carousel-creator/ProfileIdentitySelector";
 import {
   Dialog,
   DialogContent,
@@ -61,6 +63,15 @@ const CreateCarousel = () => {
   // Audio state
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [audioDuration, setAudioDuration] = useState<number | null>(null);
+
+  // Profile identity state
+  const [profileIdentity, setProfileIdentity] = useState<ProfileIdentity>({
+    name: user?.user_metadata?.full_name || user?.user_metadata?.name || '',
+    username: '',
+    photoUrl: user?.user_metadata?.avatar_url || null,
+    avatarPosition: 'top-left',
+    displayMode: 'name_and_username',
+  });
 
   // Customization state
   const [selectedTone, setSelectedTone] = useState<ToneType>("PROFESSIONAL");
@@ -132,7 +143,8 @@ const CreateCarousel = () => {
       case "upload":
         return audioFile !== null;
       case "customize":
-        return true;
+        // Require at least username for profile identity
+        return profileIdentity.username.length >= 2;
       default:
         return false;
     }
@@ -333,7 +345,7 @@ const CreateCarousel = () => {
                   <Mic2 className="w-4 h-4 text-primary-foreground" />
                 </div>
                 <span className="font-bold tracking-tight hidden sm:block">
-                  Carrossel<span className="text-accent">AI</span>
+                  {BRAND.name}
                 </span>
               </a>
             </div>
@@ -474,10 +486,18 @@ const CreateCarousel = () => {
               </div>
               
               <div className="space-y-8">
-                <ToneSelector 
-                  selectedTone={selectedTone} 
-                  setSelectedTone={setSelectedTone} 
+                <ProfileIdentitySelector
+                  profile={profileIdentity}
+                  setProfile={setProfileIdentity}
                 />
+                
+                <div className="border-t border-border pt-8">
+                  <ToneSelector 
+                    selectedTone={selectedTone} 
+                    setSelectedTone={setSelectedTone} 
+                  />
+                </div>
+                
                 <StyleSelector 
                   selectedStyle={selectedStyle} 
                   setSelectedStyle={setSelectedStyle} 
