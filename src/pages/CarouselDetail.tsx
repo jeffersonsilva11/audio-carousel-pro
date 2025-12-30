@@ -30,6 +30,7 @@ import {
 import { toast } from "sonner";
 import JSZip from "jszip";
 import { formatLocalizedDate, formatDuration, formatInteger, formatFileSize, formatRelativeTime } from "@/lib/localization";
+import CarouselDetailSkeleton from "@/components/skeletons/CarouselDetailSkeleton";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -247,11 +248,7 @@ const CarouselDetail = () => {
   };
 
   if (loading || loadingCarousel) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-accent" />
-      </div>
-    );
+    return <CarouselDetailSkeleton />;
   }
 
   if (!carousel) {
