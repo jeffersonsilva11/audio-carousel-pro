@@ -1,40 +1,44 @@
 import { Mic, Sparkles, Download, ArrowRight } from "lucide-react";
-
-const steps = [
-  {
-    icon: Mic,
-    title: "Grave ou envie",
-    description: "Grave um áudio de até 60 segundos ou faça upload de um arquivo. Fale naturalmente sobre o que quiser compartilhar.",
-    color: "bg-blue-500/10 text-blue-500",
-  },
-  {
-    icon: Sparkles,
-    title: "IA transforma",
-    description: "Nossa IA transcreve, aplica frameworks de storytelling e gera um roteiro otimizado com gatilhos mentais.",
-    color: "bg-violet-500/10 text-violet-500",
-  },
-  {
-    icon: Download,
-    title: "Baixe e poste",
-    description: "Receba 6 slides prontos em alta qualidade. Baixe individualmente ou em ZIP e poste direto no Instagram.",
-    color: "bg-emerald-500/10 text-emerald-500",
-  },
-];
+import { useLanguage } from "@/hooks/useLanguage";
+import { t } from "@/lib/translations";
 
 const HowItWorks = () => {
+  const { language } = useLanguage();
+
+  const steps = [
+    {
+      icon: Mic,
+      title: t("howItWorks", "step1Title", language),
+      description: t("howItWorks", "step1Desc", language),
+      color: "bg-blue-500/10 text-blue-500",
+    },
+    {
+      icon: Sparkles,
+      title: t("howItWorks", "step2Title", language),
+      description: t("howItWorks", "step2Desc", language),
+      color: "bg-violet-500/10 text-violet-500",
+    },
+    {
+      icon: Download,
+      title: t("howItWorks", "step3Title", language),
+      description: t("howItWorks", "step3Desc", language),
+      color: "bg-emerald-500/10 text-emerald-500",
+    },
+  ];
+
   return (
     <section id="features" className="py-24 md:py-32 bg-secondary/30">
       <div className="container mx-auto">
         {/* Section Header */}
         <div className="text-center max-w-2xl mx-auto mb-16">
           <span className="inline-block text-sm font-semibold text-accent mb-4 tracking-wide uppercase">
-            Como funciona
+            {t("howItWorks", "sectionTitle", language)}
           </span>
           <h2 className="text-display-sm md:text-display-md mb-4">
-            De áudio a carrossel em 3 passos
+            {t("howItWorks", "title", language)}
           </h2>
           <p className="text-body-lg text-muted-foreground">
-            Processo 100% automatizado. Você fala, a IA faz o resto.
+            {t("howItWorks", "subtitle", language)}
           </p>
         </div>
 
@@ -81,7 +85,7 @@ const HowItWorks = () => {
                       <Mic className="w-6 h-6 text-accent-foreground" />
                     </div>
                     <div>
-                      <p className="font-semibold">Seu áudio</p>
+                      <p className="font-semibold">{t("howItWorks", "yourAudio", language)}</p>
                       <p className="text-sm text-muted-foreground">00:45 / 01:00</p>
                     </div>
                   </div>

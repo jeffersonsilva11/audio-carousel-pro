@@ -1,7 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Sparkles } from "lucide-react";
+import { useLanguage } from "@/hooks/useLanguage";
+import { t } from "@/lib/translations";
 
 const CTA = () => {
+  const { language } = useLanguage();
+
   return (
     <section className="py-24 md:py-32 bg-primary text-primary-foreground relative overflow-hidden">
       {/* Background Pattern */}
@@ -16,30 +20,33 @@ const CTA = () => {
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary-foreground/10 border border-primary-foreground/20 mb-8">
             <Sparkles className="w-4 h-4" />
             <span className="text-sm font-medium">
-              Comece agora — teste grátis
+              {t("cta", "badge", language)}
             </span>
           </div>
 
           <h2 className="text-display-sm md:text-display-md mb-6">
-            Pronto para transformar suas ideias em carrosséis?
+            {t("cta", "title", language)}
           </h2>
 
           <p className="text-xl text-primary-foreground/70 mb-10 max-w-xl mx-auto">
-            Grave um áudio. Deixe a IA fazer o resto. Poste em segundos.
+            {t("cta", "subtitle", language)}
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button
               size="xl"
               className="bg-primary-foreground text-primary hover:bg-primary-foreground/90 shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all group w-full sm:w-auto"
+              asChild
             >
-              Criar meu carrossel grátis
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              <a href="/auth">
+                {t("cta", "button", language)}
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </a>
             </Button>
           </div>
 
           <p className="mt-6 text-sm text-primary-foreground/50">
-            Sem cartão de crédito · 1 carrossel grátis · Cancele quando quiser
+            {t("cta", "disclaimer", language)}
           </p>
         </div>
       </div>
