@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Minimize2, Sparkles, FileText, CheckCircle2, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { TEXT_MODES, TextModeId } from "@/lib/constants";
+import { TEXT_MODES, TextModeId, getTextModeLabel } from "@/lib/constants";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import {
@@ -9,6 +9,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { useLanguage } from "@/hooks/useLanguage";
 
 export type CreativeTone = "emotional" | "professional" | "provocative";
 
@@ -37,6 +38,7 @@ const TextModeSelector = ({
   creativeTone, 
   setCreativeTone 
 }: TextModeSelectorProps) => {
+  const { language } = useLanguage();
   const [isCreativeOpen, setIsCreativeOpen] = useState(selectedMode === "creative");
 
   const handleModeChange = (mode: TextModeId) => {
@@ -82,13 +84,13 @@ const TextModeSelector = ({
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="font-medium">{mode.name}</span>
+                    <span className="font-medium">{getTextModeLabel(mode.nameKey, language)}</span>
                     {isSelected && (
                       <CheckCircle2 className="w-4 h-4 text-accent" />
                     )}
                   </div>
                   <p className="text-sm text-muted-foreground mt-0.5">
-                    {mode.description}
+                    {getTextModeLabel(mode.descriptionKey, language)}
                   </p>
                 </div>
 

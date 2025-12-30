@@ -1,7 +1,8 @@
 import { Wand2, SlidersHorizontal, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { SLIDE_COUNT_OPTIONS, SlideCountMode } from "@/lib/constants";
+import { SLIDE_COUNT_OPTIONS, SlideCountMode, getSlideCountLabel } from "@/lib/constants";
 import { Slider } from "@/components/ui/slider";
+import { useLanguage } from "@/hooks/useLanguage";
 
 interface SlideCountSelectorProps {
   mode: SlideCountMode;
@@ -16,6 +17,7 @@ const SlideCountSelector = ({
   manualCount, 
   setManualCount 
 }: SlideCountSelectorProps) => {
+  const { language } = useLanguage();
   
   const handleModeChange = (newMode: SlideCountMode) => {
     setMode(newMode);
@@ -51,13 +53,13 @@ const SlideCountSelector = ({
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <span className="font-medium">{SLIDE_COUNT_OPTIONS.auto.label}</span>
+              <span className="font-medium">{getSlideCountLabel(SLIDE_COUNT_OPTIONS.auto.labelKey, language)}</span>
               {mode === "auto" && (
                 <CheckCircle2 className="w-4 h-4 text-accent" />
               )}
             </div>
             <p className="text-sm text-muted-foreground mt-0.5">
-              {SLIDE_COUNT_OPTIONS.auto.description}
+              {getSlideCountLabel(SLIDE_COUNT_OPTIONS.auto.descriptionKey, language)}
             </p>
           </div>
         </button>
@@ -82,13 +84,13 @@ const SlideCountSelector = ({
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <span className="font-medium">{SLIDE_COUNT_OPTIONS.manual.label}</span>
+              <span className="font-medium">{getSlideCountLabel(SLIDE_COUNT_OPTIONS.manual.labelKey, language)}</span>
               {mode === "manual" && (
                 <CheckCircle2 className="w-4 h-4 text-accent" />
               )}
             </div>
             <p className="text-sm text-muted-foreground mt-0.5">
-              {SLIDE_COUNT_OPTIONS.manual.description}
+              {getSlideCountLabel(SLIDE_COUNT_OPTIONS.manual.descriptionKey, language)}
             </p>
           </div>
         </button>

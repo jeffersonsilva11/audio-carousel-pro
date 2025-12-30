@@ -1,6 +1,6 @@
 import { Lock, CheckCircle2, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { TEMPLATES, TemplateId } from "@/lib/constants";
+import { TEMPLATES, TemplateId, getTemplateLabel } from "@/lib/constants";
 import { useSubscription } from "@/hooks/useSubscription";
 import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -75,7 +75,7 @@ const TemplateSelector = ({ selectedTemplate, setSelectedTemplate }: TemplateSel
               {/* Template Info */}
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <span className="font-medium text-sm">{template.name}</span>
+                  <span className="font-medium text-sm">{getTemplateLabel(template.nameKey, language)}</span>
                   {isPremium && (
                     <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
                       <Sparkles className="w-2.5 h-2.5 mr-0.5" />
@@ -84,7 +84,7 @@ const TemplateSelector = ({ selectedTemplate, setSelectedTemplate }: TemplateSel
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground line-clamp-2">
-                  {template.description}
+                  {getTemplateLabel(template.descriptionKey, language)}
                 </p>
               </div>
 
