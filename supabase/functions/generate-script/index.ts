@@ -202,6 +202,33 @@ async function logUsage(
   }
 }
 
+// Log API usage for cost tracking
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function logApiUsage(
+  supabase: any,
+  userId: string,
+  apiName: string,
+  action: string,
+  tokensInput: number,
+  tokensOutput: number
+) {
+  try {
+    // Gemini pricing: $0.000125 per 1K input tokens, $0.000375 per 1K output tokens
+    const estimatedCost = (tokensInput / 1000) * 0.000125 + (tokensOutput / 1000) * 0.000375;
+    
+    await supabase.from('api_usage').insert({
+      user_id: userId,
+      api_name: apiName,
+      action,
+      tokens_input: tokensInput,
+      tokens_output: tokensOutput,
+      estimated_cost_usd: estimatedCost
+    });
+  } catch (error) {
+    logStep('Failed to log API usage', { error: String(error) });
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -377,8 +404,12 @@ Você deve retornar APENAS um JSON válido no seguinte formato (sem markdown, se
 
     const data = await response.json();
     let scriptText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    
+    // Get usage metadata for token counting (estimate based on text length)
+    const inputTokensEstimate = Math.ceil((systemPrompt.length + userPrompt.length) / 4);
+    const outputTokensEstimate = Math.ceil(scriptText.length / 4);
 
-    logStep('Raw script response', { preview: scriptText.substring(0, 200) });
+    logStep('Raw script response', { preview: scriptText.substring(0, 200), inputTokens: inputTokensEstimate, outputTokens: outputTokensEstimate });
 
     // Clean up the response - remove markdown code blocks if present
     scriptText = scriptText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
@@ -406,10 +437,15 @@ Você deve retornar APENAS um JSON válido no seguinte formato (sem markdown, se
 
     logStep('Script generated successfully', { slideCount: script.slides?.length });
     
+    // Log API usage for cost tracking
+    await logApiUsage(supabase, user.id, 'gemini', 'generate_script', inputTokensEstimate, outputTokensEstimate);
+    
     await logUsage(supabase, user.id, 'generate_script', carouselId, 'success', { 
       slideCount: script.slides?.length,
       textMode,
-      plan
+      plan,
+      tokensInput: inputTokensEstimate,
+      tokensOutput: outputTokensEstimate
     }, ipAddress);
 
     return new Response(JSON.stringify({ script }), {

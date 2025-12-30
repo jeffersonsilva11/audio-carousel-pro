@@ -2249,6 +2249,195 @@ export const translations = {
       es: "Error en la descarga por lotes",
     },
   },
+
+  // Profile Settings
+  profileSettings: {
+    pageTitle: {
+      "pt-BR": "Configurações do Perfil",
+      en: "Profile Settings",
+      es: "Configuración del Perfil",
+    },
+    profileIdentity: {
+      "pt-BR": "Identidade do Perfil",
+      en: "Profile Identity",
+      es: "Identidad del Perfil",
+    },
+    profileIdentityDesc: {
+      "pt-BR": "Estas informações aparecerão em todos os seus carrosséis",
+      en: "This information will appear in all your carousels",
+      es: "Esta información aparecerá en todos tus carruseles",
+    },
+    uploadPhoto: {
+      "pt-BR": "Carregar foto",
+      en: "Upload photo",
+      es: "Subir foto",
+    },
+    changePhoto: {
+      "pt-BR": "Trocar foto",
+      en: "Change photo",
+      es: "Cambiar foto",
+    },
+    uploading: {
+      "pt-BR": "Enviando...",
+      en: "Uploading...",
+      es: "Subiendo...",
+    },
+    photoRequirements: {
+      "pt-BR": "JPG, PNG ou WebP. Máx 5MB.",
+      en: "JPG, PNG or WebP. Max 5MB.",
+      es: "JPG, PNG o WebP. Máx 5MB.",
+    },
+    yourName: {
+      "pt-BR": "Nome",
+      en: "Name",
+      es: "Nombre",
+    },
+    yourNamePlaceholder: {
+      "pt-BR": "Seu nome",
+      en: "Your name",
+      es: "Tu nombre",
+    },
+    username: {
+      "pt-BR": "@username",
+      en: "@username",
+      es: "@usuario",
+    },
+    usernamePlaceholder: {
+      "pt-BR": "seuusername",
+      en: "yourusername",
+      es: "tuusuario",
+    },
+    slidePosition: {
+      "pt-BR": "Posição no slide",
+      en: "Slide position",
+      es: "Posición en el slide",
+    },
+    displayAs: {
+      "pt-BR": "Exibir",
+      en: "Display as",
+      es: "Mostrar como",
+    },
+    dateTimePreferences: {
+      "pt-BR": "Preferências de Data e Hora",
+      en: "Date & Time Preferences",
+      es: "Preferencias de Fecha y Hora",
+    },
+    dateTimeDesc: {
+      "pt-BR": "Personalize como as datas são exibidas no aplicativo",
+      en: "Customize how dates are displayed in the app",
+      es: "Personaliza cómo se muestran las fechas en la app",
+    },
+    dateFormat: {
+      "pt-BR": "Formato de data",
+      en: "Date format",
+      es: "Formato de fecha",
+    },
+    timeFormat: {
+      "pt-BR": "Formato de hora",
+      en: "Time format",
+      es: "Formato de hora",
+    },
+    relativeTime: {
+      "pt-BR": "Tempo relativo",
+      en: "Relative time",
+      es: "Tiempo relativo",
+    },
+    relativeTimeDesc: {
+      "pt-BR": "Exibir datas como \"há 2 horas\", \"ontem\", etc.",
+      en: "Show dates like \"2 hours ago\", \"yesterday\", etc.",
+      es: "Mostrar fechas como \"hace 2 horas\", \"ayer\", etc.",
+    },
+    slidePreview: {
+      "pt-BR": "Preview do Slide",
+      en: "Slide Preview",
+      es: "Vista previa del Slide",
+    },
+    slidePreviewDesc: {
+      "pt-BR": "Como sua identidade aparecerá nos carrosséis",
+      en: "How your identity will appear in carousels",
+      es: "Cómo aparecerá tu identidad en los carruseles",
+    },
+    saved: {
+      "pt-BR": "Configurações salvas",
+      en: "Settings saved",
+      es: "Configuración guardada",
+    },
+    savedDesc: {
+      "pt-BR": "Suas preferências foram atualizadas.",
+      en: "Your preferences have been updated.",
+      es: "Tus preferencias han sido actualizadas.",
+    },
+    invalidFile: {
+      "pt-BR": "Arquivo inválido",
+      en: "Invalid file",
+      es: "Archivo inválido",
+    },
+    selectImage: {
+      "pt-BR": "Por favor, selecione uma imagem.",
+      en: "Please select an image.",
+      es: "Por favor, selecciona una imagen.",
+    },
+    fileTooLarge: {
+      "pt-BR": "Arquivo muito grande",
+      en: "File too large",
+      es: "Archivo demasiado grande",
+    },
+    maxFileSize: {
+      "pt-BR": "A imagem deve ter no máximo 5MB.",
+      en: "Image must be at most 5MB.",
+      es: "La imagen debe tener máximo 5MB.",
+    },
+    photoUploaded: {
+      "pt-BR": "Foto carregada",
+      en: "Photo uploaded",
+      es: "Foto subida",
+    },
+    photoUploadedDesc: {
+      "pt-BR": "Sua foto de perfil foi atualizada.",
+      en: "Your profile photo has been updated.",
+      es: "Tu foto de perfil ha sido actualizada.",
+    },
+    uploadError: {
+      "pt-BR": "Erro no upload",
+      en: "Upload error",
+      es: "Error al subir",
+    },
+    uploadErrorDesc: {
+      "pt-BR": "Não foi possível carregar a foto.",
+      en: "Could not upload photo.",
+      es: "No se pudo subir la foto.",
+    },
+    dateShort: {
+      "pt-BR": "Curto",
+      en: "Short",
+      es: "Corto",
+    },
+    dateMedium: {
+      "pt-BR": "Médio",
+      en: "Medium",
+      es: "Medio",
+    },
+    dateLong: {
+      "pt-BR": "Completo",
+      en: "Full",
+      es: "Completo",
+    },
+    dateWithTime: {
+      "pt-BR": "Com hora",
+      en: "With time",
+      es: "Con hora",
+    },
+    time24h: {
+      "pt-BR": "24 horas",
+      en: "24 hours",
+      es: "24 horas",
+    },
+    time12h: {
+      "pt-BR": "12 horas",
+      en: "12 hours",
+      es: "12 horas",
+    },
+  },
 } as const;
 
 export type TranslationKey = keyof typeof translations;

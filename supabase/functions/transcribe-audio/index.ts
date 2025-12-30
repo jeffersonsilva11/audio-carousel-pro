@@ -182,6 +182,31 @@ async function logUsage(
   }
 }
 
+// Log API usage for cost tracking
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function logApiUsage(
+  supabase: any,
+  userId: string,
+  apiName: string,
+  action: string,
+  audioSeconds: number
+) {
+  try {
+    // Whisper pricing: $0.006 per second
+    const estimatedCost = audioSeconds * 0.006;
+    
+    await supabase.from('api_usage').insert({
+      user_id: userId,
+      api_name: apiName,
+      action,
+      audio_seconds: audioSeconds,
+      estimated_cost_usd: estimatedCost
+    });
+  } catch (error) {
+    logStep('Failed to log API usage', { error: String(error) });
+  }
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -313,11 +338,18 @@ serve(async (req) => {
     const result = await response.json();
     const transcription = result.text || '';
 
-    logStep('Transcription completed', { length: transcription.length });
+    // Estimate audio duration from file size (rough estimate: ~16KB per second for compressed audio)
+    const estimatedAudioSeconds = binaryAudio.length / 16000;
+    
+    logStep('Transcription completed', { length: transcription.length, estimatedSeconds: estimatedAudioSeconds });
+    
+    // Log API usage for cost tracking
+    await logApiUsage(supabase, user.id, 'whisper', 'transcribe', estimatedAudioSeconds);
     
     await logUsage(supabase, user.id, 'transcribe', carouselId, 'success', { 
       transcriptionLength: transcription.length,
-      plan
+      plan,
+      estimatedAudioSeconds
     }, ipAddress);
 
     return new Response(JSON.stringify({ transcription }), {

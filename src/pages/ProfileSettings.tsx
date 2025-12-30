@@ -52,16 +52,16 @@ import {
 import { formatLocalizedDate } from "@/lib/localization";
 import SlidePreview from "@/components/carousel-creator/SlidePreview";
 
-const DATE_FORMAT_OPTIONS: { value: DateFormatPreference; label: string; example: (lang: SupportedLanguage) => string }[] = [
-  { value: 'short', label: 'Curto', example: (lang) => formatLocalizedDate(new Date(), lang, 'short') },
-  { value: 'medium', label: 'Médio', example: (lang) => formatLocalizedDate(new Date(), lang, 'medium') },
-  { value: 'long', label: 'Completo', example: (lang) => formatLocalizedDate(new Date(), lang, 'long') },
-  { value: 'withTime', label: 'Com hora', example: (lang) => formatLocalizedDate(new Date(), lang, 'withTime') },
+const getDateFormatOptions = (lang: SupportedLanguage) => [
+  { value: 'short' as DateFormatPreference, label: t("profileSettings", "dateShort", lang), example: formatLocalizedDate(new Date(), lang, 'short') },
+  { value: 'medium' as DateFormatPreference, label: t("profileSettings", "dateMedium", lang), example: formatLocalizedDate(new Date(), lang, 'medium') },
+  { value: 'long' as DateFormatPreference, label: t("profileSettings", "dateLong", lang), example: formatLocalizedDate(new Date(), lang, 'long') },
+  { value: 'withTime' as DateFormatPreference, label: t("profileSettings", "dateWithTime", lang), example: formatLocalizedDate(new Date(), lang, 'withTime') },
 ];
 
-const TIME_FORMAT_OPTIONS: { value: TimeFormatPreference; label: string; example: string }[] = [
-  { value: '24h', label: '24 horas', example: '14:30' },
-  { value: '12h', label: '12 horas', example: '2:30 PM' },
+const getTimeFormatOptions = (lang: SupportedLanguage) => [
+  { value: '24h' as TimeFormatPreference, label: t("profileSettings", "time24h", lang), example: '14:30' },
+  { value: '12h' as TimeFormatPreference, label: t("profileSettings", "time12h", lang), example: '2:30 PM' },
 ];
 
 const ProfileSettings = () => {
@@ -126,8 +126,8 @@ const ProfileSettings = () => {
 
     if (!file.type.startsWith('image/')) {
       toast({
-        title: "Arquivo inválido",
-        description: "Por favor, selecione uma imagem.",
+        title: t("profileSettings", "invalidFile", language),
+        description: t("profileSettings", "selectImage", language),
         variant: "destructive",
       });
       return;
@@ -135,8 +135,8 @@ const ProfileSettings = () => {
 
     if (file.size > 5 * 1024 * 1024) {
       toast({
-        title: "Arquivo muito grande",
-        description: "A imagem deve ter no máximo 5MB.",
+        title: t("profileSettings", "fileTooLarge", language),
+        description: t("profileSettings", "maxFileSize", language),
         variant: "destructive",
       });
       return;
@@ -160,14 +160,14 @@ const ProfileSettings = () => {
       setPhotoUrl(publicUrl);
       
       toast({
-        title: "Foto carregada",
-        description: "Sua foto de perfil foi atualizada.",
+        title: t("profileSettings", "photoUploaded", language),
+        description: t("profileSettings", "photoUploadedDesc", language),
       });
     } catch (error) {
       console.error('Error uploading photo:', error);
       toast({
-        title: "Erro no upload",
-        description: "Não foi possível carregar a foto.",
+        title: t("profileSettings", "uploadError", language),
+        description: t("profileSettings", "uploadErrorDesc", language),
         variant: "destructive",
       });
     } finally {
@@ -201,8 +201,8 @@ const ProfileSettings = () => {
     });
 
     toast({
-      title: "Configurações salvas",
-      description: "Suas preferências foram atualizadas.",
+      title: t("profileSettings", "saved", language),
+      description: t("profileSettings", "savedDesc", language),
     });
   };
 
@@ -228,7 +228,7 @@ const ProfileSettings = () => {
               >
                 <ChevronLeft className="w-5 h-5" />
               </Button>
-              <h1 className="font-semibold">Configurações do Perfil</h1>
+              <h1 className="font-semibold">{t("profileSettings", "pageTitle", language)}</h1>
             </div>
 
             <Button 
@@ -241,7 +241,7 @@ const ProfileSettings = () => {
               ) : (
                 <Save className="w-4 h-4" />
               )}
-              Salvar
+              {t("common", "save", language)}
             </Button>
           </nav>
         </div>
@@ -444,12 +444,12 @@ const ProfileSettings = () => {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {DATE_FORMAT_OPTIONS.map((option) => (
+                      {getDateFormatOptions(language).map((option) => (
                         <SelectItem key={option.value} value={option.value}>
                           <div className="flex justify-between items-center gap-4">
                             <span>{option.label}</span>
                             <span className="text-muted-foreground text-xs">
-                              {option.example(language)}
+                              {option.example}
                             </span>
                           </div>
                         </SelectItem>
@@ -466,7 +466,7 @@ const ProfileSettings = () => {
                     onValueChange={(v) => setTimeFormat(v as TimeFormatPreference)}
                     className="flex gap-4"
                   >
-                    {TIME_FORMAT_OPTIONS.map((option) => (
+                    {getTimeFormatOptions(language).map((option) => (
                       <label
                         key={option.value}
                         className={cn(

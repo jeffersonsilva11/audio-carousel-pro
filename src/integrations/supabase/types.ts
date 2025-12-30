@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      api_usage: {
+        Row: {
+          action: string
+          api_name: string
+          audio_seconds: number | null
+          created_at: string
+          estimated_cost_usd: number | null
+          id: string
+          tokens_input: number | null
+          tokens_output: number | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          api_name: string
+          audio_seconds?: number | null
+          created_at?: string
+          estimated_cost_usd?: number | null
+          id?: string
+          tokens_input?: number | null
+          tokens_output?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          api_name?: string
+          audio_seconds?: number | null
+          created_at?: string
+          estimated_cost_usd?: number | null
+          id?: string
+          tokens_input?: number | null
+          tokens_output?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       carousels: {
         Row: {
           audio_duration: number | null
@@ -104,6 +140,36 @@ export type Database = {
           updated_at?: string
           usage_date?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      feature_flags: {
+        Row: {
+          created_at: string
+          description: string | null
+          enabled: boolean
+          id: string
+          key: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          id?: string
+          key: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          id?: string
+          key?: string
+          name?: string
+          updated_at?: string
         }
         Relationships: []
       }
