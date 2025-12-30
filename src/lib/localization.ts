@@ -12,6 +12,13 @@ interface CurrencyConfig {
   thousandsSeparator: string;
 }
 
+// Locale configuration for number and date formatting
+const LOCALE_CONFIG: Record<SupportedLanguage, string> = {
+  "pt-BR": "pt-BR",
+  en: "en-US",
+  es: "es-ES",
+};
+
 const CURRENCY_CONFIG: Record<SupportedLanguage, CurrencyConfig> = {
   "pt-BR": {
     code: "BRL",
@@ -138,18 +145,59 @@ const DATE_FORMATS: Record<SupportedLanguage, {
 export type DateFormatType = "short" | "medium" | "long" | "withTime";
 
 /**
- * Format a date according to the user's language preference
+ * Get the user's timezone
+ */
+export function getUserTimezone(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  } catch {
+    return "UTC";
+  }
+}
+
+/**
+ * Convert a date to the user's local timezone
+ */
+export function toLocalTimezone(date: Date | string): Date {
+  const dateObj = typeof date === "string" ? new Date(date) : date;
+  // The Date object already represents the moment in time correctly,
+  // formatting will automatically use the browser's local timezone
+  return dateObj;
+}
+
+/**
+ * Format a date according to the user's language preference and local timezone
  */
 export function formatLocalizedDate(
   date: Date | string,
   language: SupportedLanguage,
   formatType: DateFormatType = "medium"
 ): string {
-  const dateObj = typeof date === "string" ? new Date(date) : date;
+  const dateObj = toLocalTimezone(date);
   const pattern = DATE_FORMATS[language][formatType];
   const locale = getDateFnsLocale(language);
   
   return formatDate(dateObj, pattern, { locale });
+}
+
+/**
+ * Format a date with timezone indicator
+ */
+export function formatDateWithTimezone(
+  date: Date | string,
+  language: SupportedLanguage,
+  formatType: DateFormatType = "withTime"
+): string {
+  const dateObj = toLocalTimezone(date);
+  const formattedDate = formatLocalizedDate(dateObj, language, formatType);
+  const timezone = getUserTimezone();
+  
+  // Get short timezone name
+  const timezoneName = new Intl.DateTimeFormat(LOCALE_CONFIG[language], {
+    timeZoneName: "short",
+  }).formatToParts(dateObj).find(part => part.type === "timeZoneName")?.value || "";
+  
+  return `${formattedDate} (${timezoneName})`;
 }
 
 /**
@@ -174,4 +222,135 @@ export function getCurrencySymbol(language: SupportedLanguage): string {
  */
 export function getCurrencyCode(language: SupportedLanguage): string {
   return CURRENCY_CONFIG[language].code;
+}
+
+// ============================================
+// NUMBER FORMATTING UTILITIES
+// ============================================
+
+/**
+ * Format a number according to the user's locale
+ */
+export function formatNumber(
+  value: number,
+  language: SupportedLanguage,
+  options?: Intl.NumberFormatOptions
+): string {
+  return new Intl.NumberFormat(LOCALE_CONFIG[language], options).format(value);
+}
+
+/**
+ * Format an integer (no decimal places)
+ */
+export function formatInteger(
+  value: number,
+  language: SupportedLanguage
+): string {
+  return formatNumber(value, language, {
+    maximumFractionDigits: 0,
+  });
+}
+
+/**
+ * Format a decimal number with specified precision
+ */
+export function formatDecimal(
+  value: number,
+  language: SupportedLanguage,
+  decimals: number = 2
+): string {
+  return formatNumber(value, language, {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  });
+}
+
+/**
+ * Format a percentage
+ */
+export function formatPercent(
+  value: number,
+  language: SupportedLanguage,
+  decimals: number = 0
+): string {
+  return formatNumber(value / 100, language, {
+    style: "percent",
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  });
+}
+
+/**
+ * Format a compact number (e.g., 1K, 1M)
+ */
+export function formatCompactNumber(
+  value: number,
+  language: SupportedLanguage
+): string {
+  return formatNumber(value, language, {
+    notation: "compact",
+    compactDisplay: "short",
+  });
+}
+
+/**
+ * Format file size in bytes to human readable format
+ */
+export function formatFileSize(
+  bytes: number,
+  language: SupportedLanguage
+): string {
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  let unitIndex = 0;
+  let size = bytes;
+
+  while (size >= 1024 && unitIndex < units.length - 1) {
+    size /= 1024;
+    unitIndex++;
+  }
+
+  const formattedSize = formatNumber(size, language, {
+    maximumFractionDigits: unitIndex === 0 ? 0 : 1,
+  });
+
+  return `${formattedSize} ${units[unitIndex]}`;
+}
+
+/**
+ * Format duration in seconds to human readable format
+ */
+export function formatDuration(
+  seconds: number,
+  language: SupportedLanguage
+): string {
+  if (seconds < 60) {
+    return `${formatInteger(Math.round(seconds), language)}s`;
+  }
+  
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = Math.round(seconds % 60);
+  
+  if (minutes < 60) {
+    return remainingSeconds > 0 
+      ? `${formatInteger(minutes, language)}m ${formatInteger(remainingSeconds, language)}s`
+      : `${formatInteger(minutes, language)}m`;
+  }
+  
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  
+  return remainingMinutes > 0
+    ? `${formatInteger(hours, language)}h ${formatInteger(remainingMinutes, language)}m`
+    : `${formatInteger(hours, language)}h`;
+}
+
+/**
+ * Format a count with singular/plural handling
+ * Returns the formatted number (use with translation strings)
+ */
+export function formatCount(
+  count: number,
+  language: SupportedLanguage
+): string {
+  return formatInteger(count, language);
 }
