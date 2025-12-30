@@ -1,8 +1,10 @@
 import { Mic2 } from "lucide-react";
 import { BRAND } from "@/lib/constants";
+import { useLanguage, LANGUAGES } from "@/hooks/useLanguage";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
+  const { language, setLanguage } = useLanguage();
 
   const links = {
     product: [
@@ -19,12 +21,6 @@ const Footer = () => {
       { name: "Twitter", href: "https://twitter.com" },
     ],
   };
-
-  const languages = [
-    { code: "pt-BR", name: "Português" },
-    { code: "en", name: "English" },
-    { code: "es", name: "Español" },
-  ];
 
   return (
     <footer className="bg-card border-t border-border">
@@ -44,10 +40,14 @@ const Footer = () => {
               {BRAND.tagline}
             </p>
             {/* Language Selector */}
-            <select className="text-sm bg-secondary border border-border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent">
-              {languages.map((lang) => (
+            <select 
+              value={language}
+              onChange={(e) => setLanguage(e.target.value as typeof language)}
+              className="text-sm bg-secondary border border-border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent cursor-pointer"
+            >
+              {LANGUAGES.map((lang) => (
                 <option key={lang.code} value={lang.code}>
-                  {lang.name}
+                  {lang.flag} {lang.name}
                 </option>
               ))}
             </select>

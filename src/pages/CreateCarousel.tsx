@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useUserPreferences } from "@/hooks/useUserPreferences";
+import { useLanguage, SupportedLanguage } from "@/hooks/useLanguage";
 import { supabase } from "@/integrations/supabase/client";
 import { useCarouselGeneration } from "@/hooks/useCarouselGeneration";
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,7 @@ import ProfileIdentitySelector, { ProfileIdentity } from "@/components/carousel-
 import TemplateSelector from "@/components/carousel-creator/TemplateSelector";
 import TextModeSelector, { CreativeTone } from "@/components/carousel-creator/TextModeSelector";
 import SlideCountSelector from "@/components/carousel-creator/SlideCountSelector";
+import LanguageSelector from "@/components/carousel-creator/LanguageSelector";
 import {
   Dialog,
   DialogContent,
@@ -57,10 +59,14 @@ const CreateCarousel = () => {
   const { user, loading } = useAuth();
   const { isPro, createCheckout, loading: subLoading } = useSubscription();
   const { preferences, loading: prefsLoading, savePreferences } = useUserPreferences();
+  const { language: siteLanguage } = useLanguage();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const { status, error, result, generateCarousel } = useCarouselGeneration();
+
+  // Language state for carousel generation (defaults to site language)
+  const [carouselLanguage, setCarouselLanguage] = useState<SupportedLanguage>(siteLanguage);
 
   // Step management
   const [currentStep, setCurrentStep] = useState<Step>("upload");
@@ -262,7 +268,7 @@ const CreateCarousel = () => {
         carouselId: carousel.id,
         userId: user.id,
         isPro,
-        language: 'pt-BR'
+        language: carouselLanguage
       });
 
     } catch (err: unknown) {
@@ -573,6 +579,13 @@ const CreateCarousel = () => {
                     setMode={setSlideCountMode}
                     manualCount={manualSlideCount}
                     setManualCount={setManualSlideCount}
+                  />
+                </div>
+                
+                <div className="border-t border-border pt-8">
+                  <LanguageSelector
+                    value={carouselLanguage}
+                    onChange={setCarouselLanguage}
                   />
                 </div>
                 
