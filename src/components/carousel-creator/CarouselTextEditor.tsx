@@ -27,6 +27,21 @@ interface Slide {
   imageUrl?: string;
 }
 
+interface ProfileIdentity {
+  name: string;
+  username: string;
+  photoUrl: string | null;
+  avatarPosition: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+  displayMode: 'name_only' | 'username_only' | 'name_and_username';
+}
+
+interface TemplateCustomization {
+  fontId: string;
+  gradientId: string;
+  customGradientColors?: string[];
+  slideImages?: (string | null)[];
+}
+
 interface CarouselTextEditorProps {
   slides: Slide[];
   onSlidesUpdate: (slides: Slide[]) => void;
@@ -34,6 +49,8 @@ interface CarouselTextEditorProps {
   carouselId?: string;
   style?: string;
   format?: string;
+  profile?: ProfileIdentity;
+  customization?: TemplateCustomization;
 }
 
 const CarouselTextEditor = ({ 
@@ -42,7 +59,9 @@ const CarouselTextEditor = ({
   isPro = false,
   carouselId,
   style = 'BLACK_WHITE',
-  format = 'POST_SQUARE'
+  format = 'POST_SQUARE',
+  profile,
+  customization
 }: CarouselTextEditorProps) => {
   const { t } = useTranslation();
   const [slides, setSlides] = useState<Slide[]>(initialSlides);
@@ -134,7 +153,10 @@ const CarouselTextEditor = ({
             hasWatermark: false,
             regenerateSingle: true,
             slideIndex,
-            totalSlides: slides.length
+            totalSlides: slides.length,
+            // Preserve profile and customization settings
+            profile,
+            customization
           }
         }
       );
