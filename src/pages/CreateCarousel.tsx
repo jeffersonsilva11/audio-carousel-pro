@@ -27,6 +27,8 @@ import StyleSelector, { StyleType } from "@/components/carousel-creator/StyleSel
 import FormatSelector, { FormatType } from "@/components/carousel-creator/FormatSelector";
 import ProcessingStatus from "@/components/carousel-creator/ProcessingStatus";
 import CarouselPreview from "@/components/carousel-creator/CarouselPreview";
+import CarouselTextEditor from "@/components/carousel-creator/CarouselTextEditor";
+import ExportFormatSelector, { PlatformFormat, PLATFORM_FORMATS } from "@/components/carousel-creator/ExportFormatSelector";
 import ProfileIdentitySelector, { ProfileIdentity } from "@/components/carousel-creator/ProfileIdentitySelector";
 import TemplateSelector from "@/components/carousel-creator/TemplateSelector";
 import TextModeSelector, { CreativeTone } from "@/components/carousel-creator/TextModeSelector";
@@ -34,6 +36,7 @@ import SlideCountSelector from "@/components/carousel-creator/SlideCountSelector
 import LanguageSelector from "@/components/carousel-creator/LanguageSelector";
 import AdvancedTemplateEditor, { TemplateCustomization } from "@/components/carousel-creator/AdvancedTemplateEditor";
 import { FontId, GradientId } from "@/lib/constants";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -118,6 +121,17 @@ const CreateCarousel = () => {
   const [carouselCount, setCarouselCount] = useState<number>(0);
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  
+  // Export format state
+  const [exportFormat, setExportFormat] = useState<PlatformFormat | null>(
+    PLATFORM_FORMATS.find(f => f.platform === 'instagram' && f.format === 'feed') || null
+  );
+  
+  // Preview mode state
+  const [previewMode, setPreviewMode] = useState<'preview' | 'edit'>('preview');
+  
+  // Carousel ID for editing
+  const [currentCarouselId, setCurrentCarouselId] = useState<string | null>(null);
 
   // Initialize state from preferences when loaded
   useEffect(() => {
@@ -269,8 +283,9 @@ const CreateCarousel = () => {
         .single();
 
       if (insertError) throw insertError;
-
-      // Start the real AI generation
+      
+      // Store carousel ID for editing
+      setCurrentCarouselId(carousel.id);
       await generateCarousel({
         audioFile,
         textMode: selectedTextMode,
@@ -635,22 +650,54 @@ const CreateCarousel = () => {
           {currentStep === "preview" && generatedSlides.length > 0 && (
             <>
               <div className="text-center mb-8">
-                <h1 className="text-2xl font-bold mb-2">Carrossel pronto! 🎉</h1>
+                <h1 className="text-2xl font-bold mb-2">{t("create", "carouselReady", siteLanguage)} 🎉</h1>
                 <p className="text-muted-foreground">
-                  Seu carrossel foi gerado com sucesso • {generatedSlides.length} slides
+                  {t("create", "generatedSuccess", siteLanguage)} • {generatedSlides.length} slides
                 </p>
                 {!isPro && (
                   <p className="text-sm text-amber-500 mt-2">
-                    ⚠️ Este carrossel contém marca d'água. Assine o Pro para remover.
+                    ⚠️ {t("create", "watermarkWarning", siteLanguage)}
                   </p>
                 )}
               </div>
               
-              <CarouselPreview 
-                slides={generatedSlides} 
-                onDownloadAll={handleDownloadAll}
-                isPro={isPro}
-              />
+              {/* Tabs for Preview / Edit modes - Pro only */}
+              <Tabs value={previewMode} onValueChange={(v) => setPreviewMode(v as 'preview' | 'edit')} className="mb-6">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="preview">{t("carouselEditor", "previewTab", siteLanguage)}</TabsTrigger>
+                  <TabsTrigger value="edit" disabled={!isPro}>
+                    {t("carouselEditor", "editTab", siteLanguage)}
+                    {!isPro && <Crown className="w-3 h-3 ml-1 text-accent" />}
+                  </TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="preview" className="mt-6">
+                  <CarouselPreview 
+                    slides={generatedSlides} 
+                    onDownloadAll={handleDownloadAll}
+                    isPro={isPro}
+                  />
+                </TabsContent>
+                
+                <TabsContent value="edit" className="mt-6">
+                  <CarouselTextEditor
+                    slides={generatedSlides}
+                    onSlidesUpdate={setGeneratedSlides}
+                    isPro={isPro}
+                    carouselId={currentCarouselId || undefined}
+                    style={selectedStyle}
+                    format={selectedFormat}
+                  />
+                </TabsContent>
+              </Tabs>
+              
+              {/* Export Format Selector */}
+              <div className="border-t border-border pt-6 mt-6">
+                <ExportFormatSelector
+                  selectedFormat={exportFormat}
+                  onSelectFormat={setExportFormat}
+                />
+              </div>
 
               <div className="flex flex-col sm:flex-row justify-center gap-3 mt-6">
                 {!isPro && (
@@ -659,14 +706,14 @@ const CreateCarousel = () => {
                     onClick={() => setShowUpgradeDialog(true)}
                   >
                     <Crown className="w-4 h-4 mr-2" />
-                    Remover marca d'água
+                    {t("create", "removeWatermark", siteLanguage)}
                   </Button>
                 )}
                 <Button 
                   variant="outline"
                   onClick={() => navigate("/dashboard")}
                 >
-                  Ver no Dashboard
+                  {t("create", "viewDashboard", siteLanguage)}
                 </Button>
               </div>
             </>
