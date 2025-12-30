@@ -703,6 +703,31 @@ export const translations = {
       en: "Error signing in with Google",
       es: "Error al iniciar sesión con Google",
     },
+    accountLocked: {
+      "pt-BR": "Conta bloqueada temporariamente",
+      en: "Account temporarily locked",
+      es: "Cuenta bloqueada temporalmente",
+    },
+    tryAgainLater: {
+      "pt-BR": "Muitas tentativas falhadas. Tente novamente em {minutes} minuto(s).",
+      en: "Too many failed attempts. Try again in {minutes} minute(s).",
+      es: "Demasiados intentos fallidos. Inténtalo de nuevo en {minutes} minuto(s).",
+    },
+    accountLockedMessage: {
+      "pt-BR": "Aguarde {seconds} segundos antes de tentar novamente",
+      en: "Wait {seconds} seconds before trying again",
+      es: "Espera {seconds} segundos antes de intentar de nuevo",
+    },
+    verifyCaptcha: {
+      "pt-BR": "Complete a verificação abaixo para continuar:",
+      en: "Complete the verification below to continue:",
+      es: "Completa la verificación a continuación para continuar:",
+    },
+    captchaVerified: {
+      "pt-BR": "Verificação concluída",
+      en: "Verification complete",
+      es: "Verificación completada",
+    },
   },
 
   // Dashboard
@@ -1888,6 +1913,16 @@ export const translations = {
       "pt-BR": "Por favor, tente novamente. Se o problema persistir, recarregue a página.",
       en: "Please try again. If the problem persists, reload the page.",
       es: "Por favor, inténtalo de nuevo. Si el problema persiste, recarga la página.",
+    },
+    captchaRequired: {
+      "pt-BR": "Verificação necessária",
+      en: "Verification required",
+      es: "Verificación necesaria",
+    },
+    completeCaptcha: {
+      "pt-BR": "Complete a verificação de segurança antes de continuar.",
+      en: "Complete the security verification before continuing.",
+      es: "Completa la verificación de seguridad antes de continuar.",
     },
   },
 

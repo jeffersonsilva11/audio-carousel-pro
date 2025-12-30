@@ -3,15 +3,18 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useRecaptcha } from "@/hooks/useRecaptcha";
+import { useAuthProtection } from "@/hooks/useAuthProtection";
 import { t } from "@/lib/translations";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Mic2, Mail, Lock, User, ArrowLeft, Loader2 } from "lucide-react";
+import { Mic2, Mail, Lock, User, ArrowLeft, Loader2, AlertTriangle, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { BRAND } from "@/lib/constants";
 import { Separator } from "@/components/ui/separator";
+import { InteractiveCaptcha } from "@/components/auth/InteractiveCaptcha";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const Auth = () => {
   const { language } = useLanguage();
@@ -22,11 +25,21 @@ const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string; name?: string }>({});
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   
   const { user, signIn, signUp, signInWithGoogle } = useAuth();
-  const { verifyRecaptcha, isLoading: recaptchaLoading } = useRecaptcha();
+  const { verifyRecaptcha } = useRecaptcha();
+  const { 
+    isLocked, 
+    requiresInteractiveCaptcha, 
+    recordFailedAttempt, 
+    recordSuccessfulAttempt,
+    getRemainingLockoutTime 
+  } = useAuthProtection();
   const navigate = useNavigate();
   const { toast } = useToast();
+  
+  const [lockoutSeconds, setLockoutSeconds] = useState(0);
 
   const emailSchema = z.string().email(t("auth", "invalidEmail", language));
   const passwordSchema = z.string().min(6, t("auth", "passwordMinLength", language));
@@ -37,6 +50,16 @@ const Auth = () => {
       navigate("/dashboard");
     }
   }, [user, navigate]);
+
+  // Update lockout countdown
+  useEffect(() => {
+    if (isLocked) {
+      const interval = setInterval(() => {
+        setLockoutSeconds(getRemainingLockoutTime());
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [isLocked, getRemainingLockoutTime]);
 
   const validateForm = () => {
     const newErrors: { email?: string; password?: string; name?: string } = {};
@@ -67,12 +90,44 @@ const Auth = () => {
     
     if (!validateForm()) return;
     
+    // Check if locked out
+    if (isLocked) {
+      toast({
+        title: t("auth", "accountLocked", language),
+        description: t("auth", "tryAgainLater", language).replace("{minutes}", String(Math.ceil(lockoutSeconds / 60))),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check if interactive captcha is required but not completed
+    if (requiresInteractiveCaptcha && !captchaToken) {
+      toast({
+        title: t("errors", "captchaRequired", language),
+        description: t("errors", "completeCaptcha", language),
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setIsLoading(true);
     
     try {
-      // Verify reCAPTCHA first
+      // Verify reCAPTCHA first (invisible v3)
       const recaptchaAction = isLogin ? 'login' : 'signup';
       const recaptchaResult = await verifyRecaptcha(recaptchaAction);
+      
+      if (!recaptchaResult.success) {
+        await recordFailedAttempt();
+        toast({
+          title: t("errors", "recaptchaFailed", language),
+          description: t("errors", "recaptchaFailedDescription", language),
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        setCaptchaToken(null);
+        return;
+      }
       
       if (!recaptchaResult.success) {
         toast({
@@ -87,6 +142,8 @@ const Auth = () => {
       if (isLogin) {
         const { error } = await signIn(email, password);
         if (error) {
+          await recordFailedAttempt();
+          setCaptchaToken(null);
           if (error.message.includes("Invalid login credentials")) {
             toast({
               title: t("auth", "loginError", language),
@@ -101,6 +158,7 @@ const Auth = () => {
             });
           }
         } else {
+          await recordSuccessfulAttempt();
           toast({
             title: t("auth", "welcomeBack", language),
             description: t("auth", "loginSuccess", language),
@@ -110,6 +168,8 @@ const Auth = () => {
       } else {
         const { error } = await signUp(email, password, name);
         if (error) {
+          await recordFailedAttempt();
+          setCaptchaToken(null);
           if (error.message.includes("User already registered")) {
             toast({
               title: t("auth", "emailAlreadyRegistered", language),
@@ -124,6 +184,7 @@ const Auth = () => {
             });
           }
         } else {
+          await recordSuccessfulAttempt();
           toast({
             title: t("auth", "accountCreated", language),
             description: `${t("auth", "welcomeTo", language)} ${BRAND.name}!`,
@@ -136,29 +197,61 @@ const Auth = () => {
     }
   };
 
+  const handleCaptchaVerify = (token: string) => {
+    setCaptchaToken(token);
+  };
+
+  const handleCaptchaExpire = () => {
+    setCaptchaToken(null);
+  };
+
   const handleGoogleSignIn = async () => {
+    if (isLocked) {
+      toast({
+        title: t("auth", "accountLocked", language),
+        description: t("auth", "tryAgainLater", language).replace("{minutes}", String(Math.ceil(lockoutSeconds / 60))),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (requiresInteractiveCaptcha && !captchaToken) {
+      toast({
+        title: t("errors", "captchaRequired", language),
+        description: t("errors", "completeCaptcha", language),
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsGoogleLoading(true);
     try {
       // Verify reCAPTCHA first
       const recaptchaResult = await verifyRecaptcha('google_login');
       
       if (!recaptchaResult.success) {
+        await recordFailedAttempt();
         toast({
           title: t("errors", "recaptchaFailed", language),
           description: t("errors", "recaptchaFailedDescription", language),
           variant: "destructive",
         });
         setIsGoogleLoading(false);
+        setCaptchaToken(null);
         return;
       }
 
       const { error } = await signInWithGoogle();
       if (error) {
+        await recordFailedAttempt();
+        setCaptchaToken(null);
         toast({
           title: t("auth", "googleError", language),
           description: error.message,
           variant: "destructive",
         });
+      } else {
+        await recordSuccessfulAttempt();
       }
     } finally {
       setIsGoogleLoading(false);
@@ -198,13 +291,42 @@ const Auth = () => {
           </CardHeader>
 
           <CardContent className="pt-6">
+            {/* Lockout Warning */}
+            {isLocked && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription className="flex items-center gap-2">
+                  <Clock className="w-4 h-4" />
+                  {t("auth", "accountLockedMessage", language).replace("{seconds}", String(lockoutSeconds))}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Interactive Captcha (shown after failed attempts) */}
+            {requiresInteractiveCaptcha && !isLocked && (
+              <div className="mb-4">
+                <p className="text-sm text-muted-foreground text-center mb-2">
+                  {t("auth", "verifyCaptcha", language)}
+                </p>
+                <InteractiveCaptcha
+                  onVerify={handleCaptchaVerify}
+                  onExpire={handleCaptchaExpire}
+                />
+                {captchaToken && (
+                  <p className="text-sm text-green-600 text-center">
+                    ✓ {t("auth", "captchaVerified", language)}
+                  </p>
+                )}
+              </div>
+            )}
+
             {/* Google Sign In Button */}
             <Button
               type="button"
               variant="outline"
               className="w-full mb-4"
               onClick={handleGoogleSignIn}
-              disabled={isGoogleLoading}
+              disabled={isGoogleLoading || isLocked || (requiresInteractiveCaptcha && !captchaToken)}
             >
               {isGoogleLoading ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -273,7 +395,12 @@ const Auth = () => {
                 {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
               </div>
 
-              <Button type="submit" variant="accent" className="w-full" disabled={isLoading}>
+              <Button 
+                type="submit" 
+                variant="accent" 
+                className="w-full" 
+                disabled={isLoading || isLocked || (requiresInteractiveCaptcha && !captchaToken)}
+              >
                 {isLoading ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
