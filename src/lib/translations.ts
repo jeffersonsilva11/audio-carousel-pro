@@ -2908,6 +2908,20 @@ export const translations = {
       es: "Directo, incómodo e impactante",
     },
   },
+
+  // Live Preview
+  livePreview: {
+    title: {
+      "pt-BR": "Preview ao vivo",
+      en: "Live preview",
+      es: "Vista previa en vivo",
+    },
+    description: {
+      "pt-BR": "Prévia do resultado final. O conteúdo será gerado pelo seu áudio.",
+      en: "Preview of the final result. Content will be generated from your audio.",
+      es: "Vista previa del resultado final. El contenido se generará de tu audio.",
+    },
+  },
 } as const;
 
 export type TranslationKey = keyof typeof translations;
