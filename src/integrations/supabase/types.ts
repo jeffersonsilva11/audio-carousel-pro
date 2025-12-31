@@ -192,6 +192,9 @@ export type Database = {
           instagram_handle: string | null
           last_carousel_reset_date: string | null
           name: string | null
+          onboarding_completed: boolean | null
+          onboarding_completed_at: string | null
+          onboarding_step: number | null
           plan_tier: Database["public"]["Enums"]["plan_tier"] | null
           preferred_lang: string | null
           profile_image: string | null
@@ -219,6 +222,9 @@ export type Database = {
           instagram_handle?: string | null
           last_carousel_reset_date?: string | null
           name?: string | null
+          onboarding_completed?: boolean | null
+          onboarding_completed_at?: string | null
+          onboarding_step?: number | null
           plan_tier?: Database["public"]["Enums"]["plan_tier"] | null
           preferred_lang?: string | null
           profile_image?: string | null
@@ -246,6 +252,9 @@ export type Database = {
           instagram_handle?: string | null
           last_carousel_reset_date?: string | null
           name?: string | null
+          onboarding_completed?: boolean | null
+          onboarding_completed_at?: string | null
+          onboarding_step?: number | null
           plan_tier?: Database["public"]["Enums"]["plan_tier"] | null
           preferred_lang?: string | null
           profile_image?: string | null

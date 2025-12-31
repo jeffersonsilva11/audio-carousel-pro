@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useLanguage, LANGUAGES } from "@/hooks/useLanguage";
+import { useOnboarding } from "@/hooks/useOnboarding";
 import { t } from "@/lib/translations";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,7 @@ import {
 } from "lucide-react";
 import UsageStats from "@/components/dashboard/UsageStats";
 import DashboardSkeleton from "@/components/skeletons/DashboardSkeleton";
+import OnboardingModal from "@/components/onboarding/OnboardingModal";
 import { useAdminAccess } from "@/hooks/useAdminAccess";
 import { toast } from "sonner";
 import { BRAND } from "@/lib/constants";
@@ -43,6 +45,7 @@ const Dashboard = () => {
   const { isAdmin } = useAdminAccess();
   const { isPro, plan, dailyUsed, dailyLimit, subscriptionEnd, createCheckout, openCustomerPortal, loading: subLoading, getRemainingCarousels } = useSubscription();
   const { language, setLanguage } = useLanguage();
+  const { showOnboarding, loading: onboardingLoading, completeOnboarding } = useOnboarding();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [carousels, setCarousels] = useState<Carousel[]>([]);
@@ -162,12 +165,16 @@ const Dashboard = () => {
     return t("dashboard", "errorStatus", language);
   };
 
-  if (loading || subLoading) {
+  if (loading || subLoading || onboardingLoading) {
     return <DashboardSkeleton />;
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <>
+      {/* Onboarding Modal */}
+      <OnboardingModal open={showOnboarding} onComplete={completeOnboarding} />
+      
+      <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b border-border/50 bg-background/80 backdrop-blur-xl sticky top-0 z-50">
         <div className="container mx-auto px-4">
@@ -449,6 +456,7 @@ const Dashboard = () => {
         </div>
       </main>
     </div>
+    </>
   );
 };
 
