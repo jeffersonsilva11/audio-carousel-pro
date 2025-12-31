@@ -1,12 +1,14 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 
 interface AutoSaveOptions {
   debounceMs?: number;
   enabled?: boolean;
 }
 
+export type SaveStatus = "idle" | "saving" | "saved" | "error";
+
 /**
- * Hook for auto-saving data with debounce
+ * Hook for auto-saving data with debounce and visual feedback
  * @param data - The data to auto-save
  * @param onSave - Callback function to save the data
  * @param options - Configuration options
@@ -18,16 +20,21 @@ export function useAutoSave<T>(
 ) {
   const { debounceMs = 3000, enabled = true } = options;
   
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const savedIndicatorTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastSavedRef = useRef<string>(JSON.stringify(data));
   const isSavingRef = useRef(false);
   const pendingDataRef = useRef<T | null>(null);
 
-  // Cleanup timeout on unmount
+  // Cleanup timeouts on unmount
   useEffect(() => {
     return () => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
+      }
+      if (savedIndicatorTimeoutRef.current) {
+        clearTimeout(savedIndicatorTimeoutRef.current);
       }
     };
   }, []);
@@ -47,12 +54,32 @@ export function useAutoSave<T>(
     }
 
     isSavingRef.current = true;
+    setSaveStatus("saving");
     
     try {
       await onSave(dataToSave);
       lastSavedRef.current = serialized;
+      setSaveStatus("saved");
+      
+      // Reset to idle after showing "saved" for 2 seconds
+      if (savedIndicatorTimeoutRef.current) {
+        clearTimeout(savedIndicatorTimeoutRef.current);
+      }
+      savedIndicatorTimeoutRef.current = setTimeout(() => {
+        setSaveStatus("idle");
+      }, 2000);
+      
     } catch (error) {
       console.error("Auto-save error:", error);
+      setSaveStatus("error");
+      
+      // Reset to idle after showing error for 3 seconds
+      if (savedIndicatorTimeoutRef.current) {
+        clearTimeout(savedIndicatorTimeoutRef.current);
+      }
+      savedIndicatorTimeoutRef.current = setTimeout(() => {
+        setSaveStatus("idle");
+      }, 3000);
     } finally {
       isSavingRef.current = false;
       
@@ -68,6 +95,12 @@ export function useAutoSave<T>(
   // Effect to trigger debounced save
   useEffect(() => {
     if (!enabled) return;
+
+    // Check if data has changed
+    const serialized = JSON.stringify(data);
+    if (serialized === lastSavedRef.current) {
+      return;
+    }
 
     // Clear existing timeout
     if (timeoutRef.current) {
@@ -102,6 +135,7 @@ export function useAutoSave<T>(
   return {
     saveNow,
     hasUnsavedChanges,
-    isSaving: isSavingRef.current,
+    saveStatus,
+    isSaving: saveStatus === "saving",
   };
 }
