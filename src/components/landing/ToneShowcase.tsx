@@ -1,11 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Heart, Briefcase, Zap, ChevronLeft, ChevronRight } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
 import { t } from "@/lib/translations";
+import { motion, useScroll, useTransform } from "framer-motion";
 
 const ToneShowcase = () => {
   const { language } = useLanguage();
+  const { scrollYProgress } = useScroll();
+  const y = useTransform(scrollYProgress, [0, 1], [0, -50]);
 
   const tones = [
     {
@@ -109,10 +112,26 @@ const ToneShowcase = () => {
   };
 
   return (
-    <section className="py-24 md:py-32">
-      <div className="container mx-auto">
-        {/* Section Header */}
-        <div className="text-center max-w-2xl mx-auto mb-16">
+    <section className="py-24 md:py-32 relative overflow-hidden">
+      {/* Parallax background elements */}
+      <motion.div 
+        style={{ y }}
+        className="absolute inset-0 pointer-events-none"
+      >
+        <div className="absolute top-20 left-10 w-72 h-72 bg-rose-500/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-amber-500/5 rounded-full blur-3xl" />
+      </motion.div>
+
+      <div className="container mx-auto relative z-10">
+        {/* Section Header with scroll animation */}
+        <motion.div 
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.6 }}
+          className="text-center max-w-2xl mx-auto mb-16"
+        >
           <span className="inline-block text-sm font-semibold text-accent mb-4 tracking-wide uppercase">
             {t("toneShowcase", "sectionTitle", language)}
           </span>
@@ -122,14 +141,26 @@ const ToneShowcase = () => {
           <p className="text-body-lg text-muted-foreground">
             {t("toneShowcase", "subtitle", language)}
           </p>
-        </div>
+        </motion.div>
 
         <div className="max-w-5xl mx-auto">
-          {/* Tone Selector */}
-          <div className="flex flex-wrap justify-center gap-4 mb-12">
-            {tones.map((tone) => (
-              <button
+          {/* Tone Selector with staggered animation */}
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="flex flex-wrap justify-center gap-4 mb-12"
+          >
+            {tones.map((tone, index) => (
+              <motion.button
                 key={tone.id}
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.3, delay: 0.1 * index }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={() => {
                   setActiveTone(tone);
                   setCurrentSlide(0);
@@ -147,14 +178,24 @@ const ToneShowcase = () => {
                   <p className="font-semibold">{tone.name}</p>
                   <p className="text-xs text-muted-foreground hidden sm:block">{tone.description}</p>
                 </div>
-              </button>
+              </motion.button>
             ))}
-          </div>
+          </motion.div>
 
-          {/* Carousel Preview */}
-          <div className="flex flex-col md:flex-row items-center gap-8">
+          {/* Carousel Preview with parallax */}
+          <motion.div 
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="flex flex-col md:flex-row items-center gap-8"
+          >
             {/* Phone Mockup */}
-            <div className="flex-1 flex justify-center">
+            <motion.div 
+              className="flex-1 flex justify-center"
+              whileHover={{ scale: 1.02 }}
+              transition={{ duration: 0.3 }}
+            >
               <div className="relative w-72">
                 {/* Phone Frame */}
                 <div className="relative bg-gradient-to-b from-card to-secondary rounded-[2.5rem] p-2 shadow-2xl border border-border">
@@ -164,14 +205,21 @@ const ToneShowcase = () => {
                     
                     {/* Carousel Slide */}
                     <div className="aspect-[9/16] relative bg-primary flex items-center justify-center p-8">
-                      <div className="text-center text-primary-foreground">
+                      <motion.div 
+                        key={currentSlide}
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        transition={{ duration: 0.3 }}
+                        className="text-center text-primary-foreground"
+                      >
                         <p className="text-xs text-primary-foreground/60 mb-6">
                           {currentSlide + 1}/6
                         </p>
                         <p className="text-xl font-bold leading-relaxed">
                           {activeTone.slides[currentSlide]}
                         </p>
-                      </div>
+                      </motion.div>
                       
                       {/* Navigation Arrows */}
                       <button
@@ -205,30 +253,67 @@ const ToneShowcase = () => {
                   </div>
                 </div>
               </div>
-            </div>
+            </motion.div>
 
-            {/* Tone Description */}
-            <div className="flex-1 space-y-6">
-              <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full ${activeTone.color}`}>
+            {/* Tone Description with staggered elements */}
+            <motion.div 
+              className="flex-1 space-y-6"
+              initial={{ opacity: 0, x: 30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+            >
+              <motion.div 
+                key={activeTone.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={`inline-flex items-center gap-2 px-4 py-2 rounded-full ${activeTone.color}`}
+              >
                 <activeTone.icon className="w-4 h-4" />
                 <span className="font-medium">{activeTone.name}</span>
-              </div>
+              </motion.div>
               
-              <h3 className="text-display-sm">
+              <motion.h3 
+                key={`title-${activeTone.id}`}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="text-display-sm"
+              >
                 {getToneTitle(activeTone.id)}
-              </h3>
+              </motion.h3>
 
-              <p className="text-body-lg text-muted-foreground">
+              <motion.p 
+                key={`desc-${activeTone.id}`}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="text-body-lg text-muted-foreground"
+              >
                 {getToneLongDesc(activeTone.id)}
-              </p>
+              </motion.p>
 
-              <div className="flex flex-wrap gap-2">
-                {getToneTags(activeTone.id).map((tag) => (
-                  <span key={tag} className="px-3 py-1 bg-secondary rounded-full text-sm">{tag}</span>
+              <motion.div 
+                key={`tags-${activeTone.id}`}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="flex flex-wrap gap-2"
+              >
+                {getToneTags(activeTone.id).map((tag, i) => (
+                  <motion.span 
+                    key={tag} 
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.3 + i * 0.1 }}
+                    className="px-3 py-1 bg-secondary rounded-full text-sm"
+                  >
+                    {tag}
+                  </motion.span>
                 ))}
-              </div>
-            </div>
-          </div>
+              </motion.div>
+            </motion.div>
+          </motion.div>
         </div>
       </div>
     </section>

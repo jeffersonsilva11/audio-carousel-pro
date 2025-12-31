@@ -15,7 +15,8 @@ import {
   AlertTriangle,
   Flag,
   DollarSign,
-  UserCog
+  UserCog,
+  Settings
 } from "lucide-react";
 import { BRAND } from "@/lib/constants";
 import AdminStats from "@/components/admin/AdminStats";
@@ -25,6 +26,7 @@ import StripeEventsTable from "@/components/admin/StripeEventsTable";
 import FeatureFlagsCard from "@/components/admin/FeatureFlagsCard";
 import ApiUsageCard from "@/components/admin/ApiUsageCard";
 import RoleManagement from "@/components/admin/RoleManagement";
+import AppSettingsCard from "@/components/admin/AppSettingsCard";
 
 const Admin = () => {
   const { user, loading: authLoading } = useAuth();
@@ -131,6 +133,10 @@ const Admin = () => {
               <UserCog className="w-4 h-4" />
               {language === "pt-BR" ? "Permissões" : language === "es" ? "Permisos" : "Permissions"}
             </TabsTrigger>
+            <TabsTrigger value="settings" className="gap-2">
+              <Settings className="w-4 h-4" />
+              {language === "pt-BR" ? "Configurações" : language === "es" ? "Configuración" : "Settings"}
+            </TabsTrigger>
             <TabsTrigger value="flags" className="gap-2">
               <Flag className="w-4 h-4" />
               Features
@@ -155,6 +161,10 @@ const Admin = () => {
 
           <TabsContent value="roles">
             <RoleManagement />
+          </TabsContent>
+
+          <TabsContent value="settings">
+            <AppSettingsCard />
           </TabsContent>
 
           <TabsContent value="flags">
