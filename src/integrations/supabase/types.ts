@@ -143,6 +143,45 @@ export type Database = {
         }
         Relationships: []
       }
+      custom_templates: {
+        Row: {
+          created_at: string
+          custom_colors: string[] | null
+          font_id: string
+          gradient_id: string | null
+          id: string
+          is_default: boolean
+          name: string
+          style: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          custom_colors?: string[] | null
+          font_id?: string
+          gradient_id?: string | null
+          id?: string
+          is_default?: boolean
+          name: string
+          style?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          custom_colors?: string[] | null
+          font_id?: string
+          gradient_id?: string | null
+          id?: string
+          is_default?: boolean
+          name?: string
+          style?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       daily_usage: {
         Row: {
           carousels_created: number

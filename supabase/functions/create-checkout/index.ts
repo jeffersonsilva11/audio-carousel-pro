@@ -21,7 +21,7 @@ const PLAN_CONFIGS: Record<string, { name: string; description: string; price: n
   },
   agency: {
     name: "Audisell Agency",
-    description: "20 carrosséis/dia, geração de imagens AI, todos os recursos premium",
+    description: "20 carrosséis/dia, customização avançada, todos os recursos premium",
     price: 19990, // R$ 199,90
   },
 };

@@ -72,7 +72,6 @@ serve(async (req) => {
         has_watermark: true,
         has_editor: false,
         has_history: false,
-        has_image_generation: false
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
@@ -96,7 +95,6 @@ serve(async (req) => {
     let hasWatermark = true;
     let hasEditor = false;
     let hasHistory = false;
-    let hasImageGeneration = false;
 
     if (hasActiveSub) {
       const subscription = subscriptions.data[0];
@@ -129,25 +127,22 @@ serve(async (req) => {
           hasWatermark = false;
           hasEditor = true;
           hasHistory = true;
-          hasImageGeneration = false;
           break;
         case "creator":
           dailyLimit = 8;
           hasWatermark = false;
           hasEditor = true;
           hasHistory = true;
-          hasImageGeneration = false;
           break;
         case "agency":
           dailyLimit = 20;
           hasWatermark = false;
           hasEditor = true;
           hasHistory = true;
-          hasImageGeneration = true;
           break;
       }
 
-      logStep("Determined plan tier", { plan, dailyLimit, hasImageGeneration });
+      logStep("Determined plan tier", { plan, dailyLimit });
     } else {
       logStep("No active subscription found, using free plan");
     }
@@ -167,7 +162,6 @@ serve(async (req) => {
       hasWatermark = false;
       hasEditor = true;
       hasHistory = true;
-      hasImageGeneration = true;
     }
 
     return new Response(JSON.stringify({
@@ -180,7 +174,6 @@ serve(async (req) => {
       has_watermark: hasWatermark,
       has_editor: hasEditor,
       has_history: hasHistory,
-      has_image_generation: hasImageGeneration,
       is_admin: isAdmin
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

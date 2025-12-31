@@ -321,11 +321,11 @@ serve(async (req) => {
       ? getWordsPerSlide(actualSlideCount, textMode)
       : '15-35 palavras por slide';
 
-    // Template context for image generation hints
+    // Template context for styling
     const templateContext = template === 'gradient' 
-      ? 'Os slides terão imagem IA de fundo com overlay gradiente.'
+      ? 'Os slides terão fundo com gradiente de cores.'
       : template === 'image_top'
-      ? 'Os slides terão imagem IA no topo e texto na área inferior.'
+      ? 'Os slides terão imagem no topo e texto na área inferior.'
       : 'Os slides terão fundo sólido (preto ou branco).';
 
     logStep(`Generating script`, { mode: textMode, tone: creativeTone, slides: actualSlideCount, template });
