@@ -19,7 +19,9 @@ import {
   Settings,
   FileText,
   HelpCircle,
-  Quote
+  Quote,
+  Building,
+  BarChart3
 } from "lucide-react";
 import { BRAND } from "@/lib/constants";
 import AdminStats from "@/components/admin/AdminStats";
@@ -33,6 +35,8 @@ import AppSettingsCard from "@/components/admin/AppSettingsCard";
 import LandingContentManager from "@/components/admin/LandingContentManager";
 import FAQManager from "@/components/admin/FAQManager";
 import TestimonialsManager from "@/components/admin/TestimonialsManager";
+import TrustedCompaniesManager from "@/components/admin/TrustedCompaniesManager";
+import AdvancedAnalytics from "@/components/admin/AdvancedAnalytics";
 
 const Admin = () => {
   const { user, loading: authLoading } = useAuth();
@@ -131,6 +135,10 @@ const Admin = () => {
         {/* Tabs */}
         <Tabs defaultValue="landing" className="space-y-6">
           <TabsList className="flex-wrap h-auto gap-1">
+            <TabsTrigger value="analytics" className="gap-2">
+              <BarChart3 className="w-4 h-4" />
+              Analytics
+            </TabsTrigger>
             <TabsTrigger value="landing" className="gap-2">
               <FileText className="w-4 h-4" />
               Landing
@@ -142,6 +150,10 @@ const Admin = () => {
             <TabsTrigger value="testimonials" className="gap-2">
               <Quote className="w-4 h-4" />
               Depoimentos
+            </TabsTrigger>
+            <TabsTrigger value="companies" className="gap-2">
+              <Building className="w-4 h-4" />
+              Parceiros
             </TabsTrigger>
             <TabsTrigger value="users" className="gap-2">
               <Users className="w-4 h-4" />
@@ -173,6 +185,10 @@ const Admin = () => {
             </TabsTrigger>
           </TabsList>
 
+          <TabsContent value="analytics">
+            <AdvancedAnalytics />
+          </TabsContent>
+
           <TabsContent value="landing">
             <LandingContentManager />
           </TabsContent>
@@ -183,6 +199,10 @@ const Admin = () => {
 
           <TabsContent value="testimonials">
             <TestimonialsManager />
+          </TabsContent>
+
+          <TabsContent value="companies">
+            <TrustedCompaniesManager />
           </TabsContent>
 
           <TabsContent value="users">
