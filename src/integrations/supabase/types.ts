@@ -200,6 +200,42 @@ export type Database = {
         }
         Relationships: []
       }
+      landing_content: {
+        Row: {
+          content_key: string
+          content_type: string | null
+          created_at: string
+          id: string
+          section_key: string
+          updated_at: string
+          value_en: string | null
+          value_es: string | null
+          value_pt: string
+        }
+        Insert: {
+          content_key: string
+          content_type?: string | null
+          created_at?: string
+          id?: string
+          section_key: string
+          updated_at?: string
+          value_en?: string | null
+          value_es?: string | null
+          value_pt: string
+        }
+        Update: {
+          content_key?: string
+          content_type?: string | null
+          created_at?: string
+          id?: string
+          section_key?: string
+          updated_at?: string
+          value_en?: string | null
+          value_es?: string | null
+          value_pt?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_position: string | null
