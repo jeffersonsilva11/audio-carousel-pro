@@ -8,7 +8,7 @@ declare global {
   }
 }
 
-const GA_MEASUREMENT_ID = "G-8RGJS3QZN8";
+const GA_MEASUREMENT_ID = import.meta.env.VITE_GA_ID || "G-8RGJS3QZN8";
 
 // Initialize GA script
 export const initGA = () => {

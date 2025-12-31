@@ -101,7 +101,7 @@
 ### Variáveis de Ambiente Frontend
 ```
 VITE_SENTRY_DSN=✅ Configurado
-VITE_GA_ID=❌ Adicionar ID do Google Analytics
+VITE_GA_ID=✅ Configurado
 ```
 
 ### Secrets das Edge Functions (Supabase)
@@ -114,16 +114,24 @@ LOVABLE_API_KEY=✅ Configurado (para traduções)
 RECAPTCHA_SECRET_KEY=✅ Configurado
 ```
 
-### Stripe
-- [ ] Criar produtos e preços no Stripe Dashboard
-- [ ] Configurar webhook URL: `https://[PROJECT_ID].supabase.co/functions/v1/stripe-webhook`
-- [ ] Eventos a escutar:
-  - `checkout.session.completed`
-  - `customer.subscription.updated`
-  - `customer.subscription.deleted`
-  - `invoice.payment_failed`
-  - `invoice.payment_succeeded`
-- [ ] Configurar portal do cliente no Stripe
+### Stripe (AÇÃO NECESSÁRIA)
+**Produtos criados no Stripe:**
+- Starter: prod_ThdxtXMqQrNPCq (R$ 9,90/mês)
+- Creator: prod_ThdxrWyTfbPE71 (R$ 29,90/mês)
+- Agency: prod_Thdxalc2y35jpA (R$ 99,90/mês)
+
+**Próximos passos:**
+1. [ ] Acessar [Stripe Dashboard → Products](https://dashboard.stripe.com/test/products)
+2. [ ] Copiar os **price_id** de cada produto
+3. [ ] Atualizar em `src/lib/plans.ts` → `STRIPE_PRICE_IDS`
+4. [ ] Configurar webhook URL: `https://czsxwcgathtklvwtgdhn.supabase.co/functions/v1/stripe-webhook`
+5. [ ] Eventos do webhook:
+   - `checkout.session.completed`
+   - `customer.subscription.updated`
+   - `customer.subscription.deleted`
+   - `invoice.payment_failed`
+   - `invoice.payment_succeeded`
+6. [ ] Configurar portal do cliente no Stripe
 
 ### Domínio & DNS
 - [ ] Registrar domínio (audisell.com ou similar)
