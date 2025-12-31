@@ -116,13 +116,12 @@ RECAPTCHA_SECRET_KEY=✅ Configurado
 
 ### Stripe (AÇÃO NECESSÁRIA)
 **Produtos criados no Stripe:**
-- Starter: prod_ThdxtXMqQrNPCq (R$ 9,90/mês)
-- Creator: prod_ThdxrWyTfbPE71 (R$ 29,90/mês)
-- Agency: prod_Thdxalc2y35jpA (R$ 99,90/mês)
+- Starter: prod_The3hLxkN18wxc (R$ 29,90/mês)
+- Creator: prod_The3iuUmGhYz6u (R$ 99,90/mês)
 
 **Próximos passos:**
 1. [ ] Acessar [Stripe Dashboard → Products](https://dashboard.stripe.com/test/products)
-2. [ ] Copiar os **price_id** de cada produto
+2. [ ] Copiar os **price_id** de cada produto (começam com `price_`)
 3. [ ] Atualizar em `src/lib/plans.ts` → `STRIPE_PRICE_IDS`
 4. [ ] Configurar webhook URL: `https://czsxwcgathtklvwtgdhn.supabase.co/functions/v1/stripe-webhook`
 5. [ ] Eventos do webhook:

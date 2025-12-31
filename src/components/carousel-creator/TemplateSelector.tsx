@@ -13,14 +13,14 @@ interface TemplateSelectorProps {
 }
 
 const TemplateSelector = ({ selectedTemplate, setSelectedTemplate }: TemplateSelectorProps) => {
-  const { isCreator, isAgency } = useSubscription();
+  const { isCreator } = useSubscription();
   const { language } = useLanguage();
 
   const canSelectTemplate = (templateId: TemplateId) => {
     const template = TEMPLATES.find(t => t.id === templateId);
     if (!template) return false;
     if (template.requiredPlan === 'free') return true;
-    if (template.requiredPlan === 'creator') return isCreator || isAgency;
+    if (template.requiredPlan === 'creator') return isCreator;
     return true;
   };
 
@@ -100,7 +100,7 @@ const TemplateSelector = ({ selectedTemplate, setSelectedTemplate }: TemplateSel
       </div>
 
       {/* Info about premium templates */}
-      {!isCreator && !isAgency && (
+      {!isCreator && (
         <p className="text-xs text-muted-foreground text-center">
           {t("templateSelector", "premiumInfo", language).replace("{price}", getPlanPrice("creator", language))}
         </p>

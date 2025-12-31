@@ -1,11 +1,13 @@
 // Plan configuration for Audisell
-export type PlanTier = 'free' | 'starter' | 'creator' | 'agency';
+export type PlanTier = 'free' | 'starter' | 'creator';
 
-// Stripe Price IDs (created via Stripe Dashboard)
+// Stripe Price IDs - Atualize com os IDs do Stripe Dashboard
+// Produtos criados:
+// - Starter (prod_The3hLxkN18wxc): R$ 29,90/mês
+// - Creator (prod_The3iuUmGhYz6u): R$ 99,90/mês
 export const STRIPE_PRICE_IDS = {
-  starter: 'price_starter_monthly', // TODO: Replace with actual price_id from Stripe
-  creator: 'price_creator_monthly', // TODO: Replace with actual price_id from Stripe  
-  agency: 'price_agency_monthly',   // TODO: Replace with actual price_id from Stripe
+  starter: 'price_REPLACE_WITH_STARTER_PRICE_ID', // Copie do Stripe Dashboard
+  creator: 'price_REPLACE_WITH_CREATOR_PRICE_ID', // Copie do Stripe Dashboard
 } as const;
 
 export interface PlanConfig {
@@ -58,8 +60,8 @@ export const PLANS: Record<PlanTier, PlanConfig> = {
     id: 'starter',
     name: 'Starter',
     description: 'Para criadores iniciantes',
-    price: 990, // R$ 9,90
-    priceDisplay: 'R$ 9,90',
+    price: 2990, // R$ 29,90
+    priceDisplay: 'R$ 29,90',
     priceId: STRIPE_PRICE_IDS.starter,
     dailyLimit: 1,
     monthlyLimit: 30,
@@ -82,8 +84,8 @@ export const PLANS: Record<PlanTier, PlanConfig> = {
     id: 'creator',
     name: 'Creator',
     description: 'Para criadores sérios',
-    price: 2990, // R$ 29,90
-    priceDisplay: 'R$ 29,90',
+    price: 9990, // R$ 99,90
+    priceDisplay: 'R$ 99,90',
     priceId: STRIPE_PRICE_IDS.creator,
     dailyLimit: 8,
     monthlyLimit: null, // fair usage
@@ -107,43 +109,14 @@ export const PLANS: Record<PlanTier, PlanConfig> = {
     ],
     limitations: [],
   },
-  agency: {
-    id: 'agency',
-    name: 'Agency',
-    description: 'Para agências e power users',
-    price: 9990, // R$ 99,90
-    priceDisplay: 'R$ 99,90',
-    priceId: STRIPE_PRICE_IDS.agency,
-    dailyLimit: 20,
-    monthlyLimit: null, // fair usage
-    hasWatermark: false,
-    hasEditor: true,
-    hasHistory: true,
-    hasZipDownload: true,
-    hasCustomFonts: true,
-    hasGradients: true,
-    hasSlideImages: true,
-    templates: ['solid', 'gradient', 'image_top'],
-    features: [
-      'Até 20 carrosséis por dia',
-      'Uso ilimitado mensal (uso justo)',
-      'Sem marca d\'água',
-      'Customização avançada',
-      'Todos os templates',
-      'Processamento prioritário',
-      'Suporte premium',
-    ],
-    limitations: [],
-  },
 };
 
-export const PLAN_ORDER: PlanTier[] = ['free', 'starter', 'creator', 'agency'];
+export const PLAN_ORDER: PlanTier[] = ['free', 'starter', 'creator'];
 
 export function getPlanByPriceId(priceId: string): PlanTier | null {
   const priceIdMap: Record<string, PlanTier> = {
     [STRIPE_PRICE_IDS.starter]: 'starter',
     [STRIPE_PRICE_IDS.creator]: 'creator',
-    [STRIPE_PRICE_IDS.agency]: 'agency',
   };
   return priceIdMap[priceId] || null;
 }

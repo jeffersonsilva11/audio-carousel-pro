@@ -264,8 +264,8 @@ export default function PlansModal({ open, onOpenChange }: PlansModalProps) {
     return null;
   };
 
-  // Filter out agency plan for now
-  const availablePlans = PLAN_ORDER.filter(p => p !== "agency");
+  // Available plans
+  const availablePlans = PLAN_ORDER;
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>

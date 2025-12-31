@@ -18,11 +18,6 @@ export const planNames: Record<PlanTier, Record<SupportedLanguage, string>> = {
     en: "Creator",
     es: "Creator",
   },
-  agency: {
-    "pt-BR": "Agency",
-    en: "Agency",
-    es: "Agency",
-  },
 };
 
 export const planDescriptions: Record<PlanTier, Record<SupportedLanguage, string>> = {
@@ -40,11 +35,6 @@ export const planDescriptions: Record<PlanTier, Record<SupportedLanguage, string
     "pt-BR": "Para criadores sérios",
     en: "For serious creators",
     es: "Para creadores serios",
-  },
-  agency: {
-    "pt-BR": "Para agências e power users",
-    en: "For agencies and power users",
-    es: "Para agencias y power users",
   },
 };
 

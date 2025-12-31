@@ -194,7 +194,6 @@ export function useSubscription() {
     canCreateCarousel,
     getRemainingCarousels,
     isPro: state.plan !== "free",
-    isCreator: state.plan === "creator" || state.plan === "agency",
-    isAgency: state.plan === "agency",
+    isCreator: state.plan === "creator",
   };
 }
