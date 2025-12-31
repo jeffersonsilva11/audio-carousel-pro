@@ -9,7 +9,6 @@ interface SubscriptionState {
   dailyLimit: number;
   dailyUsed: number;
   hasWatermark: boolean;
-  hasImageGeneration: boolean;
   hasEditor: boolean;
   hasHistory: boolean;
   hasZipDownload: boolean;
@@ -25,7 +24,6 @@ export function useSubscription() {
     dailyLimit: 1,
     dailyUsed: 0,
     hasWatermark: true,
-    hasImageGeneration: false,
     hasEditor: false,
     hasHistory: false,
     hasZipDownload: false,
@@ -41,7 +39,6 @@ export function useSubscription() {
         dailyLimit: 1,
         dailyUsed: 0,
         hasWatermark: true,
-        hasImageGeneration: false,
         hasEditor: false,
         hasHistory: false,
         hasZipDownload: false,
@@ -72,7 +69,6 @@ export function useSubscription() {
           dailyLimit: 1,
           dailyUsed: 0,
           hasWatermark: true,
-          hasImageGeneration: false,
           hasEditor: false,
           hasHistory: false,
           hasZipDownload: false,
@@ -91,7 +87,6 @@ export function useSubscription() {
           dailyLimit: 1,
           dailyUsed: 0,
           hasWatermark: true,
-          hasImageGeneration: false,
           hasEditor: false,
           hasHistory: false,
           hasZipDownload: false,
@@ -110,7 +105,6 @@ export function useSubscription() {
         dailyLimit: data.daily_limit || planConfig.dailyLimit,
         dailyUsed: data.daily_used || 0,
         hasWatermark: data.has_watermark ?? planConfig.hasWatermark,
-        hasImageGeneration: data.has_image_generation ?? planConfig.hasImageGeneration,
         hasEditor: data.has_editor ?? planConfig.hasEditor,
         hasHistory: data.has_history ?? planConfig.hasHistory,
         hasZipDownload: planConfig.hasZipDownload,
@@ -126,7 +120,6 @@ export function useSubscription() {
         dailyLimit: 1,
         dailyUsed: 0,
         hasWatermark: true,
-        hasImageGeneration: false,
         hasEditor: false,
         hasHistory: false,
         hasZipDownload: false,

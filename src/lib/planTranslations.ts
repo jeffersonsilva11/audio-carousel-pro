@@ -174,10 +174,10 @@ export const featureTranslations: Record<string, Record<SupportedLanguage, strin
     en: "No visual editor",
     es: "Sin editor visual",
   },
-  "Sem geração de imagens": {
-    "pt-BR": "Sem geração de imagens",
-    en: "No image generation",
-    es: "Sin generación de imágenes",
+  "Templates premium": {
+    "pt-BR": "Templates premium",
+    en: "Premium templates",
+    es: "Plantillas premium",
   },
 };
 

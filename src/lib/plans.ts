@@ -10,7 +10,6 @@ export interface PlanConfig {
   dailyLimit: number;
   monthlyLimit: number | null; // null = fair usage
   hasWatermark: boolean;
-  hasImageGeneration: boolean;
   hasEditor: boolean;
   hasHistory: boolean;
   hasZipDownload: boolean;
@@ -32,7 +31,6 @@ export const PLANS: Record<PlanTier, PlanConfig> = {
     dailyLimit: 1,
     monthlyLimit: 1, // 1 total per account
     hasWatermark: true,
-    hasImageGeneration: false,
     hasEditor: false,
     hasHistory: false,
     hasZipDownload: false,
@@ -57,7 +55,6 @@ export const PLANS: Record<PlanTier, PlanConfig> = {
     dailyLimit: 1,
     monthlyLimit: 30,
     hasWatermark: false,
-    hasImageGeneration: false,
     hasEditor: true,
     hasHistory: true,
     hasZipDownload: true,
@@ -70,9 +67,7 @@ export const PLANS: Record<PlanTier, PlanConfig> = {
       'Download em ZIP',
       'Template fundo sólido',
     ],
-    limitations: [
-      'Sem geração de imagens',
-    ],
+    limitations: [],
   },
   creator: {
     id: 'creator',
@@ -83,7 +78,6 @@ export const PLANS: Record<PlanTier, PlanConfig> = {
     dailyLimit: 8,
     monthlyLimit: null, // fair usage
     hasWatermark: false,
-    hasImageGeneration: false, // Disabled for now
     hasEditor: true,
     hasHistory: true,
     hasZipDownload: true,
@@ -97,7 +91,7 @@ export const PLANS: Record<PlanTier, PlanConfig> = {
       'Sem marca d\'água',
       'Editor visual completo',
       'Customização de fontes',
-      'Templates com gradientes',
+      'Templates premium',
       'Upload de imagens por slide',
       'Processamento prioritário',
     ],
@@ -112,7 +106,6 @@ export const PLANS: Record<PlanTier, PlanConfig> = {
     dailyLimit: 20,
     monthlyLimit: null, // fair usage
     hasWatermark: false,
-    hasImageGeneration: false, // Disabled for now
     hasEditor: true,
     hasHistory: true,
     hasZipDownload: true,
@@ -143,10 +136,6 @@ export function getPlanByPriceId(priceId: string): PlanTier | null {
 
 export function canAccessTemplate(planTier: PlanTier, template: 'solid' | 'gradient' | 'image_top'): boolean {
   return PLANS[planTier].templates.includes(template);
-}
-
-export function canGenerateImages(planTier: PlanTier): boolean {
-  return PLANS[planTier].hasImageGeneration;
 }
 
 export function getDailyLimit(planTier: PlanTier): number {
