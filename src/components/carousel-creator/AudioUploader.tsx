@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { useTranslation } from "@/hooks/useLanguage";
 import { useRecaptcha } from "@/hooks/useRecaptcha";
 import { useToast } from "@/hooks/use-toast";
+import { LottieAnimation } from "@/components/animations/LottieAnimations";
 
 interface AudioUploaderProps {
   audioFile: File | null;
@@ -261,18 +262,9 @@ const AudioUploader = ({
             </Button>
           </div>
           
-          {/* Waveform placeholder */}
-          <div className="mt-4 h-16 bg-background/50 rounded-lg flex items-center justify-center gap-1 overflow-hidden">
-            {Array.from({ length: 50 }).map((_, i) => (
-              <div
-                key={i}
-                className="w-1 bg-accent/40 rounded-full animate-pulse"
-                style={{
-                  height: `${Math.random() * 100}%`,
-                  animationDelay: `${i * 0.05}s`
-                }}
-              />
-            ))}
+          {/* Waveform animation */}
+          <div className="mt-4 flex items-center justify-center">
+            <LottieAnimation type="audioWave" size={80} />
           </div>
         </CardContent>
       </Card>
@@ -343,9 +335,13 @@ const AudioUploader = ({
       >
         <CardContent className="p-8">
           <div className="flex flex-col items-center text-center">
-            <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4">
-              <Upload className="w-6 h-6 text-muted-foreground" />
-            </div>
+            {isDragging ? (
+              <LottieAnimation type="upload" size={80} className="mb-4" />
+            ) : (
+              <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4">
+                <Upload className="w-6 h-6 text-muted-foreground" />
+              </div>
+            )}
             <p className="font-semibold mb-1">
               {t("audioUploader", "dragOrClick")}
             </p>
