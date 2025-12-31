@@ -4,10 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Save, Globe, FileText, Sparkles, MessageSquare, Layout, Users } from "lucide-react";
+import { Loader2, Save, Globe, FileText, Sparkles, MessageSquare, Layout, Users, Languages } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 interface LandingContent {
@@ -29,7 +29,6 @@ const SECTIONS = [
 ];
 
 const FIELD_LABELS: Record<string, string> = {
-  // Hero
   badge: "Badge (texto pequeno no topo)",
   title_part1: "Título - Parte 1",
   title_highlight: "Título - Palavra destacada",
@@ -37,8 +36,6 @@ const FIELD_LABELS: Record<string, string> = {
   subtitle: "Subtítulo",
   cta_primary: "Botão principal",
   cta_secondary: "Botão secundário",
-  
-  // How it works
   section_title: "Título da seção",
   title: "Título principal",
   step1_title: "Passo 1 - Título",
@@ -47,12 +44,8 @@ const FIELD_LABELS: Record<string, string> = {
   step2_desc: "Passo 2 - Descrição",
   step3_title: "Passo 3 - Título",
   step3_desc: "Passo 3 - Descrição",
-  
-  // CTA
   button: "Texto do botão",
   disclaimer: "Disclaimer (texto pequeno)",
-  
-  // General
   enabled: "Ativar seção",
 };
 
@@ -60,6 +53,7 @@ const LandingContentManager = () => {
   const [content, setContent] = useState<LandingContent[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [translating, setTranslating] = useState(false);
   const [editedContent, setEditedContent] = useState<Record<string, Partial<LandingContent>>>({});
   const [activeTab, setActiveTab] = useState("pt");
   const { toast } = useToast();
@@ -142,6 +136,72 @@ const LandingContentManager = () => {
     }
   };
 
+  const handleAutoTranslate = async () => {
+    setTranslating(true);
+    try {
+      // Get all content that has PT values but missing EN or ES
+      const itemsToTranslate = content.filter(item => 
+        item.value_pt && (!item.value_en || !item.value_es)
+      );
+
+      if (itemsToTranslate.length === 0) {
+        toast({
+          title: "Nada para traduzir",
+          description: "Todos os campos já possuem traduções.",
+        });
+        setTranslating(false);
+        return;
+      }
+
+      let translatedCount = 0;
+
+      for (const item of itemsToTranslate) {
+        const updates: Partial<LandingContent> = {};
+
+        // Translate to English if missing
+        if (!item.value_en) {
+          const { data: enData, error: enError } = await supabase.functions.invoke("translate-content", {
+            body: { text: item.value_pt, targetLanguage: "en", context: "landing_page" }
+          });
+          if (!enError && enData?.translatedText) {
+            updates.value_en = enData.translatedText;
+          }
+        }
+
+        // Translate to Spanish if missing
+        if (!item.value_es) {
+          const { data: esData, error: esError } = await supabase.functions.invoke("translate-content", {
+            body: { text: item.value_pt, targetLanguage: "es", context: "landing_page" }
+          });
+          if (!esError && esData?.translatedText) {
+            updates.value_es = esData.translatedText;
+          }
+        }
+
+        if (Object.keys(updates).length > 0) {
+          await supabase.from("landing_content").update(updates).eq("id", item.id);
+          translatedCount++;
+        }
+      }
+
+      toast({
+        title: "Tradução concluída!",
+        description: `${translatedCount} campos traduzidos automaticamente.`,
+      });
+
+      fetchContent();
+    } catch (error) {
+      console.error("Error translating content:", error);
+      toast({
+        title: "Erro na tradução",
+        description: "Não foi possível traduzir o conteúdo.",
+        variant: "destructive",
+      });
+    } finally {
+      setTranslating(false);
+    }
+  };
+
   const getContentBySection = (sectionKey: string) => {
     return content.filter((item) => item.section_key === sectionKey);
   };
@@ -171,16 +231,31 @@ const LandingContentManager = () => {
               Edite textos, títulos e CTAs da página inicial
             </CardDescription>
           </div>
-          {hasChanges && (
-            <Button onClick={handleSave} disabled={saving}>
-              {saving ? (
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              onClick={handleAutoTranslate} 
+              disabled={translating}
+              title="Traduzir automaticamente campos vazios"
+            >
+              {translating ? (
                 <Loader2 className="w-4 h-4 animate-spin mr-2" />
               ) : (
-                <Save className="w-4 h-4 mr-2" />
+                <Languages className="w-4 h-4 mr-2" />
               )}
-              Salvar alterações
+              Auto-traduzir
             </Button>
-          )}
+            {hasChanges && (
+              <Button onClick={handleSave} disabled={saving}>
+                {saving ? (
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                ) : (
+                  <Save className="w-4 h-4 mr-2" />
+                )}
+                Salvar alterações
+              </Button>
+            )}
+          </div>
         </div>
       </CardHeader>
       <CardContent>

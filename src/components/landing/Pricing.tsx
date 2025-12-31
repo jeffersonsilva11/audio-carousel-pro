@@ -94,7 +94,7 @@ const Pricing = () => {
                   </div>
                 )}
 
-                {isCurrentPlan && (
+                {isCurrentPlan && tier !== "free" && (
                   <div className="absolute -top-3 right-4">
                     <span className="inline-flex items-center px-3 py-1 bg-green-500 text-white text-xs font-semibold rounded-full">
                       {t("pricing", "yourPlan", language)}

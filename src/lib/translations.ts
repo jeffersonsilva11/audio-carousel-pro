@@ -126,9 +126,9 @@ export const translations = {
       es: "en carruseles profesionales",
     },
     subtitle: {
-      "pt-BR": "Grave um áudio de até 60 segundos. Nossa IA transcreve, roteiriza e gera carrosséis prontos para o Instagram em segundos.",
-      en: "Record an audio of up to 60 seconds. Our AI transcribes, scripts, and generates Instagram-ready carousels in seconds.",
-      es: "Graba un audio de hasta 60 segundos. Nuestra IA transcribe, guioniza y genera carruseles listos para Instagram en segundos.",
+      "pt-BR": "Grave um áudio de até 30 segundos. Nossa IA transcreve, roteiriza e gera carrosséis prontos para o Instagram em segundos.",
+      en: "Record an audio of up to 30 seconds. Our AI transcribes, scripts, and generates Instagram-ready carousels in seconds.",
+      es: "Graba un audio de hasta 30 segundos. Nuestra IA transcribe, guioniza y genera carruseles listos para Instagram en segundos.",
     },
     cta: {
       "pt-BR": "Criar meu primeiro carrossel",
@@ -190,9 +190,9 @@ export const translations = {
       es: "Graba o sube",
     },
     step1Desc: {
-      "pt-BR": "Grave um áudio de até 60 segundos ou faça upload de um arquivo. Fale naturalmente sobre o que quiser compartilhar.",
-      en: "Record an audio up to 60 seconds or upload a file. Speak naturally about what you want to share.",
-      es: "Graba un audio de hasta 60 segundos o sube un archivo. Habla naturalmente sobre lo que quieras compartir.",
+      "pt-BR": "Grave um áudio de até 30 segundos ou faça upload de um arquivo. Fale naturalmente sobre o que quiser compartilhar.",
+      en: "Record an audio up to 30 seconds or upload a file. Speak naturally about what you want to share.",
+      es: "Graba un audio de hasta 30 segundos o sube un archivo. Habla naturalmente sobre lo que quieras compartir.",
     },
     step2Title: {
       "pt-BR": "IA transforma",

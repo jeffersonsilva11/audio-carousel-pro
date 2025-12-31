@@ -13,6 +13,7 @@ import {
   Sparkles, FolderOpen, Crown, CreditCard, RefreshCw, AlertTriangle, Globe, Settings, History, Shield
 } from "lucide-react";
 import UsageStats from "@/components/dashboard/UsageStats";
+import CustomTemplatesManager from "@/components/dashboard/CustomTemplatesManager";
 import DashboardSkeleton from "@/components/skeletons/DashboardSkeleton";
 import OnboardingModal from "@/components/onboarding/OnboardingModal";
 import PlansModal from "@/components/dashboard/PlansModal";
@@ -318,6 +319,11 @@ const Dashboard = () => {
         {/* Usage Stats - Metrics */}
         <div className="mb-6">
           <UsageStats />
+        </div>
+
+        {/* Custom Templates Manager */}
+        <div className="mb-6">
+          <CustomTemplatesManager />
         </div>
 
         {/* Quick actions */}

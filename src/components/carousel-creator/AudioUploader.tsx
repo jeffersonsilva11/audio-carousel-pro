@@ -15,7 +15,7 @@ interface AudioUploaderProps {
   setAudioDuration: (duration: number | null) => void;
 }
 
-const MAX_DURATION = 60; // 60 seconds
+const MAX_DURATION = 30; // 30 seconds (Whisper limit)
 const MAX_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_TYPES = ["audio/mpeg", "audio/wav", "audio/mp4", "audio/x-m4a", "audio/webm"];
 

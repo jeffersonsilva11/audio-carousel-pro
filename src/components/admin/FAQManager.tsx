@@ -6,10 +6,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Save, Plus, Trash2, GripVertical, HelpCircle, Eye, EyeOff } from "lucide-react";
+import { Loader2, Save, Plus, Trash2, GripVertical, HelpCircle, Eye, EyeOff, Languages } from "lucide-react";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from "@dnd-kit/core";
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useSortable } from "@dnd-kit/sortable";
@@ -32,15 +32,19 @@ interface SortableFAQItemProps {
   onEdit: (faq: FAQ) => void;
   onToggle: (id: string, active: boolean) => void;
   onDelete: (id: string) => void;
+  onTranslate: (faq: FAQ) => void;
+  translatingId: string | null;
 }
 
-const SortableFAQItem = ({ faq, onEdit, onToggle, onDelete }: SortableFAQItemProps) => {
+const SortableFAQItem = ({ faq, onEdit, onToggle, onDelete, onTranslate, translatingId }: SortableFAQItemProps) => {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: faq.id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
   };
+
+  const needsTranslation = !faq.question_en || !faq.answer_en || !faq.question_es || !faq.answer_es;
 
   return (
     <div
@@ -62,6 +66,21 @@ const SortableFAQItem = ({ faq, onEdit, onToggle, onDelete }: SortableFAQItemPro
       </div>
 
       <div className="flex items-center gap-2">
+        {needsTranslation && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onTranslate(faq)}
+            disabled={translatingId === faq.id}
+            title="Traduzir automaticamente"
+          >
+            {translatingId === faq.id ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Languages className="w-4 h-4 text-accent" />
+            )}
+          </Button>
+        )}
         <Button
           variant="ghost"
           size="icon"
@@ -85,6 +104,7 @@ const FAQManager = () => {
   const [faqs, setFaqs] = useState<FAQ[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [translatingId, setTranslatingId] = useState<string | null>(null);
   const [editingFaq, setEditingFaq] = useState<FAQ | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("pt");
@@ -131,6 +151,59 @@ const FAQManager = () => {
     }
   };
 
+  const handleTranslate = async (faq: FAQ) => {
+    setTranslatingId(faq.id);
+    try {
+      const updates: Partial<FAQ> = {};
+
+      // Translate question to English if missing
+      if (!faq.question_en) {
+        const { data } = await supabase.functions.invoke("translate-content", {
+          body: { text: faq.question_pt, targetLanguage: "en", context: "faq_question" }
+        });
+        if (data?.translatedText) updates.question_en = data.translatedText;
+      }
+
+      // Translate answer to English if missing
+      if (!faq.answer_en) {
+        const { data } = await supabase.functions.invoke("translate-content", {
+          body: { text: faq.answer_pt, targetLanguage: "en", context: "faq_answer" }
+        });
+        if (data?.translatedText) updates.answer_en = data.translatedText;
+      }
+
+      // Translate question to Spanish if missing
+      if (!faq.question_es) {
+        const { data } = await supabase.functions.invoke("translate-content", {
+          body: { text: faq.question_pt, targetLanguage: "es", context: "faq_question" }
+        });
+        if (data?.translatedText) updates.question_es = data.translatedText;
+      }
+
+      // Translate answer to Spanish if missing
+      if (!faq.answer_es) {
+        const { data } = await supabase.functions.invoke("translate-content", {
+          body: { text: faq.answer_pt, targetLanguage: "es", context: "faq_answer" }
+        });
+        if (data?.translatedText) updates.answer_es = data.translatedText;
+      }
+
+      if (Object.keys(updates).length > 0) {
+        await supabase.from("faqs").update(updates).eq("id", faq.id);
+        toast({ title: "FAQ traduzida com sucesso!" });
+        fetchFaqs();
+      }
+    } catch (error) {
+      console.error("Error translating FAQ:", error);
+      toast({
+        title: "Erro na tradução",
+        variant: "destructive",
+      });
+    } finally {
+      setTranslatingId(null);
+    }
+  };
+
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     
@@ -141,7 +214,6 @@ const FAQManager = () => {
       const newFaqs = arrayMove(faqs, oldIndex, newIndex);
       setFaqs(newFaqs);
 
-      // Update order in database
       try {
         for (let i = 0; i < newFaqs.length; i++) {
           await supabase
@@ -152,7 +224,7 @@ const FAQManager = () => {
         toast({ title: "Ordem atualizada!" });
       } catch (error) {
         console.error("Error updating order:", error);
-        fetchFaqs(); // Revert on error
+        fetchFaqs();
       }
     }
   };
@@ -318,6 +390,8 @@ const FAQManager = () => {
                   onEdit={handleEdit}
                   onToggle={handleToggle}
                   onDelete={handleDelete}
+                  onTranslate={handleTranslate}
+                  translatingId={translatingId}
                 />
               ))}
             </div>
