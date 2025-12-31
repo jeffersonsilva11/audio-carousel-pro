@@ -16,7 +16,8 @@ import {
   Flag,
   DollarSign,
   UserCog,
-  Settings
+  Settings,
+  FileText
 } from "lucide-react";
 import { BRAND } from "@/lib/constants";
 import AdminStats from "@/components/admin/AdminStats";
@@ -27,6 +28,7 @@ import FeatureFlagsCard from "@/components/admin/FeatureFlagsCard";
 import ApiUsageCard from "@/components/admin/ApiUsageCard";
 import RoleManagement from "@/components/admin/RoleManagement";
 import AppSettingsCard from "@/components/admin/AppSettingsCard";
+import LandingContentManager from "@/components/admin/LandingContentManager";
 
 const Admin = () => {
   const { user, loading: authLoading } = useAuth();
@@ -123,8 +125,12 @@ const Admin = () => {
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="users" className="space-y-6">
+        <Tabs defaultValue="landing" className="space-y-6">
           <TabsList className="flex-wrap">
+            <TabsTrigger value="landing" className="gap-2">
+              <FileText className="w-4 h-4" />
+              Landing Page
+            </TabsTrigger>
             <TabsTrigger value="users" className="gap-2">
               <Users className="w-4 h-4" />
               {language === "pt-BR" ? "Usuários" : language === "es" ? "Usuarios" : "Users"}
@@ -154,6 +160,10 @@ const Admin = () => {
               Stripe
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="landing">
+            <LandingContentManager />
+          </TabsContent>
 
           <TabsContent value="users">
             <UsersTable />

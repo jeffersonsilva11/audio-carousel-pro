@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { LanguageProvider } from "@/hooks/useLanguage";
+import { NotificationsProvider } from "@/hooks/useNotifications";
 import CookieConsent from "@/components/CookieConsent";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -25,29 +26,31 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <LanguageProvider>
       <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <AnalyticsProvider>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/create" element={<CreateCarousel />} />
-                <Route path="/carousel/:id" element={<CarouselDetail />} />
-                <Route path="/settings/profile" element={<ProfileSettings />} />
-                <Route path="/history" element={<History />} />
-                <Route path="/admin" element={<Admin />} />
-                <Route path="/terms" element={<TermsOfService />} />
-                <Route path="/privacy" element={<PrivacyPolicy />} />
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </AnalyticsProvider>
-          </BrowserRouter>
-          <CookieConsent />
-        </TooltipProvider>
+        <NotificationsProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <AnalyticsProvider>
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/auth" element={<Auth />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/create" element={<CreateCarousel />} />
+                  <Route path="/carousel/:id" element={<CarouselDetail />} />
+                  <Route path="/settings/profile" element={<ProfileSettings />} />
+                  <Route path="/history" element={<History />} />
+                  <Route path="/admin" element={<Admin />} />
+                  <Route path="/terms" element={<TermsOfService />} />
+                  <Route path="/privacy" element={<PrivacyPolicy />} />
+                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </AnalyticsProvider>
+            </BrowserRouter>
+            <CookieConsent />
+          </TooltipProvider>
+        </NotificationsProvider>
       </AuthProvider>
     </LanguageProvider>
   </QueryClientProvider>
