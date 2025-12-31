@@ -17,7 +17,9 @@ import {
   DollarSign,
   UserCog,
   Settings,
-  FileText
+  FileText,
+  HelpCircle,
+  Quote
 } from "lucide-react";
 import { BRAND } from "@/lib/constants";
 import AdminStats from "@/components/admin/AdminStats";
@@ -29,6 +31,8 @@ import ApiUsageCard from "@/components/admin/ApiUsageCard";
 import RoleManagement from "@/components/admin/RoleManagement";
 import AppSettingsCard from "@/components/admin/AppSettingsCard";
 import LandingContentManager from "@/components/admin/LandingContentManager";
+import FAQManager from "@/components/admin/FAQManager";
+import TestimonialsManager from "@/components/admin/TestimonialsManager";
 
 const Admin = () => {
   const { user, loading: authLoading } = useAuth();
@@ -126,10 +130,18 @@ const Admin = () => {
 
         {/* Tabs */}
         <Tabs defaultValue="landing" className="space-y-6">
-          <TabsList className="flex-wrap">
+          <TabsList className="flex-wrap h-auto gap-1">
             <TabsTrigger value="landing" className="gap-2">
               <FileText className="w-4 h-4" />
-              Landing Page
+              Landing
+            </TabsTrigger>
+            <TabsTrigger value="faqs" className="gap-2">
+              <HelpCircle className="w-4 h-4" />
+              FAQs
+            </TabsTrigger>
+            <TabsTrigger value="testimonials" className="gap-2">
+              <Quote className="w-4 h-4" />
+              Depoimentos
             </TabsTrigger>
             <TabsTrigger value="users" className="gap-2">
               <Users className="w-4 h-4" />
@@ -141,7 +153,7 @@ const Admin = () => {
             </TabsTrigger>
             <TabsTrigger value="settings" className="gap-2">
               <Settings className="w-4 h-4" />
-              {language === "pt-BR" ? "Configurações" : language === "es" ? "Configuración" : "Settings"}
+              {language === "pt-BR" ? "Config" : language === "es" ? "Config" : "Settings"}
             </TabsTrigger>
             <TabsTrigger value="flags" className="gap-2">
               <Flag className="w-4 h-4" />
@@ -149,7 +161,7 @@ const Admin = () => {
             </TabsTrigger>
             <TabsTrigger value="api" className="gap-2">
               <DollarSign className="w-4 h-4" />
-              {language === "pt-BR" ? "Custos API" : language === "es" ? "Costos API" : "API Costs"}
+              API
             </TabsTrigger>
             <TabsTrigger value="logs" className="gap-2">
               <Activity className="w-4 h-4" />
@@ -163,6 +175,14 @@ const Admin = () => {
 
           <TabsContent value="landing">
             <LandingContentManager />
+          </TabsContent>
+
+          <TabsContent value="faqs">
+            <FAQManager />
+          </TabsContent>
+
+          <TabsContent value="testimonials">
+            <TestimonialsManager />
           </TabsContent>
 
           <TabsContent value="users">

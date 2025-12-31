@@ -458,6 +458,102 @@ export type Database = {
         }
         Relationships: []
       }
+      testimonials: {
+        Row: {
+          author_avatar: string | null
+          author_company: string | null
+          author_name: string
+          author_role_en: string | null
+          author_role_es: string | null
+          author_role_pt: string
+          created_at: string
+          display_order: number
+          id: string
+          is_active: boolean
+          metric_label_en: string | null
+          metric_label_es: string | null
+          metric_label_pt: string | null
+          metric_value: string | null
+          quote_en: string | null
+          quote_es: string | null
+          quote_pt: string
+          rating: number | null
+          updated_at: string
+        }
+        Insert: {
+          author_avatar?: string | null
+          author_company?: string | null
+          author_name: string
+          author_role_en?: string | null
+          author_role_es?: string | null
+          author_role_pt: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          metric_label_en?: string | null
+          metric_label_es?: string | null
+          metric_label_pt?: string | null
+          metric_value?: string | null
+          quote_en?: string | null
+          quote_es?: string | null
+          quote_pt: string
+          rating?: number | null
+          updated_at?: string
+        }
+        Update: {
+          author_avatar?: string | null
+          author_company?: string | null
+          author_name?: string
+          author_role_en?: string | null
+          author_role_es?: string | null
+          author_role_pt?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          metric_label_en?: string | null
+          metric_label_es?: string | null
+          metric_label_pt?: string | null
+          metric_value?: string | null
+          quote_en?: string | null
+          quote_es?: string | null
+          quote_pt?: string
+          rating?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      trusted_companies: {
+        Row: {
+          created_at: string
+          display_order: number
+          id: string
+          is_active: boolean
+          logo_svg: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          logo_svg: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          logo_svg?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       usage_logs: {
         Row: {
           action: string
