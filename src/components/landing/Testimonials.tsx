@@ -1,11 +1,73 @@
 import { useState, useEffect } from "react";
 import { Star, Quote, ArrowLeft, ArrowRight, TrendingUp, Clock, Zap } from "lucide-react";
-import { useLanguage } from "@/hooks/useLanguage";
+import { useLanguage, SupportedLanguage } from "@/hooks/useLanguage";
 import { motion, AnimatePresence } from "framer-motion";
+import { supabase } from "@/integrations/supabase/client";
+import { Skeleton } from "@/components/ui/skeleton";
+
+interface Testimonial {
+  id: string;
+  quote_pt: string;
+  quote_en: string | null;
+  quote_es: string | null;
+  author_name: string;
+  author_role_pt: string;
+  author_role_en: string | null;
+  author_role_es: string | null;
+  author_company: string | null;
+  author_avatar: string | null;
+  metric_value: string | null;
+  metric_label_pt: string | null;
+  metric_label_en: string | null;
+  metric_label_es: string | null;
+  rating: number;
+  display_order: number;
+}
 
 const Testimonials = () => {
   const { language } = useLanguage();
   const [activeIndex, setActiveIndex] = useState(0);
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchTestimonials();
+  }, []);
+
+  const fetchTestimonials = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("testimonials")
+        .select("*")
+        .eq("is_active", true)
+        .order("display_order");
+
+      if (error) throw error;
+      setTestimonials(data || []);
+    } catch (error) {
+      console.error("Error fetching testimonials:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getQuote = (t: Testimonial, lang: SupportedLanguage): string => {
+    if (lang === "en") return t.quote_en || t.quote_pt;
+    if (lang === "es") return t.quote_es || t.quote_pt;
+    return t.quote_pt;
+  };
+
+  const getRole = (t: Testimonial, lang: SupportedLanguage): string => {
+    if (lang === "en") return t.author_role_en || t.author_role_pt;
+    if (lang === "es") return t.author_role_es || t.author_role_pt;
+    return t.author_role_pt;
+  };
+
+  const getMetricLabel = (t: Testimonial, lang: SupportedLanguage): string => {
+    if (lang === "en") return t.metric_label_en || t.metric_label_pt || "";
+    if (lang === "es") return t.metric_label_es || t.metric_label_pt || "";
+    return t.metric_label_pt || "";
+  };
 
   // Success metrics
   const metrics = [
@@ -32,72 +94,9 @@ const Testimonials = () => {
     },
   ];
 
-  // Testimonials data
-  const testimonials = [
-    {
-      id: 1,
-      quote: language === "pt-BR"
-        ? "Eu passava 4 horas por dia criando conteúdo. Agora faço em 20 minutos. Meu engajamento triplicou e finalmente tenho tempo para focar no meu negócio."
-        : language === "es"
-          ? "Pasaba 4 horas al día creando contenido. Ahora lo hago en 20 minutos. Mi engagement se triplicó y finalmente tengo tiempo para enfocarme en mi negocio."
-          : "I used to spend 4 hours a day creating content. Now I do it in 20 minutes. My engagement tripled and I finally have time to focus on my business.",
-      author: "Marina Silva",
-      role: "Social Media Manager",
-      company: "Agência Digital",
-      avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop&crop=face",
-      metric: "+340%",
-      metricLabel: language === "pt-BR" ? "engajamento" : language === "es" ? "engagement" : "engagement",
-      rating: 5,
-    },
-    {
-      id: 2,
-      quote: language === "pt-BR"
-        ? "O tom provocador mudou completamente meu perfil. Minhas postagens agora geram debates e meu alcance orgânico explodiu. A melhor ferramenta que já usei."
-        : language === "es"
-          ? "El tono provocador cambió completamente mi perfil. Mis publicaciones ahora generan debates y mi alcance orgánico explotó. La mejor herramienta que he usado."
-          : "The provocative tone completely changed my profile. My posts now spark debates and my organic reach exploded. Best tool I've ever used.",
-      author: "Carlos Mendes",
-      role: language === "pt-BR" ? "Criador de Conteúdo" : language === "es" ? "Creador de Contenido" : "Content Creator",
-      company: "150K followers",
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=face",
-      metric: "+520%",
-      metricLabel: language === "pt-BR" ? "alcance" : language === "es" ? "alcance" : "reach",
-      rating: 5,
-    },
-    {
-      id: 3,
-      quote: language === "pt-BR"
-        ? "Como coach, preciso de conteúdo que conecte emocionalmente. O tom emocional do Audisell entende isso perfeitamente. Meus clientes sempre perguntam como eu faço."
-        : language === "es"
-          ? "Como coach, necesito contenido que conecte emocionalmente. El tono emocional de Audisell lo entiende perfectamente. Mis clientes siempre preguntan cómo lo hago."
-          : "As a coach, I need content that connects emotionally. Audisell's emotional tone understands this perfectly. My clients always ask how I do it.",
-      author: "Ana Beatriz",
-      role: "Life Coach",
-      company: "Coaching Premium",
-      avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&h=200&fit=crop&crop=face",
-      metric: "+180%",
-      metricLabel: language === "pt-BR" ? "conversões" : language === "es" ? "conversiones" : "conversions",
-      rating: 5,
-    },
-    {
-      id: 4,
-      quote: language === "pt-BR"
-        ? "Gerencio 12 contas de clientes. Antes era impossível manter qualidade e consistência. Com o Audisell, cada cliente tem conteúdo único e profissional todos os dias."
-        : language === "es"
-          ? "Gestiono 12 cuentas de clientes. Antes era imposible mantener calidad y consistencia. Con Audisell, cada cliente tiene contenido único y profesional todos los días."
-          : "I manage 12 client accounts. It was impossible to maintain quality and consistency. With Audisell, each client has unique, professional content every day.",
-      author: "Rodrigo Alves",
-      role: language === "pt-BR" ? "Gestor de Redes Sociais" : language === "es" ? "Gestor de Redes Sociales" : "Social Media Manager",
-      company: "MediaPro Agency",
-      avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop&crop=face",
-      metric: "12",
-      metricLabel: language === "pt-BR" ? "contas gerenciadas" : language === "es" ? "cuentas gestionadas" : "accounts managed",
-      rating: 5,
-    },
-  ];
-
   // Auto-rotate testimonials
   useEffect(() => {
+    if (testimonials.length === 0) return;
     const interval = setInterval(() => {
       setActiveIndex((prev) => (prev + 1) % testimonials.length);
     }, 6000);
@@ -112,6 +111,32 @@ const Testimonials = () => {
     setActiveIndex((prev) => (prev + 1) % testimonials.length);
   };
 
+  if (loading) {
+    return (
+      <section className="py-24 md:py-32 bg-background">
+        <div className="container mx-auto">
+          <div className="text-center max-w-2xl mx-auto mb-16">
+            <Skeleton className="h-6 w-32 mx-auto mb-4" />
+            <Skeleton className="h-12 w-96 mx-auto mb-4" />
+            <Skeleton className="h-6 w-64 mx-auto" />
+          </div>
+          <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto mb-16">
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-32 rounded-2xl" />
+            ))}
+          </div>
+          <Skeleton className="h-64 max-w-4xl mx-auto rounded-3xl" />
+        </div>
+      </section>
+    );
+  }
+
+  if (testimonials.length === 0) {
+    return null;
+  }
+
+  const currentTestimonial = testimonials[activeIndex];
+
   return (
     <section id="testimonials" className="py-24 md:py-32 bg-background relative overflow-hidden">
       {/* Background elements */}
@@ -123,23 +148,40 @@ const Testimonials = () => {
       <div className="container mx-auto relative z-10">
         {/* Section Header */}
         <div className="text-center max-w-2xl mx-auto mb-16">
-          <span className="inline-block text-sm font-semibold text-accent mb-4 tracking-wide uppercase">
+          <motion.span 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="inline-block text-sm font-semibold text-accent mb-4 tracking-wide uppercase"
+          >
             {language === "pt-BR" ? "Casos de sucesso" : language === "es" ? "Casos de éxito" : "Success Stories"}
-          </span>
-          <h2 className="text-display-sm md:text-display-md mb-4">
+          </motion.span>
+          <motion.h2 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1 }}
+            className="text-display-sm md:text-display-md mb-4"
+          >
             {language === "pt-BR" 
               ? "Criadores que transformaram seus resultados" 
               : language === "es"
                 ? "Creadores que transformaron sus resultados"
                 : "Creators who transformed their results"}
-          </h2>
-          <p className="text-body-lg text-muted-foreground">
+          </motion.h2>
+          <motion.p 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
+            className="text-body-lg text-muted-foreground"
+          >
             {language === "pt-BR"
               ? "Veja o que nossos usuários dizem sobre a plataforma"
               : language === "es"
                 ? "Mira lo que dicen nuestros usuarios sobre la plataforma"
                 : "See what our users say about the platform"}
-          </p>
+          </motion.p>
         </div>
 
         {/* Metrics Grid */}
@@ -179,25 +221,27 @@ const Testimonials = () => {
 
                 {/* Quote Text */}
                 <p className="text-lg md:text-xl text-foreground mb-8 leading-relaxed">
-                  "{testimonials[activeIndex].quote}"
+                  "{getQuote(currentTestimonial, language)}"
                 </p>
 
                 {/* Author Info */}
                 <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
                   <div className="flex items-center gap-4">
-                    <img
-                      src={testimonials[activeIndex].avatar}
-                      alt={testimonials[activeIndex].author}
-                      className="w-14 h-14 rounded-full object-cover ring-2 ring-accent/20"
-                    />
+                    {currentTestimonial.author_avatar && (
+                      <img
+                        src={currentTestimonial.author_avatar}
+                        alt={currentTestimonial.author_name}
+                        className="w-14 h-14 rounded-full object-cover ring-2 ring-accent/20"
+                      />
+                    )}
                     <div>
-                      <p className="font-semibold text-foreground">{testimonials[activeIndex].author}</p>
+                      <p className="font-semibold text-foreground">{currentTestimonial.author_name}</p>
                       <p className="text-sm text-muted-foreground">
-                        {testimonials[activeIndex].role} • {testimonials[activeIndex].company}
+                        {getRole(currentTestimonial, language)} {currentTestimonial.author_company && `• ${currentTestimonial.author_company}`}
                       </p>
                       {/* Stars */}
                       <div className="flex gap-0.5 mt-1">
-                        {[...Array(testimonials[activeIndex].rating)].map((_, i) => (
+                        {[...Array(currentTestimonial.rating)].map((_, i) => (
                           <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />
                         ))}
                       </div>
@@ -205,44 +249,48 @@ const Testimonials = () => {
                   </div>
 
                   {/* Metric Badge */}
-                  <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 border border-accent/20">
-                    <TrendingUp className="w-4 h-4 text-accent" />
-                    <span className="font-bold text-accent">{testimonials[activeIndex].metric}</span>
-                    <span className="text-sm text-muted-foreground">{testimonials[activeIndex].metricLabel}</span>
-                  </div>
+                  {currentTestimonial.metric_value && (
+                    <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 border border-accent/20">
+                      <TrendingUp className="w-4 h-4 text-accent" />
+                      <span className="font-bold text-accent">{currentTestimonial.metric_value}</span>
+                      <span className="text-sm text-muted-foreground">{getMetricLabel(currentTestimonial, language)}</span>
+                    </div>
+                  )}
                 </div>
               </motion.div>
             </AnimatePresence>
 
             {/* Navigation Buttons */}
-            <div className="flex items-center justify-center gap-4 mt-8">
-              <button
-                onClick={goToPrev}
-                className="w-10 h-10 rounded-full bg-card border border-border flex items-center justify-center hover:bg-muted transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </button>
+            {testimonials.length > 1 && (
+              <div className="flex items-center justify-center gap-4 mt-8">
+                <button
+                  onClick={goToPrev}
+                  className="w-10 h-10 rounded-full bg-card border border-border flex items-center justify-center hover:bg-muted transition-colors"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                </button>
 
-              {/* Dots */}
-              <div className="flex gap-2">
-                {testimonials.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setActiveIndex(index)}
-                    className={`w-2 h-2 rounded-full transition-all ${
-                      index === activeIndex ? "w-6 bg-accent" : "bg-muted-foreground/30"
-                    }`}
-                  />
-                ))}
+                {/* Dots */}
+                <div className="flex gap-2">
+                  {testimonials.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setActiveIndex(index)}
+                      className={`w-2 h-2 rounded-full transition-all ${
+                        index === activeIndex ? "w-6 bg-accent" : "bg-muted-foreground/30"
+                      }`}
+                    />
+                  ))}
+                </div>
+
+                <button
+                  onClick={goToNext}
+                  className="w-10 h-10 rounded-full bg-card border border-border flex items-center justify-center hover:bg-muted transition-colors"
+                >
+                  <ArrowRight className="w-5 h-5" />
+                </button>
               </div>
-
-              <button
-                onClick={goToNext}
-                className="w-10 h-10 rounded-full bg-card border border-border flex items-center justify-center hover:bg-muted transition-colors"
-              >
-                <ArrowRight className="w-5 h-5" />
-              </button>
-            </div>
+            )}
           </div>
         </div>
 
