@@ -1,12 +1,20 @@
 // Plan configuration for Audisell
 export type PlanTier = 'free' | 'starter' | 'creator' | 'agency';
 
+// Stripe Price IDs (created via Stripe Dashboard)
+export const STRIPE_PRICE_IDS = {
+  starter: 'price_starter_monthly', // TODO: Replace with actual price_id from Stripe
+  creator: 'price_creator_monthly', // TODO: Replace with actual price_id from Stripe  
+  agency: 'price_agency_monthly',   // TODO: Replace with actual price_id from Stripe
+} as const;
+
 export interface PlanConfig {
   id: PlanTier;
   name: string;
   description: string;
   price: number; // in BRL cents
   priceDisplay: string;
+  priceId?: string; // Stripe price ID
   dailyLimit: number;
   monthlyLimit: number | null; // null = fair usage
   hasWatermark: boolean;
@@ -50,8 +58,9 @@ export const PLANS: Record<PlanTier, PlanConfig> = {
     id: 'starter',
     name: 'Starter',
     description: 'Para criadores iniciantes',
-    price: 2990, // R$ 29,90
-    priceDisplay: 'R$ 29,90',
+    price: 990, // R$ 9,90
+    priceDisplay: 'R$ 9,90',
+    priceId: STRIPE_PRICE_IDS.starter,
     dailyLimit: 1,
     monthlyLimit: 30,
     hasWatermark: false,
@@ -73,8 +82,9 @@ export const PLANS: Record<PlanTier, PlanConfig> = {
     id: 'creator',
     name: 'Creator',
     description: 'Para criadores sérios',
-    price: 9990, // R$ 99,90
-    priceDisplay: 'R$ 99,90',
+    price: 2990, // R$ 29,90
+    priceDisplay: 'R$ 29,90',
+    priceId: STRIPE_PRICE_IDS.creator,
     dailyLimit: 8,
     monthlyLimit: null, // fair usage
     hasWatermark: false,
@@ -101,8 +111,9 @@ export const PLANS: Record<PlanTier, PlanConfig> = {
     id: 'agency',
     name: 'Agency',
     description: 'Para agências e power users',
-    price: 19990, // R$ 199,90
-    priceDisplay: 'R$ 199,90',
+    price: 9990, // R$ 99,90
+    priceDisplay: 'R$ 99,90',
+    priceId: STRIPE_PRICE_IDS.agency,
     dailyLimit: 20,
     monthlyLimit: null, // fair usage
     hasWatermark: false,
@@ -129,8 +140,11 @@ export const PLANS: Record<PlanTier, PlanConfig> = {
 export const PLAN_ORDER: PlanTier[] = ['free', 'starter', 'creator', 'agency'];
 
 export function getPlanByPriceId(priceId: string): PlanTier | null {
-  // This will be populated with actual Stripe price IDs
-  const priceIdMap: Record<string, PlanTier> = {};
+  const priceIdMap: Record<string, PlanTier> = {
+    [STRIPE_PRICE_IDS.starter]: 'starter',
+    [STRIPE_PRICE_IDS.creator]: 'creator',
+    [STRIPE_PRICE_IDS.agency]: 'agency',
+  };
   return priceIdMap[priceId] || null;
 }
 
