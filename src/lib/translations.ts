@@ -2745,6 +2745,16 @@ export const translations = {
       en: "Change redone",
       es: "Cambio rehecho",
     },
+    autoSaving: {
+      "pt-BR": "Salvando automaticamente...",
+      en: "Auto-saving...",
+      es: "Guardando automáticamente...",
+    },
+    slidesReordered: {
+      "pt-BR": "Slides reordenados",
+      en: "Slides reordered",
+      es: "Slides reordenados",
+    },
   },
 
   // Cookie Consent
@@ -2940,6 +2950,45 @@ export const translations = {
       "pt-BR": "Prévia do resultado final. O conteúdo será gerado pelo seu áudio.",
       en: "Preview of the final result. Content will be generated from your audio.",
       es: "Vista previa del resultado final. El contenido se generará de tu audio.",
+    },
+  },
+
+  // Plans Modal
+  plansModal: {
+    choosePlan: {
+      "pt-BR": "Escolha seu plano",
+      en: "Choose your plan",
+      es: "Elige tu plan",
+    },
+    yourPlan: {
+      "pt-BR": "Seu plano",
+      en: "Your plan",
+      es: "Tu plan",
+    },
+    currentPlan: {
+      "pt-BR": "Plano atual",
+      en: "Current plan",
+      es: "Plan actual",
+    },
+    upgrade: {
+      "pt-BR": "Fazer upgrade",
+      en: "Upgrade",
+      es: "Hacer upgrade",
+    },
+    managePlan: {
+      "pt-BR": "Gerenciar plano",
+      en: "Manage plan",
+      es: "Gestionar plan",
+    },
+    cancelPlan: {
+      "pt-BR": "Cancelar plano",
+      en: "Cancel plan",
+      es: "Cancelar plan",
+    },
+    popular: {
+      "pt-BR": "Popular",
+      en: "Popular",
+      es: "Popular",
     },
   },
 } as const;

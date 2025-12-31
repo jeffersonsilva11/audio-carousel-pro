@@ -15,6 +15,7 @@ import {
 import UsageStats from "@/components/dashboard/UsageStats";
 import DashboardSkeleton from "@/components/skeletons/DashboardSkeleton";
 import OnboardingModal from "@/components/onboarding/OnboardingModal";
+import PlansModal from "@/components/dashboard/PlansModal";
 import { useAdminAccess } from "@/hooks/useAdminAccess";
 import { toast } from "sonner";
 import { BRAND } from "@/lib/constants";
@@ -52,6 +53,7 @@ const Dashboard = () => {
   const [loadingCarousels, setLoadingCarousels] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [regeneratingId, setRegeneratingId] = useState<string | null>(null);
+  const [showPlansModal, setShowPlansModal] = useState(false);
 
 
   // Handle subscription callback
@@ -173,6 +175,9 @@ const Dashboard = () => {
     <>
       {/* Onboarding Modal */}
       <OnboardingModal open={showOnboarding} onComplete={completeOnboarding} />
+      
+      {/* Plans Modal */}
+      <PlansModal open={showPlansModal} onOpenChange={setShowPlansModal} />
       
       <div className="min-h-screen bg-background">
       {/* Header */}
@@ -297,12 +302,12 @@ const Dashboard = () => {
                 </div>
               </div>
               {isPro ? (
-                <Button variant="outline" size="sm" onClick={openCustomerPortal}>
+                <Button variant="outline" size="sm" onClick={() => setShowPlansModal(true)}>
                   {t("dashboard", "manageSubscription", language)}
                 </Button>
               ) : (
-                <Button variant="accent" size="sm" onClick={() => createCheckout("starter")} disabled={checkoutLoading}>
-                  {checkoutLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Crown className="w-4 h-4 mr-2" />}
+                <Button variant="accent" size="sm" onClick={() => setShowPlansModal(true)}>
+                  <Crown className="w-4 h-4 mr-2" />
                   {t("dashboard", "seePlans", language)}
                 </Button>
               )}
