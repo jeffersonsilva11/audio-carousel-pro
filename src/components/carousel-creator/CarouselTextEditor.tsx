@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,7 +14,8 @@ import {
   RotateCcw,
   Wand2,
   Undo2,
-  Redo2
+  Redo2,
+  Save
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -22,12 +23,29 @@ import JSZip from "jszip";
 import { useTranslation } from "@/hooks/useLanguage";
 import { supabase } from "@/integrations/supabase/client";
 import { useUndoRedo } from "@/hooks/useUndoRedo";
+import { useAutoSave } from "@/hooks/useAutoSave";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  horizontalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { SortableSlide } from "./SortableSlide";
 
 interface Slide {
   number: number;
@@ -93,10 +111,81 @@ const CarouselTextEditor = ({
   const [isRegenerating, setIsRegenerating] = useState(false);
   const { toast } = useToast();
 
+  // Auto-save with debounce (3 seconds)
+  const handleAutoSave = useCallback(async (slidesToSave: Slide[]) => {
+    if (!carouselId || !isPro) return;
+    
+    try {
+      // Update carousel script in database
+      const scriptData = JSON.parse(JSON.stringify({ slides: slidesToSave }));
+      await supabase
+        .from("carousels")
+        .update({ 
+          script: scriptData,
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", carouselId);
+      
+      console.log("Auto-saved slides");
+    } catch (error) {
+      console.error("Auto-save error:", error);
+    }
+  }, [carouselId, isPro]);
+
+  const { saveNow, hasUnsavedChanges } = useAutoSave(slides, handleAutoSave, {
+    debounceMs: 3000,
+    enabled: isPro && !!carouselId,
+  });
+
   // Sync with parent when slides change
   useEffect(() => {
     onSlidesUpdate(slides);
   }, [slides, onSlidesUpdate]);
+
+  // DnD sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  // Sortable items IDs
+  const sortableIds = useMemo(() => slides.map((_, i) => `slide-${i}`), [slides]);
+
+  // Handle drag end
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = parseInt(String(active.id).replace("slide-", ""));
+      const newIndex = parseInt(String(over.id).replace("slide-", ""));
+
+      const newSlides = arrayMove(slides, oldIndex, newIndex).map((slide, index) => ({
+        ...slide,
+        number: index + 1,
+      }));
+
+      setSlides(newSlides);
+      
+      // Update current slide if needed
+      if (currentSlide === oldIndex) {
+        setCurrentSlide(newIndex);
+      } else if (currentSlide > oldIndex && currentSlide <= newIndex) {
+        setCurrentSlide(currentSlide - 1);
+      } else if (currentSlide < oldIndex && currentSlide >= newIndex) {
+        setCurrentSlide(currentSlide + 1);
+      }
+
+      toast({
+        title: t("carouselEditor", "slidesReordered"),
+      });
+    }
+  }, [slides, currentSlide, setSlides, toast, t]);
 
   // Keyboard shortcuts for undo/redo
   useEffect(() => {
@@ -415,42 +504,39 @@ const CarouselTextEditor = ({
         </CardContent>
       </Card>
 
-      {/* Thumbnail navigation */}
-      <div className="flex gap-2 overflow-x-auto pb-2 justify-center">
-        {slides.map((slide, index) => {
-          const isModified = slide.text !== originalSlides[index]?.text;
-          return (
-            <button
-              key={index}
-              onClick={() => goToSlide(index)}
-              className={cn(
-                "relative shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all",
-                currentSlide === index
-                  ? "border-accent ring-2 ring-accent/20"
-                  : "border-transparent hover:border-muted-foreground/30"
-              )}
-            >
-              {slide.imageUrl ? (
-                <img
-                  src={slide.imageUrl}
-                  alt={`Thumbnail ${index + 1}`}
-                  className="w-full h-full object-cover"
+      {/* Thumbnail navigation with drag and drop */}
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext items={sortableIds} strategy={horizontalListSortingStrategy}>
+          <div className="flex gap-2 overflow-x-auto pb-2 justify-center px-4">
+            {slides.map((slide, index) => {
+              const isModified = slide.text !== originalSlides[index]?.text;
+              return (
+                <SortableSlide
+                  key={`slide-${index}`}
+                  slide={slide}
+                  index={index}
+                  isActive={currentSlide === index}
+                  isModified={isModified}
+                  onClick={() => goToSlide(index)}
+                  disabled={!isPro}
                 />
-              ) : (
-                <div className="w-full h-full bg-muted flex items-center justify-center text-xs text-muted-foreground">
-                  {index + 1}
-                </div>
-              )}
-              {currentSlide === index && (
-                <div className="absolute inset-0 bg-accent/10" />
-              )}
-              {isModified && (
-                <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-500" />
-              )}
-            </button>
-          );
-        })}
-      </div>
+              );
+            })}
+          </div>
+        </SortableContext>
+      </DndContext>
+
+      {/* Auto-save indicator */}
+      {isPro && hasUnsavedChanges() && (
+        <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+          <Save className="w-3 h-3" />
+          {t("carouselEditor", "autoSaving")}
+        </div>
+      )}
 
       {/* Text Editor Section */}
       <Card>
