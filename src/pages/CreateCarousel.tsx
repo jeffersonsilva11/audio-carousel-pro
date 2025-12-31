@@ -35,6 +35,7 @@ import TextModeSelector, { CreativeTone } from "@/components/carousel-creator/Te
 import SlideCountSelector from "@/components/carousel-creator/SlideCountSelector";
 import LanguageSelector from "@/components/carousel-creator/LanguageSelector";
 import AdvancedTemplateEditor, { TemplateCustomization } from "@/components/carousel-creator/AdvancedTemplateEditor";
+import LiveCarouselPreview from "@/components/carousel-creator/LiveCarouselPreview";
 import { FontId, GradientId } from "@/lib/constants";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -501,7 +502,10 @@ const CreateCarousel = () => {
       </header>
 
       {/* Main content */}
-      <main className="container mx-auto px-4 py-8 max-w-2xl">
+      <main className={cn(
+        "container mx-auto px-4 py-8",
+        currentStep === "customize" ? "max-w-4xl" : "max-w-2xl"
+      )}>
         {/* Free user warning */}
         {!isPro && currentStep !== "processing" && currentStep !== "preview" && (
           <div className="bg-muted/50 border border-border rounded-lg p-4 mb-6 flex items-center justify-between">
@@ -566,70 +570,99 @@ const CreateCarousel = () => {
                 </p>
               </div>
               
-              <div className="space-y-8">
-                <ProfileIdentitySelector
+              <div className="lg:grid lg:grid-cols-[1fr,280px] lg:gap-8">
+                {/* Form options */}
+                <div className="space-y-8">
+                  <ProfileIdentitySelector
+                    profile={profileIdentity}
+                    setProfile={setProfileIdentity}
+                  />
+                  
+                  <div className="border-t border-border pt-8">
+                    <TemplateSelector
+                      selectedTemplate={selectedTemplate}
+                      setSelectedTemplate={setSelectedTemplate}
+                    />
+                  </div>
+                  
+                  <div className="border-t border-border pt-8">
+                    <TextModeSelector
+                      selectedMode={selectedTextMode}
+                      setSelectedMode={setSelectedTextMode}
+                      creativeTone={creativeTone}
+                      setCreativeTone={setCreativeTone}
+                    />
+                  </div>
+                  
+                  <div className="border-t border-border pt-8">
+                    <SlideCountSelector
+                      mode={slideCountMode}
+                      setMode={setSlideCountMode}
+                      manualCount={manualSlideCount}
+                      setManualCount={setManualSlideCount}
+                    />
+                  </div>
+                  
+                  <div className="border-t border-border pt-8">
+                    <LanguageSelector
+                      value={carouselLanguage}
+                      onChange={setCarouselLanguage}
+                    />
+                  </div>
+                  
+                  <div className="border-t border-border pt-8">
+                    <ToneSelector 
+                      selectedTone={selectedTone} 
+                      setSelectedTone={setSelectedTone} 
+                    />
+                  </div>
+                  
+                  <StyleSelector 
+                    selectedStyle={selectedStyle} 
+                    setSelectedStyle={setSelectedStyle} 
+                  />
+                  <FormatSelector 
+                    selectedFormat={selectedFormat} 
+                    setSelectedFormat={setSelectedFormat} 
+                  />
+                  
+                  {/* Advanced Template Editor - Creator+ only */}
+                  <div className="border-t border-border pt-8">
+                    <AdvancedTemplateEditor
+                      customization={templateCustomization}
+                      setCustomization={setTemplateCustomization}
+                      slideCount={manualSlideCount}
+                      isCreator={isCreator}
+                      userId={user?.id}
+                    />
+                  </div>
+                </div>
+
+                {/* Live Preview - Sticky sidebar on desktop */}
+                <div className="hidden lg:block">
+                  <div className="sticky top-24">
+                    <LiveCarouselPreview
+                      profile={profileIdentity}
+                      style={selectedStyle}
+                      format={selectedFormat}
+                      template={selectedTemplate}
+                      tone={selectedTone}
+                      slideCount={slideCountMode === "auto" ? 6 : manualSlideCount}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Mobile Live Preview - Collapsible */}
+              <div className="lg:hidden border-t border-border pt-8 mt-8">
+                <LiveCarouselPreview
                   profile={profileIdentity}
-                  setProfile={setProfileIdentity}
+                  style={selectedStyle}
+                  format={selectedFormat}
+                  template={selectedTemplate}
+                  tone={selectedTone}
+                  slideCount={slideCountMode === "auto" ? 6 : manualSlideCount}
                 />
-                
-                <div className="border-t border-border pt-8">
-                  <TemplateSelector
-                    selectedTemplate={selectedTemplate}
-                    setSelectedTemplate={setSelectedTemplate}
-                  />
-                </div>
-                
-                <div className="border-t border-border pt-8">
-                  <TextModeSelector
-                    selectedMode={selectedTextMode}
-                    setSelectedMode={setSelectedTextMode}
-                    creativeTone={creativeTone}
-                    setCreativeTone={setCreativeTone}
-                  />
-                </div>
-                
-                <div className="border-t border-border pt-8">
-                  <SlideCountSelector
-                    mode={slideCountMode}
-                    setMode={setSlideCountMode}
-                    manualCount={manualSlideCount}
-                    setManualCount={setManualSlideCount}
-                  />
-                </div>
-                
-                <div className="border-t border-border pt-8">
-                  <LanguageSelector
-                    value={carouselLanguage}
-                    onChange={setCarouselLanguage}
-                  />
-                </div>
-                
-                <div className="border-t border-border pt-8">
-                  <ToneSelector 
-                    selectedTone={selectedTone} 
-                    setSelectedTone={setSelectedTone} 
-                  />
-                </div>
-                
-                <StyleSelector 
-                  selectedStyle={selectedStyle} 
-                  setSelectedStyle={setSelectedStyle} 
-                />
-                <FormatSelector 
-                  selectedFormat={selectedFormat} 
-                  setSelectedFormat={setSelectedFormat} 
-                />
-                
-                {/* Advanced Template Editor - Creator+ only */}
-                <div className="border-t border-border pt-8">
-                  <AdvancedTemplateEditor
-                    customization={templateCustomization}
-                    setCustomization={setTemplateCustomization}
-                    slideCount={manualSlideCount}
-                    isCreator={isCreator}
-                    userId={user?.id}
-                  />
-                </div>
               </div>
             </>
           )}
