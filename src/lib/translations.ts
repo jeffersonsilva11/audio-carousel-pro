@@ -2725,6 +2725,26 @@ export const translations = {
       en: "Edit",
       es: "Editar",
     },
+    undo: {
+      "pt-BR": "Desfazer",
+      en: "Undo",
+      es: "Deshacer",
+    },
+    redo: {
+      "pt-BR": "Refazer",
+      en: "Redo",
+      es: "Rehacer",
+    },
+    undoApplied: {
+      "pt-BR": "Alteração desfeita",
+      en: "Change undone",
+      es: "Cambio deshecho",
+    },
+    redoApplied: {
+      "pt-BR": "Alteração refeita",
+      en: "Change redone",
+      es: "Cambio rehecho",
+    },
   },
 
   // Cookie Consent

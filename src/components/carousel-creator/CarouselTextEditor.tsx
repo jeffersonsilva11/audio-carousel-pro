@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -12,13 +12,22 @@ import {
   Check, 
   X, 
   RotateCcw,
-  Wand2
+  Wand2,
+  Undo2,
+  Redo2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import JSZip from "jszip";
 import { useTranslation } from "@/hooks/useLanguage";
 import { supabase } from "@/integrations/supabase/client";
+import { useUndoRedo } from "@/hooks/useUndoRedo";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface Slide {
   number: number;
@@ -64,7 +73,18 @@ const CarouselTextEditor = ({
   customization
 }: CarouselTextEditorProps) => {
   const { t } = useTranslation();
-  const [slides, setSlides] = useState<Slide[]>(initialSlides);
+  
+  // Undo/Redo hook for slides
+  const {
+    state: slides,
+    setState: setSlides,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+    reset: resetHistory,
+  } = useUndoRedo<Slide[]>(initialSlides);
+  
   const [currentSlide, setCurrentSlide] = useState(0);
   const [editingSlide, setEditingSlide] = useState<number | null>(null);
   const [editedText, setEditedText] = useState("");
@@ -72,6 +92,34 @@ const CarouselTextEditor = ({
   const [isDownloadingZip, setIsDownloadingZip] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
   const { toast } = useToast();
+
+  // Sync with parent when slides change
+  useEffect(() => {
+    onSlidesUpdate(slides);
+  }, [slides, onSlidesUpdate]);
+
+  // Keyboard shortcuts for undo/redo
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!isPro) return;
+      
+      if ((e.metaKey || e.ctrlKey) && e.key === 'z') {
+        e.preventDefault();
+        if (e.shiftKey) {
+          if (canRedo) redo();
+        } else {
+          if (canUndo) undo();
+        }
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'y') {
+        e.preventDefault();
+        if (canRedo) redo();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isPro, canUndo, canRedo, undo, redo]);
 
   const goToSlide = (index: number) => {
     if (index >= 0 && index < slides.length) {
@@ -102,7 +150,6 @@ const CarouselTextEditor = ({
       index === editingSlide ? { ...slide, text: editedText } : slide
     );
     setSlides(updatedSlides);
-    onSlidesUpdate(updatedSlides);
     setEditingSlide(null);
     setEditedText("");
     
@@ -110,7 +157,7 @@ const CarouselTextEditor = ({
       title: t("carouselEditor", "textUpdated"),
       description: t("carouselEditor", "regenerateHint"),
     });
-  }, [editingSlide, editedText, slides, onSlidesUpdate, toast, t]);
+  }, [editingSlide, editedText, slides, setSlides, toast, t]);
 
   const cancelEdit = () => {
     setEditingSlide(null);
@@ -122,10 +169,23 @@ const CarouselTextEditor = ({
       index === slideIndex ? { ...slide, text: originalSlides[slideIndex].text } : slide
     );
     setSlides(updatedSlides);
-    onSlidesUpdate(updatedSlides);
     toast({
       title: t("carouselEditor", "slideReset"),
       description: t("carouselEditor", "textRestored"),
+    });
+  };
+
+  const handleUndo = () => {
+    undo();
+    toast({
+      title: t("carouselEditor", "undoApplied"),
+    });
+  };
+
+  const handleRedo = () => {
+    redo();
+    toast({
+      title: t("carouselEditor", "redoApplied"),
     });
   };
 
@@ -396,9 +456,53 @@ const CarouselTextEditor = ({
       <Card>
         <CardContent className="p-4">
           <div className="flex items-center justify-between mb-2">
-            <h4 className="text-sm font-medium text-muted-foreground">
-              {t("carouselEditor", "slideText").replace("{number}", String(currentSlide + 1))}
-            </h4>
+            <div className="flex items-center gap-2">
+              <h4 className="text-sm font-medium text-muted-foreground">
+                {t("carouselEditor", "slideText").replace("{number}", String(currentSlide + 1))}
+              </h4>
+              
+              {/* Undo/Redo buttons */}
+              {isPro && (canUndo || canRedo) && (
+                <TooltipProvider>
+                  <div className="flex items-center gap-1 ml-2 border-l border-border pl-2">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={handleUndo}
+                          disabled={!canUndo}
+                          className="h-7 w-7"
+                        >
+                          <Undo2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom">
+                        <p>{t("carouselEditor", "undo")} <kbd className="ml-1 text-xs bg-muted px-1 rounded">⌘Z</kbd></p>
+                      </TooltipContent>
+                    </Tooltip>
+                    
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={handleRedo}
+                          disabled={!canRedo}
+                          className="h-7 w-7"
+                        >
+                          <Redo2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom">
+                        <p>{t("carouselEditor", "redo")} <kbd className="ml-1 text-xs bg-muted px-1 rounded">⌘⇧Z</kbd></p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                </TooltipProvider>
+              )}
+            </div>
+            
             {isPro && editingSlide === null && (
               <div className="flex gap-2">
                 {hasChanges && (
