@@ -1,6 +1,14 @@
-import { Mic, Sparkles, Download, ArrowRight } from "lucide-react";
+import { Mic, Sparkles, Download, ArrowRight, Instagram, Linkedin, FileImage } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
 import { t } from "@/lib/translations";
+import { motion } from "framer-motion";
+
+// TikTok icon component
+const TikTokIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+    <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
+  </svg>
+);
 
 const HowItWorks = () => {
   const { language } = useLanguage();
@@ -11,19 +19,33 @@ const HowItWorks = () => {
       title: t("howItWorks", "step1Title", language),
       description: t("howItWorks", "step1Desc", language),
       color: "bg-blue-500/10 text-blue-500",
+      borderColor: "border-blue-500/20",
     },
     {
       icon: Sparkles,
       title: t("howItWorks", "step2Title", language),
       description: t("howItWorks", "step2Desc", language),
       color: "bg-violet-500/10 text-violet-500",
+      borderColor: "border-violet-500/20",
     },
     {
       icon: Download,
       title: t("howItWorks", "step3Title", language),
-      description: t("howItWorks", "step3Desc", language),
+      description: language === "pt-BR" 
+        ? "Receba slides prontos em alta qualidade. Baixe individualmente ou em ZIP e poste no Instagram, LinkedIn, TikTok e mais."
+        : language === "es"
+          ? "Recibe slides listos en alta calidad. Descarga individualmente o en ZIP y publica en Instagram, LinkedIn, TikTok y más."
+          : "Get ready slides in high quality. Download individually or as ZIP and post on Instagram, LinkedIn, TikTok, and more.",
       color: "bg-emerald-500/10 text-emerald-500",
+      borderColor: "border-emerald-500/20",
     },
+  ];
+
+  // Supported platforms
+  const platforms = [
+    { name: "Instagram", icon: Instagram },
+    { name: "LinkedIn", icon: Linkedin },
+    { name: "TikTok", icon: TikTokIcon },
   ];
 
   return (
@@ -31,21 +53,45 @@ const HowItWorks = () => {
       <div className="container mx-auto">
         {/* Section Header */}
         <div className="text-center max-w-2xl mx-auto mb-16">
-          <span className="inline-block text-sm font-semibold text-accent mb-4 tracking-wide uppercase">
+          <motion.span 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="inline-block text-sm font-semibold text-accent mb-4 tracking-wide uppercase"
+          >
             {t("howItWorks", "sectionTitle", language)}
-          </span>
-          <h2 className="text-display-sm md:text-display-md mb-4">
+          </motion.span>
+          <motion.h2 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1 }}
+            className="text-display-sm md:text-display-md mb-4"
+          >
             {t("howItWorks", "title", language)}
-          </h2>
-          <p className="text-body-lg text-muted-foreground">
+          </motion.h2>
+          <motion.p 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
+            className="text-body-lg text-muted-foreground"
+          >
             {t("howItWorks", "subtitle", language)}
-          </p>
+          </motion.p>
         </div>
 
         {/* Steps */}
         <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
           {steps.map((step, index) => (
-            <div key={step.title} className="relative">
+            <motion.div 
+              key={step.title} 
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: index * 0.15 }}
+              className="relative"
+            >
               {/* Connector Line */}
               {index < steps.length - 1 && (
                 <div className="hidden md:block absolute top-12 left-[60%] w-[80%] h-px">
@@ -54,7 +100,7 @@ const HowItWorks = () => {
                 </div>
               )}
 
-              <div className="relative bg-card rounded-2xl p-8 border border-border shadow-card hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+              <div className={`relative bg-card rounded-2xl p-8 border ${step.borderColor} shadow-card hover:shadow-xl hover:-translate-y-1 transition-all duration-300`}>
                 {/* Step Number */}
                 <span className="absolute -top-3 -left-3 w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm font-bold flex items-center justify-center shadow-lg">
                   {index + 1}
@@ -69,12 +115,17 @@ const HowItWorks = () => {
                 <h3 className="text-heading mb-3">{step.title}</h3>
                 <p className="text-body text-muted-foreground">{step.description}</p>
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
 
         {/* Visual Demo */}
-        <div className="mt-20 max-w-4xl mx-auto">
+        <motion.div 
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="mt-20 max-w-4xl mx-auto"
+        >
           <div className="bg-card rounded-3xl border border-border shadow-xl p-6 md:p-10">
             <div className="flex flex-col md:flex-row items-center gap-8">
               {/* Audio Visualization */}
@@ -119,10 +170,10 @@ const HowItWorks = () => {
                   {[...Array(6)].map((_, i) => (
                     <div
                       key={i}
-                      className="aspect-square bg-primary rounded-xl flex items-center justify-center relative overflow-hidden group"
+                      className="aspect-square bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center relative overflow-hidden group"
                     >
                       <span className="text-[10px] text-primary-foreground/60 absolute top-1 right-1">
-                        {i + 1}/6
+                        {i + 1}
                       </span>
                       <div className="p-2 text-center">
                         <p className="text-[8px] md:text-[10px] text-primary-foreground font-medium leading-tight">
@@ -138,10 +189,28 @@ const HowItWorks = () => {
                     </div>
                   ))}
                 </div>
+                
+                {/* Platform badges below output */}
+                <div className="flex items-center justify-center gap-2 mt-4">
+                  <span className="text-xs text-muted-foreground">
+                    {language === "pt-BR" ? "Pronto para:" : language === "es" ? "Listo para:" : "Ready for:"}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    {platforms.map((platform) => (
+                      <div 
+                        key={platform.name} 
+                        className="w-6 h-6 rounded-full bg-muted flex items-center justify-center"
+                        title={platform.name}
+                      >
+                        <platform.icon className="w-3 h-3 text-muted-foreground" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
     </section>
   );
