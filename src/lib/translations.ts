@@ -497,9 +497,29 @@ export const translations = {
       es: "¿Cómo funciona la muestra gratis?",
     },
     a8: {
-      "pt-BR": "Você pode gerar 1 carrossel de teste sem pagar nada. Ele vem com uma pequena marca d'água do Carrossel AI. É perfeito para testar a qualidade antes de assinar.",
-      en: "You can generate 1 test carousel for free. It comes with a small Carousel AI watermark. It's perfect for testing quality before subscribing.",
-      es: "Puedes generar 1 carrusel de prueba sin pagar nada. Viene con una pequeña marca de agua de Carousel AI. Es perfecto para probar la calidad antes de suscribirte.",
+      "pt-BR": "Você pode gerar 1 carrossel de teste sem pagar nada. Ele vem com uma pequena marca d'água do Audisell. É perfeito para testar a qualidade antes de assinar.",
+      en: "You can generate 1 test carousel for free. It comes with a small Audisell watermark. It's perfect for testing quality before subscribing.",
+      es: "Puedes generar 1 carrusel de prueba sin pagar nada. Viene con una pequeña marca de agua de Audisell. Es perfecto para probar la calidad antes de suscribirte.",
+    },
+    q9: {
+      "pt-BR": "Como o Audisell aumenta meu engajamento?",
+      en: "How does Audisell increase my engagement?",
+      es: "¿Cómo Audisell aumenta mi engagement?",
+    },
+    a9: {
+      "pt-BR": "Nossos carrosséis são criados com frameworks de copywriting comprovados (Jornada do Herói, Círculo Dourado, Pirâmide de Freytag) e gatilhos mentais que capturam a atenção. Criadores que usam o Audisell relatam em média 340% mais engajamento.",
+      en: "Our carousels are created with proven copywriting frameworks (Hero's Journey, Golden Circle, Freytag's Pyramid) and mental triggers that capture attention. Creators using Audisell report an average of 340% more engagement.",
+      es: "Nuestros carruseles se crean con frameworks de copywriting probados (Viaje del Héroe, Círculo Dorado, Pirámide de Freytag) y disparadores mentales que capturan la atención. Los creadores que usan Audisell reportan en promedio 340% más engagement.",
+    },
+    q10: {
+      "pt-BR": "Posso editar o texto depois de gerar?",
+      en: "Can I edit the text after generating?",
+      es: "¿Puedo editar el texto después de generar?",
+    },
+    a10: {
+      "pt-BR": "Sim! Assinantes dos planos pagos têm acesso ao editor visual completo. Você pode editar o texto de cada slide, reordenar slides com drag-and-drop e regenerar imagens. Todas as alterações são salvas automaticamente.",
+      en: "Yes! Paid plan subscribers have access to the full visual editor. You can edit the text of each slide, reorder slides with drag-and-drop, and regenerate images. All changes are saved automatically.",
+      es: "¡Sí! Los suscriptores de planes pagados tienen acceso al editor visual completo. Puedes editar el texto de cada slide, reordenar slides con drag-and-drop y regenerar imágenes. Todos los cambios se guardan automáticamente.",
     },
   },
 
@@ -2754,6 +2774,21 @@ export const translations = {
       "pt-BR": "Slides reordenados",
       en: "Slides reordered",
       es: "Slides reordenados",
+    },
+    saved: {
+      "pt-BR": "Salvo",
+      en: "Saved",
+      es: "Guardado",
+    },
+    saveError: {
+      "pt-BR": "Erro ao salvar",
+      en: "Save error",
+      es: "Error al guardar",
+    },
+    unsavedChanges: {
+      "pt-BR": "Alterações não salvas",
+      en: "Unsaved changes",
+      es: "Cambios sin guardar",
     },
   },
 

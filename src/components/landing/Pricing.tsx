@@ -70,9 +70,9 @@ const Pricing = () => {
           </p>
         </div>
 
-        {/* Pricing Cards */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
-          {PLAN_ORDER.map((tier) => {
+        {/* Pricing Cards - Hide Agency for now */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
+          {PLAN_ORDER.filter(tier => tier !== "agency").map((tier) => {
             const plan = PLANS[tier];
             const isFeatured = tier === getFeaturedPlan();
             const isCurrentPlan = currentPlan === tier;

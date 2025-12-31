@@ -13,11 +13,12 @@ const FAQ = () => {
   const faqs = [
     { q: t("faq", "q1", language), a: t("faq", "a1", language) },
     { q: t("faq", "q2", language), a: t("faq", "a2", language) },
+    { q: t("faq", "q9", language), a: t("faq", "a9", language) },
     { q: t("faq", "q3", language), a: t("faq", "a3", language) },
     { q: t("faq", "q4", language), a: t("faq", "a4", language) },
+    { q: t("faq", "q10", language), a: t("faq", "a10", language) },
     { q: t("faq", "q5", language), a: t("faq", "a5", language) },
     { q: t("faq", "q6", language), a: t("faq", "a6", language) },
-    { q: t("faq", "q7", language), a: t("faq", "a7", language) },
     { q: t("faq", "q8", language), a: t("faq", "a8", language) },
   ];
 

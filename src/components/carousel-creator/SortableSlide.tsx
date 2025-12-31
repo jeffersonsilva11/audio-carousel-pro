@@ -1,7 +1,7 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@/lib/utils";
-import { GripVertical } from "lucide-react";
+import { GripVertical, Move } from "lucide-react";
 
 interface Slide {
   number: number;
@@ -34,6 +34,7 @@ export function SortableSlide({
     transform,
     transition,
     isDragging,
+    over,
   } = useSortable({ 
     id: `slide-${index}`,
     disabled 
@@ -50,9 +51,10 @@ export function SortableSlide({
       style={style}
       className={cn(
         "relative shrink-0 group",
-        isDragging && "z-50 opacity-90"
+        isDragging && "z-50"
       )}
     >
+      {/* Main slide button */}
       <button
         onClick={onClick}
         className={cn(
@@ -60,7 +62,7 @@ export function SortableSlide({
           isActive
             ? "border-accent ring-2 ring-accent/20"
             : "border-transparent hover:border-muted-foreground/30",
-          isDragging && "shadow-lg scale-105"
+          isDragging && "opacity-50 scale-95"
         )}
       >
         {slide.imageUrl ? (
@@ -75,27 +77,44 @@ export function SortableSlide({
             {index + 1}
           </div>
         )}
-        {isActive && (
+        {isActive && !isDragging && (
           <div className="absolute inset-0 bg-accent/10" />
         )}
         {isModified && (
           <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-500" />
         )}
+        
+        {/* Slide number badge */}
+        <div className="absolute bottom-1 left-1 w-5 h-5 rounded bg-background/80 backdrop-blur-sm flex items-center justify-center text-[10px] font-medium">
+          {index + 1}
+        </div>
       </button>
       
-      {/* Drag handle */}
+      {/* Drag handle - only visible on hover when not disabled */}
       {!disabled && (
         <div
           {...attributes}
           {...listeners}
           className={cn(
-            "absolute -left-1 top-1/2 -translate-y-1/2 w-5 h-8 flex items-center justify-center",
-            "bg-background/80 backdrop-blur-sm rounded-l border border-r-0 border-border",
-            "cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity",
-            isDragging && "opacity-100"
+            "absolute -left-2 top-1/2 -translate-y-1/2 w-6 h-10 flex items-center justify-center",
+            "bg-background/90 backdrop-blur-sm rounded-l-lg border border-r-0 border-border",
+            "cursor-grab active:cursor-grabbing",
+            "opacity-0 group-hover:opacity-100 transition-all duration-200",
+            "hover:bg-accent/10 hover:border-accent/30",
+            isDragging && "opacity-100 cursor-grabbing bg-accent/20 border-accent"
           )}
         >
-          <GripVertical className="w-3 h-3 text-muted-foreground" />
+          <GripVertical className={cn(
+            "w-3.5 h-3.5",
+            isDragging ? "text-accent" : "text-muted-foreground"
+          )} />
+        </div>
+      )}
+
+      {/* Dragging overlay - shows on the original position */}
+      {isDragging && (
+        <div className="absolute inset-0 rounded-lg border-2 border-dashed border-accent/50 bg-accent/5 flex items-center justify-center">
+          <Move className="w-4 h-4 text-accent/50" />
         </div>
       )}
     </div>

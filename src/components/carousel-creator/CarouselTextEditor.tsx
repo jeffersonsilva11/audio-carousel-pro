@@ -15,7 +15,10 @@ import {
   Wand2,
   Undo2,
   Redo2,
-  Save
+  Save,
+  CheckCircle,
+  AlertCircle,
+  Loader2 as LoaderIcon
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -132,7 +135,7 @@ const CarouselTextEditor = ({
     }
   }, [carouselId, isPro]);
 
-  const { saveNow, hasUnsavedChanges } = useAutoSave(slides, handleAutoSave, {
+  const { saveNow, hasUnsavedChanges, saveStatus } = useAutoSave(slides, handleAutoSave, {
     debounceMs: 3000,
     enabled: isPro && !!carouselId,
   });
@@ -530,11 +533,39 @@ const CarouselTextEditor = ({
         </SortableContext>
       </DndContext>
 
-      {/* Auto-save indicator */}
-      {isPro && hasUnsavedChanges() && (
-        <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-          <Save className="w-3 h-3" />
-          {t("carouselEditor", "autoSaving")}
+      {/* Auto-save indicator with status */}
+      {isPro && (saveStatus !== "idle" || hasUnsavedChanges()) && (
+        <div className={cn(
+          "flex items-center justify-center gap-2 text-xs py-2 px-4 rounded-full mx-auto w-fit transition-all",
+          saveStatus === "saving" && "bg-muted text-muted-foreground",
+          saveStatus === "saved" && "bg-green-500/10 text-green-600 dark:text-green-400",
+          saveStatus === "error" && "bg-destructive/10 text-destructive",
+          saveStatus === "idle" && hasUnsavedChanges() && "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+        )}>
+          {saveStatus === "saving" && (
+            <>
+              <LoaderIcon className="w-3 h-3 animate-spin" />
+              {t("carouselEditor", "autoSaving")}
+            </>
+          )}
+          {saveStatus === "saved" && (
+            <>
+              <CheckCircle className="w-3 h-3" />
+              {t("carouselEditor", "saved")}
+            </>
+          )}
+          {saveStatus === "error" && (
+            <>
+              <AlertCircle className="w-3 h-3" />
+              {t("carouselEditor", "saveError")}
+            </>
+          )}
+          {saveStatus === "idle" && hasUnsavedChanges() && (
+            <>
+              <Save className="w-3 h-3" />
+              {t("carouselEditor", "unsavedChanges")}
+            </>
+          )}
         </div>
       )}
 
