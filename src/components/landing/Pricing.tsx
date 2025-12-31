@@ -9,6 +9,7 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { t } from "@/lib/translations";
 import { PLANS, PLAN_ORDER, PlanTier } from "@/lib/plans";
 import { getPlanPrice } from "@/lib/localization";
+import { translateFeature, getPlanName, getPlanDescription } from "@/lib/planTranslations";
 
 const Pricing = () => {
   const navigate = useNavigate();
@@ -105,9 +106,9 @@ const Pricing = () => {
                   <div className="mx-auto w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center mb-3">
                     <Icon className={`w-6 h-6 ${isFeatured ? "text-primary-foreground" : "text-accent"}`} />
                   </div>
-                  <CardTitle className="text-xl">{plan.name}</CardTitle>
+                  <CardTitle className="text-xl">{getPlanName(tier, language)}</CardTitle>
                   <CardDescription className={isFeatured ? "text-primary-foreground/70" : ""}>
-                    {plan.description}
+                    {getPlanDescription(tier, language)}
                   </CardDescription>
                 </CardHeader>
 
@@ -129,7 +130,7 @@ const Pricing = () => {
                         }`}>
                           <Check className={`w-3 h-3 ${isFeatured ? "text-primary-foreground" : "text-success"}`} />
                         </div>
-                        <span className={`text-sm ${isFeatured ? "text-primary-foreground/90" : ""}`}>{feature}</span>
+                        <span className={`text-sm ${isFeatured ? "text-primary-foreground/90" : ""}`}>{translateFeature(feature, language)}</span>
                       </div>
                     ))}
                     {plan.limitations.map((limitation) => (
@@ -137,7 +138,7 @@ const Pricing = () => {
                         <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center flex-shrink-0 mt-0.5">
                           <span className="text-xs">—</span>
                         </div>
-                        <span className="text-sm">{limitation}</span>
+                        <span className="text-sm">{translateFeature(limitation, language)}</span>
                       </div>
                     ))}
                   </div>
