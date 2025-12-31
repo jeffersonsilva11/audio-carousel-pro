@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import NotificationBell from "@/components/NotificationBell";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -91,6 +92,9 @@ const Header = () => {
               <div className="w-8 h-8 rounded-full bg-muted animate-pulse" />
             ) : user ? (
               <>
+                {/* Notifications */}
+                <NotificationBell />
+                
                 {/* Create button for logged in users */}
                 <Button variant="accent" size="sm" asChild>
                   <a href="/create">
