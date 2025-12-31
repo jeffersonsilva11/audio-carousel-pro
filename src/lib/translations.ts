@@ -2755,6 +2755,159 @@ export const translations = {
       es: "Más información",
     },
   },
+
+  // Onboarding
+  onboarding: {
+    stepOf: {
+      "pt-BR": "Passo {current} de {total}",
+      en: "Step {current} of {total}",
+      es: "Paso {current} de {total}",
+    },
+    skip: {
+      "pt-BR": "Pular",
+      en: "Skip",
+      es: "Omitir",
+    },
+    welcomeTitle: {
+      "pt-BR": "Bem-vindo ao Carrossel AI! 🎉",
+      en: "Welcome to Carrossel AI! 🎉",
+      es: "¡Bienvenido a Carrossel AI! 🎉",
+    },
+    welcomeDesc: {
+      "pt-BR": "Transforme sua voz em carrosséis profissionais para Instagram em segundos.",
+      en: "Transform your voice into professional Instagram carousels in seconds.",
+      es: "Transforma tu voz en carruseles profesionales para Instagram en segundos.",
+    },
+    welcomeComplete: {
+      "pt-BR": "Configuração concluída!",
+      en: "Setup complete!",
+      es: "¡Configuración completada!",
+    },
+    welcomeCompleteDesc: {
+      "pt-BR": "Tudo pronto! Agora você pode criar seu primeiro carrossel.",
+      en: "All set! Now you can create your first carousel.",
+      es: "¡Todo listo! Ahora puedes crear tu primer carrusel.",
+    },
+    feature1Title: {
+      "pt-BR": "Grave ou Envie Áudio",
+      en: "Record or Upload Audio",
+      es: "Graba o Sube Audio",
+    },
+    feature1Desc: {
+      "pt-BR": "Áudios de até 60 segundos em MP3, WAV ou M4A",
+      en: "Audio files up to 60 seconds in MP3, WAV or M4A",
+      es: "Audios de hasta 60 segundos en MP3, WAV o M4A",
+    },
+    feature2Title: {
+      "pt-BR": "IA Roteiriza Automaticamente",
+      en: "AI Scripts Automatically",
+      es: "La IA Crea el Guión",
+    },
+    feature2Desc: {
+      "pt-BR": "Escolha entre 3 tons de voz diferentes",
+      en: "Choose from 3 different voice tones",
+      es: "Elige entre 3 tonos de voz diferentes",
+    },
+    feature3Title: {
+      "pt-BR": "Baixe e Publique",
+      en: "Download and Publish",
+      es: "Descarga y Publica",
+    },
+    feature3Desc: {
+      "pt-BR": "Imagens prontas para postar no Instagram",
+      en: "Images ready to post on Instagram",
+      es: "Imágenes listas para publicar en Instagram",
+    },
+    profileTitle: {
+      "pt-BR": "Configure seu Perfil",
+      en: "Set Up Your Profile",
+      es: "Configura tu Perfil",
+    },
+    profileDesc: {
+      "pt-BR": "Essas informações aparecerão nos seus carrosséis",
+      en: "This information will appear in your carousels",
+      es: "Esta información aparecerá en tus carruseles",
+    },
+    yourName: {
+      "pt-BR": "Seu nome",
+      en: "Your name",
+      es: "Tu nombre",
+    },
+    namePlaceholder: {
+      "pt-BR": "Como você quer ser chamado?",
+      en: "What should we call you?",
+      es: "¿Cómo quieres que te llamemos?",
+    },
+    toneTitle: {
+      "pt-BR": "Escolha seu Tom de Voz",
+      en: "Choose Your Voice Tone",
+      es: "Elige tu Tono de Voz",
+    },
+    toneDesc: {
+      "pt-BR": "Esse será o tom padrão dos seus carrosséis",
+      en: "This will be the default tone for your carousels",
+      es: "Este será el tono predeterminado de tus carruseles",
+    },
+    styleTitle: {
+      "pt-BR": "Escolha seu Estilo Visual",
+      en: "Choose Your Visual Style",
+      es: "Elige tu Estilo Visual",
+    },
+    styleDesc: {
+      "pt-BR": "Defina as cores padrão dos seus carrosséis",
+      en: "Set the default colors for your carousels",
+      es: "Define los colores predeterminados de tus carruseles",
+    },
+    sampleText: {
+      "pt-BR": "Texto de exemplo do seu carrossel",
+      en: "Sample text from your carousel",
+      es: "Texto de ejemplo de tu carrusel",
+    },
+    changeAnytime: {
+      "pt-BR": "Você pode alterar essas configurações a qualquer momento",
+      en: "You can change these settings anytime",
+      es: "Puedes cambiar esta configuración en cualquier momento",
+    },
+    finish: {
+      "pt-BR": "Concluir",
+      en: "Finish",
+      es: "Finalizar",
+    },
+  },
+
+  // Tones
+  tones: {
+    emotional: {
+      "pt-BR": "Emocional",
+      en: "Emotional",
+      es: "Emocional",
+    },
+    emotionalDesc: {
+      "pt-BR": "Storytelling com gatilhos mentais e conexão pessoal",
+      en: "Storytelling with mental triggers and personal connection",
+      es: "Storytelling con disparadores mentales y conexión personal",
+    },
+    professional: {
+      "pt-BR": "Profissional",
+      en: "Professional",
+      es: "Profesional",
+    },
+    professionalDesc: {
+      "pt-BR": "Corporativo, educacional e baseado em dados",
+      en: "Corporate, educational and data-driven",
+      es: "Corporativo, educativo y basado en datos",
+    },
+    provocative: {
+      "pt-BR": "Provocador",
+      en: "Provocative",
+      es: "Provocador",
+    },
+    provocativeDesc: {
+      "pt-BR": "Direto, desconfortável e impactante",
+      en: "Direct, uncomfortable and impactful",
+      es: "Directo, incómodo e impactante",
+    },
+  },
 } as const;
 
 export type TranslationKey = keyof typeof translations;
