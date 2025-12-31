@@ -170,6 +170,48 @@ export type Database = {
         }
         Relationships: []
       }
+      faqs: {
+        Row: {
+          answer_en: string | null
+          answer_es: string | null
+          answer_pt: string
+          created_at: string
+          display_order: number
+          id: string
+          is_active: boolean
+          question_en: string | null
+          question_es: string | null
+          question_pt: string
+          updated_at: string
+        }
+        Insert: {
+          answer_en?: string | null
+          answer_es?: string | null
+          answer_pt: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          question_en?: string | null
+          question_es?: string | null
+          question_pt: string
+          updated_at?: string
+        }
+        Update: {
+          answer_en?: string | null
+          answer_es?: string | null
+          answer_pt?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          question_en?: string | null
+          question_es?: string | null
+          question_pt?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       feature_flags: {
         Row: {
           created_at: string

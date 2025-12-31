@@ -2,6 +2,7 @@ import { Mic, Sparkles, Download, ArrowRight, Instagram, Linkedin, FileImage } f
 import { useLanguage } from "@/hooks/useLanguage";
 import { t } from "@/lib/translations";
 import { motion } from "framer-motion";
+import { useLandingContent } from "@/hooks/useLandingContent";
 
 // TikTok icon component
 const TikTokIcon = ({ className }: { className?: string }) => (
@@ -12,30 +13,43 @@ const TikTokIcon = ({ className }: { className?: string }) => (
 
 const HowItWorks = () => {
   const { language } = useLanguage();
+  const { getContent } = useLandingContent();
+
+  // Get dynamic content with fallbacks
+  const sectionTitle = getContent("how_it_works", "section_title", language) || t("howItWorks", "sectionTitle", language);
+  const title = getContent("how_it_works", "title", language) || t("howItWorks", "title", language);
+  const subtitle = getContent("how_it_works", "subtitle", language) || t("howItWorks", "subtitle", language);
+  
+  const step1Title = getContent("how_it_works", "step1_title", language) || t("howItWorks", "step1Title", language);
+  const step1Desc = getContent("how_it_works", "step1_desc", language) || t("howItWorks", "step1Desc", language);
+  const step2Title = getContent("how_it_works", "step2_title", language) || t("howItWorks", "step2Title", language);
+  const step2Desc = getContent("how_it_works", "step2_desc", language) || t("howItWorks", "step2Desc", language);
+  const step3Title = getContent("how_it_works", "step3_title", language) || t("howItWorks", "step3Title", language);
+  const step3Desc = getContent("how_it_works", "step3_desc", language) || (language === "pt-BR" 
+    ? "Receba slides prontos em alta qualidade. Baixe individualmente ou em ZIP e poste no Instagram, LinkedIn, TikTok e mais."
+    : language === "es"
+      ? "Recibe slides listos en alta calidad. Descarga individualmente o en ZIP y publica en Instagram, LinkedIn, TikTok y más."
+      : "Get ready slides in high quality. Download individually or as ZIP and post on Instagram, LinkedIn, TikTok, and more.");
 
   const steps = [
     {
       icon: Mic,
-      title: t("howItWorks", "step1Title", language),
-      description: t("howItWorks", "step1Desc", language),
+      title: step1Title,
+      description: step1Desc,
       color: "bg-blue-500/10 text-blue-500",
       borderColor: "border-blue-500/20",
     },
     {
       icon: Sparkles,
-      title: t("howItWorks", "step2Title", language),
-      description: t("howItWorks", "step2Desc", language),
+      title: step2Title,
+      description: step2Desc,
       color: "bg-violet-500/10 text-violet-500",
       borderColor: "border-violet-500/20",
     },
     {
       icon: Download,
-      title: t("howItWorks", "step3Title", language),
-      description: language === "pt-BR" 
-        ? "Receba slides prontos em alta qualidade. Baixe individualmente ou em ZIP e poste no Instagram, LinkedIn, TikTok e mais."
-        : language === "es"
-          ? "Recibe slides listos en alta calidad. Descarga individualmente o en ZIP y publica en Instagram, LinkedIn, TikTok y más."
-          : "Get ready slides in high quality. Download individually or as ZIP and post on Instagram, LinkedIn, TikTok, and more.",
+      title: step3Title,
+      description: step3Desc,
       color: "bg-emerald-500/10 text-emerald-500",
       borderColor: "border-emerald-500/20",
     },
@@ -59,7 +73,7 @@ const HowItWorks = () => {
             viewport={{ once: true }}
             className="inline-block text-sm font-semibold text-accent mb-4 tracking-wide uppercase"
           >
-            {t("howItWorks", "sectionTitle", language)}
+            {sectionTitle}
           </motion.span>
           <motion.h2 
             initial={{ opacity: 0, y: 20 }}
@@ -68,7 +82,7 @@ const HowItWorks = () => {
             transition={{ delay: 0.1 }}
             className="text-display-sm md:text-display-md mb-4"
           >
-            {t("howItWorks", "title", language)}
+            {title}
           </motion.h2>
           <motion.p 
             initial={{ opacity: 0, y: 20 }}
@@ -77,7 +91,7 @@ const HowItWorks = () => {
             transition={{ delay: 0.2 }}
             className="text-body-lg text-muted-foreground"
           >
-            {t("howItWorks", "subtitle", language)}
+            {subtitle}
           </motion.p>
         </div>
 

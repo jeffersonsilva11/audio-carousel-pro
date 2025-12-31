@@ -7,6 +7,7 @@ import { t } from "@/lib/translations";
 import { BRAND } from "@/lib/constants";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
+import { useLandingContent } from "@/hooks/useLandingContent";
 
 // TikTok icon component
 const TikTokIcon = ({ className }: { className?: string }) => (
@@ -17,6 +18,7 @@ const TikTokIcon = ({ className }: { className?: string }) => (
 
 const Hero = () => {
   const { language } = useLanguage();
+  const { getContent, loading: contentLoading } = useLandingContent();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [demoVideoUrl, setDemoVideoUrl] = useState("https://www.youtube.com/embed/dQw4w9WgXcQ");
@@ -33,7 +35,7 @@ const Hero = () => {
         .from('app_settings')
         .select('value')
         .eq('key', 'demo_video_url')
-        .single();
+        .maybeSingle();
       
       if (data?.value) {
         // Convert to embed URL if needed
@@ -51,6 +53,18 @@ const Hero = () => {
     
     fetchVideoUrl();
   }, []);
+
+  // Get dynamic content with fallback
+  const heroTitle1 = getContent("hero", "title_part1", language) || (language === "pt-BR" ? "Transforme sua" : language === "es" ? "Transforma tu" : "Transform your");
+  const heroHighlight = getContent("hero", "title_highlight", language) || (language === "pt-BR" ? "voz" : language === "es" ? "voz" : "voice");
+  const heroTitle2 = getContent("hero", "title_part2", language) || (language === "pt-BR" ? "em carrosséis profissionais" : language === "es" ? "en carruseles profesionales" : "into professional carousels");
+  const heroSubtitle = getContent("hero", "subtitle", language) || (language === "pt-BR" 
+    ? "Grave um áudio de 60 segundos. Receba slides profissionais prontos para Instagram, LinkedIn, TikTok e mais."
+    : language === "es"
+      ? "Graba un audio de 60 segundos. Recibe slides profesionales listos para Instagram, LinkedIn, TikTok y más."
+      : "Record a 60-second audio. Get professional slides ready for Instagram, LinkedIn, TikTok, and more.");
+  const ctaPrimary = getContent("hero", "cta_primary", language) || (language === "pt-BR" ? "Criar meu primeiro carrossel grátis" : language === "es" ? "Crear mi primer carrusel gratis" : "Create my first free carousel");
+  const ctaSecondary = getContent("hero", "cta_secondary", language) || (language === "pt-BR" ? "Ver demonstração" : language === "es" ? "Ver demostración" : "Watch demo");
 
   // Demo carousel slides with realistic content
   const demoSlides = [
@@ -155,43 +169,26 @@ const Hero = () => {
                 </span>
               </motion.div>
 
-              {/* Main Headline - Loss Aversion Hook */}
+              {/* Main Headline - Dynamic Content */}
               <motion.h1 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
                 className="text-display-md md:text-display-lg lg:text-display-xl mb-6"
               >
-                {language === "pt-BR" ? (
-                  <>
-                    Pare de <span className="text-destructive">perder horas</span> criando conteúdo.{" "}
-                    <span className="text-gradient">A IA faz em segundos.</span>
-                  </>
-                ) : language === "es" ? (
-                  <>
-                    Deja de <span className="text-destructive">perder horas</span> creando contenido.{" "}
-                    <span className="text-gradient">La IA lo hace en segundos.</span>
-                  </>
-                ) : (
-                  <>
-                    Stop <span className="text-destructive">wasting hours</span> creating content.{" "}
-                    <span className="text-gradient">AI does it in seconds.</span>
-                  </>
-                )}
+                {heroTitle1}{" "}
+                <span className="text-gradient">{heroHighlight}</span>{" "}
+                {heroTitle2}
               </motion.h1>
 
-              {/* Subheadline - Clear Value Proposition - UPDATED */}
+              {/* Subheadline - Dynamic Content */}
               <motion.p 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
                 className="text-body-lg md:text-xl text-muted-foreground mb-6 max-w-xl mx-auto lg:mx-0"
               >
-                {language === "pt-BR" 
-                  ? "Grave um áudio de 60 segundos. Receba slides profissionais prontos para Instagram, LinkedIn, TikTok e mais."
-                  : language === "es"
-                    ? "Graba un audio de 60 segundos. Recibe slides profesionales listos para Instagram, LinkedIn, TikTok y más."
-                    : "Record a 60-second audio. Get professional slides ready for Instagram, LinkedIn, TikTok, and more."}
+                {heroSubtitle}
               </motion.p>
 
               {/* Platform badges */}
@@ -235,7 +232,7 @@ const Hero = () => {
                 </div>
               </motion.div>
 
-              {/* CTA Buttons */}
+              {/* CTA Buttons - Dynamic Content */}
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -244,7 +241,7 @@ const Hero = () => {
               >
                 <Button variant="hero" size="xl" className="group w-full sm:w-auto" asChild>
                   <a href="/auth">
-                    {language === "pt-BR" ? "Criar meu primeiro carrossel grátis" : language === "es" ? "Crear mi primer carrusel gratis" : "Create my first free carousel"}
+                    {ctaPrimary}
                     <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                   </a>
                 </Button>
@@ -255,7 +252,7 @@ const Hero = () => {
                   onClick={() => setShowVideoModal(true)}
                 >
                   <Play className="w-5 h-5" />
-                  {language === "pt-BR" ? "Ver demonstração" : language === "es" ? "Ver demostración" : "Watch demo"}
+                  {ctaSecondary}
                 </Button>
               </motion.div>
 
@@ -368,10 +365,10 @@ const Hero = () => {
                       <Check className="w-4 h-4 text-green-500" />
                     </div>
                     <div>
-                      <p className="font-semibold text-xs">
-                        {language === "pt-BR" ? "Slides gerados" : language === "es" ? "Slides generados" : "Slides generated"}
+                      <p className="text-xs font-semibold">{language === "pt-BR" ? "Pronto!" : language === "es" ? "¡Listo!" : "Done!"}</p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {language === "pt-BR" ? "6 slides gerados" : language === "es" ? "6 slides generados" : "6 slides generated"}
                       </p>
-                      <p className="text-[10px] text-muted-foreground">{language === "pt-BR" ? "em 12 segundos" : language === "es" ? "en 12 segundos" : "in 12 seconds"}</p>
                     </div>
                   </div>
                 </motion.div>
@@ -380,32 +377,17 @@ const Hero = () => {
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.7 }}
-                  className="absolute -right-4 top-1/2 glass-card rounded-xl p-3 shadow-xl hidden lg:block"
+                  className="absolute -right-4 bottom-1/4 glass-card rounded-xl p-3 shadow-xl hidden lg:block"
                 >
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-accent/20 flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center">
                       <TrendingUp className="w-4 h-4 text-accent" />
                     </div>
                     <div>
-                      <p className="font-semibold text-xs">{language === "pt-BR" ? "+340% engajamento" : language === "es" ? "+340% engagement" : "+340% engagement"}</p>
-                      <p className="text-[10px] text-muted-foreground">{language === "pt-BR" ? "em média" : language === "es" ? "en promedio" : "on average"}</p>
-                    </div>
-                  </div>
-                </motion.div>
-
-                <motion.div 
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.8 }}
-                  className="absolute -bottom-4 left-1/2 -translate-x-1/2 glass-card rounded-xl p-3 shadow-xl hidden lg:block"
-                >
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center">
-                      <Sparkles className="w-4 h-4 text-purple-500" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-xs">{language === "pt-BR" ? "Tom profissional" : language === "es" ? "Tono profesional" : "Professional tone"}</p>
-                      <p className="text-[10px] text-muted-foreground">{language === "pt-BR" ? "aplicado automaticamente" : language === "es" ? "aplicado automáticamente" : "auto-applied"}</p>
+                      <p className="text-xs font-semibold">+340%</p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {language === "pt-BR" ? "Engajamento" : language === "es" ? "Engagement" : "Engagement"}
+                      </p>
                     </div>
                   </div>
                 </motion.div>
@@ -413,38 +395,41 @@ const Hero = () => {
             </motion.div>
           </div>
 
-          {/* Social Proof Stats - Anchoring */}
+          {/* Stats Bar - Social Proof */}
           <motion.div 
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.9 }}
-            className="mt-20 pt-12 border-t border-border/50"
+            transition={{ delay: 0.6 }}
+            className="mt-16 grid grid-cols-3 gap-8 max-w-2xl mx-auto"
           >
-            <div className="grid grid-cols-3 gap-8 max-w-2xl mx-auto">
-              {stats.map((stat, index) => (
-                <div key={index} className="text-center">
-                  <p className="text-2xl md:text-3xl font-bold text-accent">{stat.value}</p>
-                  <p className="text-sm text-muted-foreground mt-1">{stat.label}</p>
-                </div>
-              ))}
-            </div>
+            {stats.map((stat, index) => (
+              <motion.div 
+                key={stat.label}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.7 + index * 0.1 }}
+                className="text-center"
+              >
+                <p className="text-2xl md:text-3xl font-bold text-gradient">{stat.value}</p>
+                <p className="text-sm text-muted-foreground">{stat.label}</p>
+              </motion.div>
+            ))}
           </motion.div>
         </div>
       </section>
 
       {/* Video Demo Modal */}
       <Dialog open={showVideoModal} onOpenChange={setShowVideoModal}>
-        <DialogContent className="sm:max-w-4xl p-0 overflow-hidden">
+        <DialogContent className="max-w-4xl p-0 overflow-hidden">
           <div className="relative aspect-video">
-            <button
+            <button 
               onClick={() => setShowVideoModal(false)}
-              className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70 transition-colors"
+              className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center hover:bg-black/70 transition-colors"
             >
-              <X className="w-4 h-4" />
+              <X className="w-4 h-4 text-white" />
             </button>
             <iframe
-              src={showVideoModal ? demoVideoUrl : ""}
-              title="Demo Video"
+              src={demoVideoUrl}
               className="w-full h-full"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen

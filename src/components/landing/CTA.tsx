@@ -4,9 +4,11 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { t } from "@/lib/translations";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
+import { useLandingContent } from "@/hooks/useLandingContent";
 
 const CTA = () => {
   const { language } = useLanguage();
+  const { getContent } = useLandingContent();
   const ref = useRef(null);
   const { scrollYProgress } = useScroll({
     target: ref,
@@ -16,6 +18,13 @@ const CTA = () => {
   const y = useTransform(scrollYProgress, [0, 1], [50, -50]);
   const opacity = useTransform(scrollYProgress, [0, 0.3, 0.7, 1], [0, 1, 1, 0]);
   const scale = useTransform(scrollYProgress, [0, 0.3, 0.7, 1], [0.95, 1, 1, 0.95]);
+
+  // Get dynamic content with fallbacks
+  const badge = getContent("cta", "badge", language) || t("cta", "badge", language);
+  const title = getContent("cta", "title", language) || t("cta", "title", language);
+  const subtitle = getContent("cta", "subtitle", language) || t("cta", "subtitle", language);
+  const button = getContent("cta", "button", language) || t("cta", "button", language);
+  const disclaimer = getContent("cta", "disclaimer", language) || t("cta", "disclaimer", language);
 
   return (
     <section ref={ref} className="py-24 md:py-32 bg-primary text-primary-foreground relative overflow-hidden">
@@ -44,7 +53,7 @@ const CTA = () => {
           >
             <Sparkles className="w-4 h-4" />
             <span className="text-sm font-medium">
-              {t("cta", "badge", language)}
+              {badge}
             </span>
           </motion.div>
 
@@ -55,7 +64,7 @@ const CTA = () => {
             transition={{ duration: 0.5, delay: 0.1 }}
             className="text-display-sm md:text-display-md mb-6"
           >
-            {t("cta", "title", language)}
+            {title}
           </motion.h2>
 
           <motion.p 
@@ -65,7 +74,7 @@ const CTA = () => {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="text-xl text-primary-foreground/70 mb-10 max-w-xl mx-auto"
           >
-            {t("cta", "subtitle", language)}
+            {subtitle}
           </motion.p>
 
           <motion.div 
@@ -85,7 +94,7 @@ const CTA = () => {
                 asChild
               >
                 <a href="/auth">
-                  {t("cta", "button", language)}
+                  {button}
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </a>
               </Button>
@@ -99,7 +108,7 @@ const CTA = () => {
             transition={{ duration: 0.5, delay: 0.4 }}
             className="mt-6 text-sm text-primary-foreground/50"
           >
-            {t("cta", "disclaimer", language)}
+            {disclaimer}
           </motion.p>
         </div>
       </motion.div>
