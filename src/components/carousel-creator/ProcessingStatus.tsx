@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Mic2, FileText, Sparkles, Image, Check, Loader2 } from "lucide-react";
+import { Mic2, FileText, Image, Check, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/hooks/useLanguage";
+import { LottieAnimation } from "@/components/animations/LottieAnimations";
 
 interface ProcessingStatusProps {
   status: string;
@@ -71,15 +72,10 @@ const ProcessingStatus = ({ status }: ProcessingStatusProps) => {
       <Card className="border-accent/20 bg-gradient-to-br from-accent/5 to-transparent">
         <CardContent className="p-8 flex flex-col items-center text-center">
           <div className="relative mb-6">
-            <div className="w-24 h-24 rounded-full bg-accent/10 flex items-center justify-center">
-              {status === "COMPLETED" ? (
-                <Check className="w-12 h-12 text-accent" />
-              ) : (
-                <Sparkles className="w-12 h-12 text-accent animate-pulse" />
-              )}
-            </div>
-            {status !== "COMPLETED" && (
-              <div className="absolute inset-0 rounded-full border-4 border-accent/30 border-t-accent animate-spin" />
+            {status === "COMPLETED" ? (
+              <LottieAnimation type="success" size={120} loop={false} />
+            ) : (
+              <LottieAnimation type="processing" size={120} />
             )}
           </div>
 
