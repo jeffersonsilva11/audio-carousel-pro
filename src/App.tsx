@@ -15,6 +15,9 @@ import ProfileSettings from "./pages/ProfileSettings";
 import History from "./pages/History";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
+import TermsOfService from "./pages/TermsOfService";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import AnalyticsProvider from "./components/AnalyticsProvider";
 
 const queryClient = new QueryClient();
 
@@ -26,18 +29,22 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/create" element={<CreateCarousel />} />
-              <Route path="/carousel/:id" element={<CarouselDetail />} />
-              <Route path="/settings/profile" element={<ProfileSettings />} />
-              <Route path="/history" element={<History />} />
-              <Route path="/admin" element={<Admin />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+            <AnalyticsProvider>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/create" element={<CreateCarousel />} />
+                <Route path="/carousel/:id" element={<CarouselDetail />} />
+                <Route path="/settings/profile" element={<ProfileSettings />} />
+                <Route path="/history" element={<History />} />
+                <Route path="/admin" element={<Admin />} />
+                <Route path="/terms" element={<TermsOfService />} />
+                <Route path="/privacy" element={<PrivacyPolicy />} />
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </AnalyticsProvider>
           </BrowserRouter>
           <CookieConsent />
         </TooltipProvider>

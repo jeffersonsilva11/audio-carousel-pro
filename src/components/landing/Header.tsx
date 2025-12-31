@@ -1,13 +1,55 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Mic2 } from "lucide-react";
+import { Menu, X, Mic2, User, LogOut, Settings, LayoutDashboard } from "lucide-react";
 import { BRAND } from "@/lib/constants";
 import { useLanguage } from "@/hooks/useLanguage";
 import { t } from "@/lib/translations";
+import { supabase } from "@/integrations/supabase/client";
+import { User as SupabaseUser } from "@supabase/supabase-js";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [loading, setLoading] = useState(true);
   const { language } = useLanguage();
+
+  useEffect(() => {
+    // Check current session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    window.location.href = "/";
+  };
+
+  const getInitials = (email?: string, name?: string) => {
+    if (name) {
+      const parts = name.split(" ");
+      return parts.length > 1 
+        ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+        : parts[0][0].toUpperCase();
+    }
+    return email?.[0]?.toUpperCase() || "U";
+  };
 
   const navigation = [
     { name: t("nav", "features", language), href: "#features" },
@@ -35,12 +77,55 @@ const Header = () => {
           </div>
 
           <div className="hidden md:flex items-center gap-3">
-            <Button variant="ghost" size="sm" asChild>
-              <a href="/auth">{t("nav", "login", language)}</a>
-            </Button>
-            <Button variant="accent" size="sm" asChild>
-              <a href="/auth">{t("nav", "startFree", language)}</a>
-            </Button>
+            {loading ? (
+              <div className="w-8 h-8 rounded-full bg-muted animate-pulse" />
+            ) : user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+                    <Avatar className="h-9 w-9">
+                      <AvatarImage src={user.user_metadata?.avatar_url} alt={user.email || ""} />
+                      <AvatarFallback className="bg-accent text-accent-foreground">
+                        {getInitials(user.email, user.user_metadata?.name)}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <div className="px-2 py-1.5">
+                    <p className="text-sm font-medium">{user.user_metadata?.name || user.email}</p>
+                    <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <a href="/dashboard" className="cursor-pointer">
+                      <LayoutDashboard className="mr-2 h-4 w-4" />
+                      Dashboard
+                    </a>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <a href="/settings/profile" className="cursor-pointer">
+                      <Settings className="mr-2 h-4 w-4" />
+                      {t("nav", "settings", language)}
+                    </a>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    {t("nav", "logout", language)}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <>
+                <Button variant="ghost" size="sm" asChild>
+                  <a href="/auth">{t("nav", "login", language)}</a>
+                </Button>
+                <Button variant="accent" size="sm" asChild>
+                  <a href="/auth">{t("nav", "startFree", language)}</a>
+                </Button>
+              </>
+            )}
           </div>
 
           <button className="md:hidden p-2 rounded-lg hover:bg-secondary transition-colors" onClick={() => setIsMenuOpen(!isMenuOpen)}>
@@ -57,12 +142,25 @@ const Header = () => {
                 </a>
               ))}
               <div className="flex flex-col gap-2 mt-4 px-4">
-                <Button variant="outline" className="w-full" asChild>
-                  <a href="/auth">{t("nav", "login", language)}</a>
-                </Button>
-                <Button variant="accent" className="w-full" asChild>
-                  <a href="/auth">{t("nav", "startFree", language)}</a>
-                </Button>
+                {user ? (
+                  <>
+                    <Button variant="outline" className="w-full" asChild>
+                      <a href="/dashboard">Dashboard</a>
+                    </Button>
+                    <Button variant="ghost" className="w-full" onClick={handleLogout}>
+                      {t("nav", "logout", language)}
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button variant="outline" className="w-full" asChild>
+                      <a href="/auth">{t("nav", "login", language)}</a>
+                    </Button>
+                    <Button variant="accent" className="w-full" asChild>
+                      <a href="/auth">{t("nav", "startFree", language)}</a>
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </div>
