@@ -49,19 +49,35 @@ serve(async (req) => {
       });
     }
 
-    // For now, we'll process without signature verification since we don't have the webhook secret
-    // In production, you should add STRIPE_WEBHOOK_SECRET and verify the signature
+    // Verify webhook signature for production security
+    const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
     let event: Stripe.Event;
     
-    try {
-      event = JSON.parse(body) as Stripe.Event;
-      logStep("Event parsed", { type: event.type, id: event.id });
-    } catch (parseError) {
-      logStep("Failed to parse event", { error: String(parseError) });
-      return new Response(JSON.stringify({ error: "Invalid JSON" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    if (webhookSecret) {
+      try {
+        event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+        logStep("Event verified with signature", { type: event.type, id: event.id });
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        logStep("Signature verification failed", { error: errorMessage });
+        return new Response(JSON.stringify({ error: `Webhook signature verification failed: ${errorMessage}` }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    } else {
+      // Fallback for development - parse without verification
+      logStep("WARNING: No webhook secret configured, parsing without verification");
+      try {
+        event = JSON.parse(body) as Stripe.Event;
+        logStep("Event parsed (unverified)", { type: event.type, id: event.id });
+      } catch (parseError) {
+        logStep("Failed to parse event", { error: String(parseError) });
+        return new Response(JSON.stringify({ error: "Invalid JSON" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
 
     // Store event in database for logging (ignore duplicates)
@@ -134,7 +150,6 @@ serve(async (req) => {
           has_watermark: false,
           has_editor: true,
           has_history: true,
-          has_image_generation: planConfig.tier === "agency",
           current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
           current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
         }, { onConflict: "user_id" });
@@ -170,7 +185,6 @@ serve(async (req) => {
             status: subscription.status,
             plan_tier: planConfig.tier,
             daily_limit: planConfig.dailyLimit,
-            has_image_generation: planConfig.tier === "agency",
             current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
             current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
           })
@@ -204,7 +218,6 @@ serve(async (req) => {
               has_watermark: true,
               has_editor: false,
               has_history: false,
-              has_image_generation: false,
             })
             .eq("stripe_subscription_id", subscription.id);
 
