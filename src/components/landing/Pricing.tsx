@@ -46,7 +46,6 @@ const Pricing = () => {
 
   const getPlanIcon = (tier: PlanTier) => {
     switch (tier) {
-      case "agency": return ImageIcon;
       case "creator": return Crown;
       case "starter": return Zap;
       default: return Sparkles;
@@ -71,9 +70,9 @@ const Pricing = () => {
           </p>
         </div>
 
-        {/* Pricing Cards - Hide Agency for now */}
+        {/* Pricing Cards */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
-          {PLAN_ORDER.filter(tier => tier !== "agency").map((tier) => {
+          {PLAN_ORDER.map((tier) => {
             const plan = PLANS[tier];
             const isFeatured = tier === getFeaturedPlan();
             const isCurrentPlan = currentPlan === tier;
