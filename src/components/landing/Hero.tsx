@@ -5,7 +5,8 @@ import { ArrowRight, Play, Sparkles, Check, Users, Zap, Shield, TrendingUp, Inst
 import { useLanguage } from "@/hooks/useLanguage";
 import { t } from "@/lib/translations";
 import { BRAND } from "@/lib/constants";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
+import { supabase } from "@/integrations/supabase/client";
 
 // TikTok icon component
 const TikTokIcon = ({ className }: { className?: string }) => (
@@ -18,9 +19,38 @@ const Hero = () => {
   const { language } = useLanguage();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [showVideoModal, setShowVideoModal] = useState(false);
+  const [demoVideoUrl, setDemoVideoUrl] = useState("https://www.youtube.com/embed/dQw4w9WgXcQ");
   
-  // YouTube video URL (can be configured via admin in the future)
-  const demoVideoUrl = "https://www.youtube.com/embed/dQw4w9WgXcQ"; // Placeholder - replace with actual demo video
+  // Parallax effect
+  const { scrollYProgress } = useScroll();
+  const y = useTransform(scrollYProgress, [0, 0.5], [0, -100]);
+  const opacity = useTransform(scrollYProgress, [0, 0.3], [1, 0]);
+
+  // Fetch demo video URL from settings
+  useEffect(() => {
+    const fetchVideoUrl = async () => {
+      const { data } = await supabase
+        .from('app_settings')
+        .select('value')
+        .eq('key', 'demo_video_url')
+        .single();
+      
+      if (data?.value) {
+        // Convert to embed URL if needed
+        let url = data.value;
+        if (url.includes('youtube.com/watch?v=')) {
+          const videoId = url.split('v=')[1]?.split('&')[0];
+          url = `https://www.youtube.com/embed/${videoId}`;
+        } else if (url.includes('youtu.be/')) {
+          const videoId = url.split('youtu.be/')[1]?.split('?')[0];
+          url = `https://www.youtube.com/embed/${videoId}`;
+        }
+        setDemoVideoUrl(url);
+      }
+    };
+    
+    fetchVideoUrl();
+  }, []);
 
   // Demo carousel slides with realistic content
   const demoSlides = [

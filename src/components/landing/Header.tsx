@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Mic2, User, LogOut, Settings, LayoutDashboard } from "lucide-react";
+import { Menu, X, Mic2, User, LogOut, Settings, LayoutDashboard, Plus, History } from "lucide-react";
 import { BRAND } from "@/lib/constants";
 import { useLanguage } from "@/hooks/useLanguage";
 import { t } from "@/lib/translations";
@@ -51,17 +51,27 @@ const Header = () => {
     return email?.[0]?.toUpperCase() || "U";
   };
 
-  const navigation = [
+  // Navigation for logged out users
+  const publicNavigation = [
     { name: t("nav", "features", language), href: "#features" },
     { name: t("nav", "pricing", language), href: "#pricing" },
     { name: t("nav", "faq", language), href: "#faq" },
   ];
 
+  // Navigation for logged in users
+  const privateNavigation = [
+    { name: "Dashboard", href: "/dashboard" },
+    { name: language === "pt-BR" ? "Criar" : language === "es" ? "Crear" : "Create", href: "/create" },
+    { name: language === "pt-BR" ? "Histórico" : language === "es" ? "Historial" : "History", href: "/history" },
+  ];
+
+  const navigation = user ? privateNavigation : publicNavigation;
+
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50">
       <div className="container mx-auto">
         <nav className="flex items-center justify-between h-16 md:h-20">
-          <a href="/" className="flex items-center gap-2 group">
+          <a href={user ? "/dashboard" : "/"} className="flex items-center gap-2 group">
             <div className="relative w-9 h-9 rounded-xl bg-primary flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow">
               <Mic2 className="w-5 h-5 text-primary-foreground" />
             </div>
@@ -80,42 +90,59 @@ const Header = () => {
             {loading ? (
               <div className="w-8 h-8 rounded-full bg-muted animate-pulse" />
             ) : user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-9 w-9 rounded-full">
-                    <Avatar className="h-9 w-9">
-                      <AvatarImage src={user.user_metadata?.avatar_url} alt={user.email || ""} />
-                      <AvatarFallback className="bg-accent text-accent-foreground">
-                        {getInitials(user.email, user.user_metadata?.name)}
-                      </AvatarFallback>
-                    </Avatar>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <div className="px-2 py-1.5">
-                    <p className="text-sm font-medium">{user.user_metadata?.name || user.email}</p>
-                    <p className="text-xs text-muted-foreground truncate">{user.email}</p>
-                  </div>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <a href="/dashboard" className="cursor-pointer">
-                      <LayoutDashboard className="mr-2 h-4 w-4" />
-                      Dashboard
-                    </a>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <a href="/settings/profile" className="cursor-pointer">
-                      <Settings className="mr-2 h-4 w-4" />
-                      {t("nav", "settings", language)}
-                    </a>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive">
-                    <LogOut className="mr-2 h-4 w-4" />
-                    {t("nav", "logout", language)}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <>
+                {/* Create button for logged in users */}
+                <Button variant="accent" size="sm" asChild>
+                  <a href="/create">
+                    <Plus className="w-4 h-4 mr-1" />
+                    {language === "pt-BR" ? "Novo" : language === "es" ? "Nuevo" : "New"}
+                  </a>
+                </Button>
+                
+                {/* User dropdown */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+                      <Avatar className="h-9 w-9">
+                        <AvatarImage src={user.user_metadata?.avatar_url} alt={user.email || ""} />
+                        <AvatarFallback className="bg-accent text-accent-foreground">
+                          {getInitials(user.email, user.user_metadata?.name)}
+                        </AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <div className="px-2 py-1.5">
+                      <p className="text-sm font-medium">{user.user_metadata?.name || user.email}</p>
+                      <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                    </div>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <a href="/dashboard" className="cursor-pointer">
+                        <LayoutDashboard className="mr-2 h-4 w-4" />
+                        Dashboard
+                      </a>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <a href="/history" className="cursor-pointer">
+                        <History className="mr-2 h-4 w-4" />
+                        {language === "pt-BR" ? "Histórico" : language === "es" ? "Historial" : "History"}
+                      </a>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <a href="/settings/profile" className="cursor-pointer">
+                        <Settings className="mr-2 h-4 w-4" />
+                        {language === "pt-BR" ? "Configurações" : language === "es" ? "Configuración" : "Settings"}
+                      </a>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive">
+                      <LogOut className="mr-2 h-4 w-4" />
+                      {t("nav", "logout", language)}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
             ) : (
               <>
                 <Button variant="ghost" size="sm" asChild>
@@ -144,10 +171,20 @@ const Header = () => {
               <div className="flex flex-col gap-2 mt-4 px-4">
                 {user ? (
                   <>
+                    <Button variant="accent" className="w-full" asChild>
+                      <a href="/create">
+                        <Plus className="w-4 h-4 mr-1" />
+                        {language === "pt-BR" ? "Novo Carrossel" : language === "es" ? "Nuevo Carrusel" : "New Carousel"}
+                      </a>
+                    </Button>
                     <Button variant="outline" className="w-full" asChild>
-                      <a href="/dashboard">Dashboard</a>
+                      <a href="/settings/profile">
+                        <Settings className="w-4 h-4 mr-1" />
+                        {language === "pt-BR" ? "Configurações" : language === "es" ? "Configuración" : "Settings"}
+                      </a>
                     </Button>
                     <Button variant="ghost" className="w-full" onClick={handleLogout}>
+                      <LogOut className="w-4 h-4 mr-1" />
                       {t("nav", "logout", language)}
                     </Button>
                   </>

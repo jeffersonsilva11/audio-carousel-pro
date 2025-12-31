@@ -83,7 +83,7 @@ export const PLANS: Record<PlanTier, PlanConfig> = {
     dailyLimit: 8,
     monthlyLimit: null, // fair usage
     hasWatermark: false,
-    hasImageGeneration: true, // Enabled for Creator
+    hasImageGeneration: false, // Disabled for now
     hasEditor: true,
     hasHistory: true,
     hasZipDownload: true,
@@ -99,7 +99,6 @@ export const PLANS: Record<PlanTier, PlanConfig> = {
       'Customização de fontes',
       'Templates com gradientes',
       'Upload de imagens por slide',
-      'Geração de imagens com IA',
       'Processamento prioritário',
     ],
     limitations: [],
@@ -113,7 +112,7 @@ export const PLANS: Record<PlanTier, PlanConfig> = {
     dailyLimit: 20,
     monthlyLimit: null, // fair usage
     hasWatermark: false,
-    hasImageGeneration: true,
+    hasImageGeneration: false, // Disabled for now
     hasEditor: true,
     hasHistory: true,
     hasZipDownload: true,
@@ -125,7 +124,6 @@ export const PLANS: Record<PlanTier, PlanConfig> = {
       'Até 20 carrosséis por dia',
       'Uso ilimitado mensal (uso justo)',
       'Sem marca d\'água',
-      'Geração de imagens com IA',
       'Customização avançada',
       'Todos os templates',
       'Processamento prioritário',
