@@ -33,16 +33,14 @@ serve(async (req) => {
   try {
     logStep("Function started");
 
-    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-    if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
-
+    // Authenticate user first
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("No authorization header provided");
 
     const token = authHeader.replace("Bearer ", "");
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
     if (userError) throw new Error(`Authentication error: ${userError.message}`);
-    
+
     const user = userData.user;
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
@@ -55,16 +53,47 @@ serve(async (req) => {
       .eq("user_id", user.id)
       .eq("usage_date", today)
       .maybeSingle();
-    
+
     const dailyUsed = usageData?.carousels_created || 0;
     logStep("Daily usage fetched", { dailyUsed, date: today });
 
-    const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
-    
-    if (customers.data.length === 0) {
-      logStep("No customer found, returning free plan");
-      return new Response(JSON.stringify({ 
+    // CHECK ADMIN FIRST - No Stripe dependency for admins
+    const { data: roleData } = await supabaseClient
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("role", "admin")
+      .maybeSingle();
+
+    const isAdmin = !!roleData;
+
+    if (isAdmin) {
+      logStep("User is admin, granting unlimited access (no Stripe check)");
+      return new Response(JSON.stringify({
+        subscribed: true,
+        plan: "creator",
+        price_id: null,
+        subscription_end: null,
+        daily_limit: 9999,
+        daily_used: dailyUsed,
+        has_watermark: false,
+        has_editor: true,
+        has_history: true,
+        has_image_generation: true,
+        is_admin: true
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
+    // For non-admin users, check Stripe subscription
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+
+    // If no Stripe key configured, return free plan for non-admins
+    if (!stripeKey) {
+      logStep("No STRIPE_SECRET_KEY configured, returning free plan");
+      return new Response(JSON.stringify({
         subscribed: false,
         plan: "free",
         daily_limit: 1,
@@ -72,6 +101,27 @@ serve(async (req) => {
         has_watermark: true,
         has_editor: false,
         has_history: false,
+        is_admin: false
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
+    const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
+    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+
+    if (customers.data.length === 0) {
+      logStep("No Stripe customer found, returning free plan");
+      return new Response(JSON.stringify({
+        subscribed: false,
+        plan: "free",
+        daily_limit: 1,
+        daily_used: dailyUsed,
+        has_watermark: true,
+        has_editor: false,
+        has_history: false,
+        is_admin: false
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
@@ -99,14 +149,14 @@ serve(async (req) => {
     if (hasActiveSub) {
       const subscription = subscriptions.data[0];
       subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
-      
+
       // Get the price from the subscription
       const price = subscription.items.data[0]?.price;
       priceId = price?.id;
       const unitAmount = price?.unit_amount;
-      
-      logStep("Active subscription found", { 
-        subscriptionId: subscription.id, 
+
+      logStep("Active subscription found", {
+        subscriptionId: subscription.id,
         endDate: subscriptionEnd,
         priceId,
         unitAmount
@@ -147,26 +197,9 @@ serve(async (req) => {
       logStep("No active subscription found, using free plan");
     }
 
-    // Check if user is admin (unlimited usage)
-    const { data: roleData } = await supabaseClient
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id)
-      .eq("role", "admin")
-      .maybeSingle();
-    
-    const isAdmin = !!roleData;
-    if (isAdmin) {
-      logStep("User is admin, granting unlimited access");
-      dailyLimit = 9999;
-      hasWatermark = false;
-      hasEditor = true;
-      hasHistory = true;
-    }
-
     return new Response(JSON.stringify({
-      subscribed: hasActiveSub || isAdmin,
-      plan: isAdmin ? "agency" : plan,
+      subscribed: hasActiveSub,
+      plan,
       price_id: priceId,
       subscription_end: subscriptionEnd,
       daily_limit: dailyLimit,
@@ -174,7 +207,7 @@ serve(async (req) => {
       has_watermark: hasWatermark,
       has_editor: hasEditor,
       has_history: hasHistory,
-      is_admin: isAdmin
+      is_admin: false
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
