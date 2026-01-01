@@ -7,22 +7,22 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.create-checkout]
-verify_jwt = true
+verify_jwt = false
 
 [functions.customer-portal]
-verify_jwt = true
+verify_jwt = false
 
 [functions.transcribe-audio]
-verify_jwt = true
+verify_jwt = false
 
 [functions.generate-script]
-verify_jwt = true
+verify_jwt = false
 
 [functions.generate-carousel-images]
-verify_jwt = true
+verify_jwt = false
 
 [functions.regenerate-without-watermark]
-verify_jwt = true
+verify_jwt = false
 
 [functions.stripe-webhook]
 verify_jwt = false
@@ -31,7 +31,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.export-user-data]
-verify_jwt = true
+verify_jwt = false
 
 [functions.translate-content]
 verify_jwt = false
