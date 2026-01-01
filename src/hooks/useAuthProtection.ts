@@ -6,6 +6,12 @@ const MAX_FAILED_ATTEMPTS = 3;
 const LOCKOUT_DURATION = 15 * 60 * 1000; // 15 minutes in ms
 const STORAGE_KEY = 'auth_attempts';
 
+// Check if running in development (localhost)
+const isDevelopment = () => {
+  const hostname = window.location.hostname;
+  return hostname === 'localhost' || hostname === '127.0.0.1' || hostname.startsWith('192.168.');
+};
+
 interface AttemptData {
   count: number;
   lastAttempt: number;
@@ -134,8 +140,8 @@ export function useAuthProtection() {
 
   return {
     failedAttempts,
-    isLocked,
-    requiresInteractiveCaptcha,
+    isLocked: isDevelopment() ? false : isLocked,
+    requiresInteractiveCaptcha: isDevelopment() ? false : requiresInteractiveCaptcha,
     recordFailedAttempt,
     recordSuccessfulAttempt,
     getRemainingLockoutTime,

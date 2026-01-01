@@ -4,6 +4,12 @@ import { supabase } from '@/integrations/supabase/client';
 // reCAPTCHA v3 site key - this is a publishable key
 const RECAPTCHA_SITE_KEY = '6LckrjssAAAAALZUi5LorvDMcL6AqGHsi2wGr10r';
 
+// Check if running in development (localhost)
+const isDevelopment = () => {
+  const hostname = window.location.hostname;
+  return hostname === 'localhost' || hostname === '127.0.0.1' || hostname.startsWith('192.168.');
+};
+
 declare global {
   interface Window {
     grecaptcha: {
@@ -70,8 +76,14 @@ export function useRecaptcha() {
   }, [isLoaded]);
 
   const verifyRecaptcha = useCallback(async (action: string): Promise<{ success: boolean; score?: number; error?: string }> => {
+    // Skip reCAPTCHA in development environment
+    if (isDevelopment()) {
+      console.log('[DEV] Skipping reCAPTCHA verification in development mode');
+      return { success: true, score: 1.0 };
+    }
+
     const token = await executeRecaptcha(action);
-    
+
     if (!token) {
       return { success: false, error: 'Failed to execute reCAPTCHA' };
     }
