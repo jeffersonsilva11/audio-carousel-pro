@@ -623,20 +623,37 @@ serve(async (req) => {
     }
 
     // Update daily usage counter (only for full carousel generation, not single slide)
-    const today = new Date().toISOString().split('T')[0];
-    const { error: usageError } = await supabase
-      .from('daily_usage')
-      .upsert({
-        user_id: user.id,
-        usage_date: today,
-        carousels_created: dailyUsed + 1,
-        updated_at: new Date().toISOString()
-      }, {
-        onConflict: 'user_id,usage_date'
-      });
-    
-    if (usageError) {
-      logStep('Usage update error', { error: usageError.message });
+    // Check if this carousel was previously FAILED - if so, don't increment (it's a retry)
+    let shouldIncrementUsage = true;
+    if (carouselId) {
+      const { data: existingCarousel } = await supabase
+        .from('carousels')
+        .select('status')
+        .eq('id', carouselId)
+        .maybeSingle();
+
+      if (existingCarousel?.status === 'FAILED') {
+        logStep('Carousel is a retry from FAILED status, not incrementing usage');
+        shouldIncrementUsage = false;
+      }
+    }
+
+    if (shouldIncrementUsage) {
+      const today = new Date().toISOString().split('T')[0];
+      const { error: usageError } = await supabase
+        .from('daily_usage')
+        .upsert({
+          user_id: user.id,
+          usage_date: today,
+          carousels_created: dailyUsed + 1,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id,usage_date'
+        });
+
+      if (usageError) {
+        logStep('Usage update error', { error: usageError.message });
+      }
     }
 
     const slides = script.slides.map((slide: { type: string; text: string }, index: number) => ({
