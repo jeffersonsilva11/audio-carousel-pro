@@ -112,6 +112,7 @@ const CreateCarousel = () => {
     gradientId: 'none' as GradientId,
     customGradientColors: undefined,
     slideImages: [],
+    textAlignment: 'center',
   });
 
   // Processing state
@@ -306,6 +307,7 @@ const CreateCarousel = () => {
           gradientId: templateCustomization.gradientId,
           customGradientColors: templateCustomization.customGradientColors,
           slideImages: templateCustomization.slideImages,
+          textAlignment: templateCustomization.textAlignment,
         } : undefined
       });
 

@@ -100,15 +100,19 @@ ${slideCount}. SIGNATURE: Nome do autor + @instagram`;
 
 function getWordsPerSlide(slideCount: number, textMode: string): string {
   if (textMode === 'single') {
-    return '150-200 palavras no slide único';
+    return '150-250 palavras no slide único';
   }
+  // More developed content with 50-100 words per slide
   if (slideCount <= 4) {
-    return '20-40 palavras por slide';
+    return '60-100 palavras por slide';
   }
   if (slideCount <= 6) {
-    return '15-35 palavras por slide';
+    return '50-80 palavras por slide';
   }
-  return '10-30 palavras por slide';
+  if (slideCount <= 8) {
+    return '40-70 palavras por slide';
+  }
+  return '35-60 palavras por slide';
 }
 
 // Get user's current plan from Stripe
@@ -301,9 +305,14 @@ serve(async (req) => {
                              slideCountMode === 'manual' ? slideCount : 
                              'auto';
 
-    const languageInstruction = language === 'pt-BR' ? 'Escreva em português brasileiro.' : 
-                                language === 'es' ? 'Escribe en español.' : 
-                                'Write in English.';
+    // Multi-language support: pt-BR (Brazilian Portuguese), pt-PT (Portugal Portuguese), es (Spanish), en (English)
+    const languageInstructions: Record<string, string> = {
+      'pt-BR': 'Escreva em português brasileiro. Use expressões e vocabulário comuns no Brasil.',
+      'pt-PT': 'Escreva em português europeu. Use expressões e vocabulário comuns em Portugal.',
+      'es': 'Escribe en español. Usa un español neutro comprensible en toda Latinoamérica y España.',
+      'en': 'Write in English. Use clear, accessible language.',
+    };
+    const languageInstruction = languageInstructions[language] || languageInstructions['pt-BR'];
 
     // Build the system prompt based on text mode
     let styleInstructions = TEXT_MODE_INSTRUCTIONS[textMode as keyof typeof TEXT_MODE_INSTRUCTIONS] || TEXT_MODE_INSTRUCTIONS.compact;
@@ -313,13 +322,13 @@ serve(async (req) => {
       styleInstructions = `${styleInstructions}\n\n${tonePrompt}`;
     }
 
-    const slideStructure = typeof actualSlideCount === 'number' 
+    const slideStructure = typeof actualSlideCount === 'number'
       ? getSlideStructure(actualSlideCount, textMode)
-      : `ESTRUTURA AUTOMÁTICA: A IA decidirá o número ideal de slides (entre 4 e 8) baseado no conteúdo.`;
+      : `ESTRUTURA AUTOMÁTICA: A IA decidirá o número ideal de slides (entre 4 e 10) baseado no conteúdo e profundidade do tema.`;
 
     const wordsGuide = typeof actualSlideCount === 'number'
       ? getWordsPerSlide(actualSlideCount, textMode)
-      : '15-35 palavras por slide';
+      : '40-80 palavras por slide (texto desenvolvido e completo)';
 
     // Template context for styling
     const templateContext = template === 'gradient' 
@@ -330,7 +339,7 @@ serve(async (req) => {
 
     logStep(`Generating script`, { mode: textMode, tone: creativeTone, slides: actualSlideCount, template });
 
-    const systemPrompt = `Você é um especialista em criação de carrosséis para Instagram.
+    const systemPrompt = `Você é um especialista em criação de carrosséis educativos e de storytelling para Instagram, conhecido por criar conteúdo que gera alto engajamento.
 
 ${languageInstruction}
 
@@ -340,8 +349,12 @@ ${slideStructure}
 
 REGRAS DE FORMATAÇÃO:
 - ${wordsGuide}
-- Frases curtas e impactantes
-- Evite parágrafos longos
+- Desenvolva cada ideia completamente, não apenas mencione
+- Use exemplos concretos, metáforas ou analogias quando apropriado
+- Cada slide deve ter valor standalone mas fluir para o próximo
+- Evite bullet points excessivos - prefira texto corrido e envolvente
+- O primeiro slide (HOOK) deve capturar atenção imediatamente
+- O último slide (CTA) deve provocar reflexão ou ação clara
 
 CONTEXTO DO TEMPLATE:
 ${templateContext}
@@ -357,8 +370,8 @@ Você deve retornar APENAS um JSON válido no seguinte formato (sem markdown, se
 }`;
 
     const userPrompt = typeof actualSlideCount === 'number'
-      ? `Transforme esta transcrição em exatamente ${actualSlideCount} slide${actualSlideCount > 1 ? 's' : ''} seguindo as regras acima:\n\nTRANSCRIÇÃO:\n${transcription}`
-      : `Transforme esta transcrição em um carrossel seguindo as regras acima. Decida o número ideal de slides (entre 4 e 8):\n\nTRANSCRIÇÃO:\n${transcription}`;
+      ? `Transforme esta transcrição em exatamente ${actualSlideCount} slide${actualSlideCount > 1 ? 's' : ''} seguindo as regras acima. Desenvolva o conteúdo de forma completa e rica:\n\nTRANSCRIÇÃO:\n${transcription}`
+      : `Transforme esta transcrição em um carrossel seguindo as regras acima. Decida o número ideal de slides (entre 4 e 10) baseado na profundidade do conteúdo. Desenvolva cada slide com texto completo e bem elaborado:\n\nTRANSCRIÇÃO:\n${transcription}`;
 
     // Use OpenAI GPT-4o-mini API
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -374,7 +387,7 @@ Você deve retornar APENAS um JSON válido no seguinte formato (sem markdown, se
           { role: 'user', content: userPrompt }
         ],
         temperature: 0.7,
-        max_tokens: 2048,
+        max_tokens: 4096,
       }),
     });
 

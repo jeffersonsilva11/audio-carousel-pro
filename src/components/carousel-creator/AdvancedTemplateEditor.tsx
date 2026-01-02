@@ -1,14 +1,17 @@
 import { useState, useRef } from "react";
-import { 
-  Type, 
-  Palette, 
-  ImagePlus, 
+import {
+  Type,
+  Palette,
+  ImagePlus,
   X,
   Upload,
   Sparkles,
   Crown,
   Eye,
-  Loader2
+  Loader2,
+  AlignLeft,
+  AlignCenter,
+  AlignRight
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -28,11 +31,14 @@ import {
   GradientCategory 
 } from "@/lib/constants";
 
+export type TextAlignment = 'left' | 'center' | 'right';
+
 export interface TemplateCustomization {
   fontId: FontId;
   gradientId: GradientId;
   customGradientColors?: string[];
   slideImages: (string | null)[]; // Array of storage URLs per slide
+  textAlignment: TextAlignment;
 }
 
 interface AdvancedTemplateEditorProps {
@@ -78,6 +84,10 @@ const AdvancedTemplateEditor = ({
 
   const handleFontChange = (fontId: FontId) => {
     setCustomization({ ...customization, fontId });
+  };
+
+  const handleTextAlignmentChange = (alignment: TextAlignment) => {
+    setCustomization({ ...customization, textAlignment: alignment });
   };
 
   const handleGradientChange = (gradientId: GradientId) => {
@@ -248,13 +258,14 @@ const AdvancedTemplateEditor = ({
           }}
         >
           <div className="absolute inset-0 flex items-center justify-center p-4">
-            <p 
-              className="text-center text-foreground leading-relaxed"
-              style={{ 
+            <p
+              className="text-foreground leading-relaxed w-full"
+              style={{
                 fontFamily: selectedFont?.family || 'Inter, sans-serif',
                 fontSize: '16px',
                 color: currentGradientColors ? '#ffffff' : 'hsl(var(--foreground))',
-                textShadow: currentGradientColors ? '0 1px 3px rgba(0,0,0,0.3)' : 'none'
+                textShadow: currentGradientColors ? '0 1px 3px rgba(0,0,0,0.3)' : 'none',
+                textAlign: customization.textAlignment || 'center'
               }}
             >
               Exemplo de texto com a fonte {selectedFont?.name || 'Inter'}
@@ -293,31 +304,60 @@ const AdvancedTemplateEditor = ({
         </TabsList>
 
         {/* Fonts Tab */}
-        <TabsContent value="fonts" className="space-y-3">
-          <p className="text-sm text-muted-foreground">{t("advancedEditor", "selectFont", language)}</p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            {AVAILABLE_FONTS.map((font) => (
-              <button
-                key={font.id}
-                onClick={() => handleFontChange(font.id)}
-                className={cn(
-                  "p-3 rounded-lg border-2 transition-all text-center",
-                  customization.fontId === font.id
-                    ? "border-accent bg-accent/10"
-                    : "border-border hover:border-accent/50"
-                )}
-              >
-                <span 
-                  className="block text-lg font-medium truncate"
-                  style={{ fontFamily: font.family }}
+        <TabsContent value="fonts" className="space-y-4">
+          {/* Text Alignment */}
+          <div className="space-y-2">
+            <p className="text-sm font-medium">Alinhamento do Texto</p>
+            <div className="flex gap-2">
+              {([
+                { value: 'left' as TextAlignment, icon: AlignLeft, label: 'Esquerda' },
+                { value: 'center' as TextAlignment, icon: AlignCenter, label: 'Centro' },
+                { value: 'right' as TextAlignment, icon: AlignRight, label: 'Direita' }
+              ]).map(({ value, icon: Icon, label }) => (
+                <button
+                  key={value}
+                  onClick={() => handleTextAlignmentChange(value)}
+                  className={cn(
+                    "flex-1 flex flex-col items-center gap-1 p-3 rounded-lg border-2 transition-all",
+                    customization.textAlignment === value
+                      ? "border-accent bg-accent/10"
+                      : "border-border hover:border-accent/50"
+                  )}
                 >
-                  Abc
-                </span>
-                <span className="text-xs text-muted-foreground mt-1 block truncate">
-                  {font.name}
-                </span>
-              </button>
-            ))}
+                  <Icon className="w-5 h-5" />
+                  <span className="text-xs">{label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Font Selection */}
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">{t("advancedEditor", "selectFont", language)}</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {AVAILABLE_FONTS.map((font) => (
+                <button
+                  key={font.id}
+                  onClick={() => handleFontChange(font.id)}
+                  className={cn(
+                    "p-3 rounded-lg border-2 transition-all text-center",
+                    customization.fontId === font.id
+                      ? "border-accent bg-accent/10"
+                      : "border-border hover:border-accent/50"
+                  )}
+                >
+                  <span
+                    className="block text-lg font-medium truncate"
+                    style={{ fontFamily: font.family }}
+                  >
+                    Abc
+                  </span>
+                  <span className="text-xs text-muted-foreground mt-1 block truncate">
+                    {font.name}
+                  </span>
+                </button>
+              ))}
+            </div>
           </div>
         </TabsContent>
 
