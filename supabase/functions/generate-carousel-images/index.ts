@@ -93,7 +93,7 @@ async function getUserPlan(supabase: any, userId: string, email: string): Promis
     .maybeSingle();
   
   if (roleData) {
-    return { plan: 'agency', dailyUsed, dailyLimit: 9999, isAdmin: true };
+    return { plan: 'creator', dailyUsed, dailyLimit: 9999, isAdmin: true };
   }
   
   // Check Stripe subscription
