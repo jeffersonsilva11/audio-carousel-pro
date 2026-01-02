@@ -61,6 +61,8 @@ interface Slide {
   type: string;
   text: string;
   imageUrl?: string;
+  subtitle?: string; // Only for HOOK slide (slide 1)
+  highlightWord?: string; // Word to highlight in title
 }
 
 const CreateCarousel = () => {
@@ -113,6 +115,10 @@ const CreateCarousel = () => {
     customGradientColors: undefined,
     slideImages: [],
     textAlignment: 'center',
+    subtitlePosition: 'above',
+    highlightColor: '#FF6B35',
+    showNavigationDots: true,
+    showNavigationArrow: true,
   });
 
   // Processing state
