@@ -56,6 +56,7 @@ export interface CarouselGenerationOptions {
     gradientId?: string;
     customGradientColors?: string[];
     slideImages?: (string | null)[];
+    textAlignment?: 'left' | 'center' | 'right';
   };
 }
 

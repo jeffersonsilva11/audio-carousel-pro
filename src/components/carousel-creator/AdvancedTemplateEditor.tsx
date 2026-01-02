@@ -1,14 +1,17 @@
 import { useState, useRef } from "react";
-import { 
-  Type, 
-  Palette, 
-  ImagePlus, 
+import {
+  Type,
+  Palette,
+  ImagePlus,
   X,
   Upload,
   Sparkles,
   Crown,
   Eye,
-  Loader2
+  Loader2,
+  AlignLeft,
+  AlignCenter,
+  AlignRight
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -28,11 +31,14 @@ import {
   GradientCategory 
 } from "@/lib/constants";
 
+export type TextAlignment = 'left' | 'center' | 'right';
+
 export interface TemplateCustomization {
   fontId: FontId;
   gradientId: GradientId;
   customGradientColors?: string[];
   slideImages: (string | null)[]; // Array of storage URLs per slide
+  textAlignment: TextAlignment;
 }
 
 interface AdvancedTemplateEditorProps {
@@ -78,6 +84,10 @@ const AdvancedTemplateEditor = ({
 
   const handleFontChange = (fontId: FontId) => {
     setCustomization({ ...customization, fontId });
+  };
+
+  const handleTextAlignmentChange = (alignment: TextAlignment) => {
+    setCustomization({ ...customization, textAlignment: alignment });
   };
 
   const handleGradientChange = (gradientId: GradientId) => {
@@ -248,13 +258,14 @@ const AdvancedTemplateEditor = ({
           }}
         >
           <div className="absolute inset-0 flex items-center justify-center p-4">
-            <p 
-              className="text-center text-foreground leading-relaxed"
-              style={{ 
+            <p
+              className="text-foreground leading-relaxed w-full"
+              style={{
                 fontFamily: selectedFont?.family || 'Inter, sans-serif',
                 fontSize: '16px',
                 color: currentGradientColors ? '#ffffff' : 'hsl(var(--foreground))',
-                textShadow: currentGradientColors ? '0 1px 3px rgba(0,0,0,0.3)' : 'none'
+                textShadow: currentGradientColors ? '0 1px 3px rgba(0,0,0,0.3)' : 'none',
+                textAlign: customization.textAlignment || 'center'
               }}
             >
               Exemplo de texto com a fonte {selectedFont?.name || 'Inter'}
@@ -293,31 +304,60 @@ const AdvancedTemplateEditor = ({
         </TabsList>
 
         {/* Fonts Tab */}
-        <TabsContent value="fonts" className="space-y-3">
-          <p className="text-sm text-muted-foreground">{t("advancedEditor", "selectFont", language)}</p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            {AVAILABLE_FONTS.map((font) => (
-              <button
-                key={font.id}
-                onClick={() => handleFontChange(font.id)}
-                className={cn(
-                  "p-3 rounded-lg border-2 transition-all text-center",
-                  customization.fontId === font.id
-                    ? "border-accent bg-accent/10"
-                    : "border-border hover:border-accent/50"
-                )}
-              >
-                <span 
-                  className="block text-lg font-medium truncate"
-                  style={{ fontFamily: font.family }}
+        <TabsContent value="fonts" className="space-y-4">
+          {/* Text Alignment */}
+          <div className="space-y-2">
+            <p className="text-sm font-medium">Alinhamento do Texto</p>
+            <div className="flex gap-2">
+              {([
+                { value: 'left' as TextAlignment, icon: AlignLeft, label: 'Esquerda' },
+                { value: 'center' as TextAlignment, icon: AlignCenter, label: 'Centro' },
+                { value: 'right' as TextAlignment, icon: AlignRight, label: 'Direita' }
+              ]).map(({ value, icon: Icon, label }) => (
+                <button
+                  key={value}
+                  onClick={() => handleTextAlignmentChange(value)}
+                  className={cn(
+                    "flex-1 flex flex-col items-center gap-1 p-3 rounded-lg border-2 transition-all",
+                    customization.textAlignment === value
+                      ? "border-accent bg-accent/10"
+                      : "border-border hover:border-accent/50"
+                  )}
                 >
-                  Abc
-                </span>
-                <span className="text-xs text-muted-foreground mt-1 block truncate">
-                  {font.name}
-                </span>
-              </button>
-            ))}
+                  <Icon className="w-5 h-5" />
+                  <span className="text-xs">{label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Font Selection */}
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">{t("advancedEditor", "selectFont", language)}</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {AVAILABLE_FONTS.map((font) => (
+                <button
+                  key={font.id}
+                  onClick={() => handleFontChange(font.id)}
+                  className={cn(
+                    "p-3 rounded-lg border-2 transition-all text-center",
+                    customization.fontId === font.id
+                      ? "border-accent bg-accent/10"
+                      : "border-border hover:border-accent/50"
+                  )}
+                >
+                  <span
+                    className="block text-lg font-medium truncate"
+                    style={{ fontFamily: font.family }}
+                  >
+                    Abc
+                  </span>
+                  <span className="text-xs text-muted-foreground mt-1 block truncate">
+                    {font.name}
+                  </span>
+                </button>
+              ))}
+            </div>
           </div>
         </TabsContent>
 
@@ -423,81 +463,83 @@ const AdvancedTemplateEditor = ({
           )}
         </TabsContent>
 
-        {/* Slide Images Tab */}
+        {/* Cover Image Tab - Only slide 1 */}
         <TabsContent value="images" className="space-y-4">
-          {slideCount === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <ImagePlus className="w-8 h-8 mx-auto mb-2 opacity-50" />
-              <p className="text-sm">{t("advancedEditor", "noSlides", language)}</p>
-            </div>
-          ) : (
-            <>
-              <p className="text-sm text-muted-foreground">{t("advancedEditor", "uploadImage", language)}</p>
-              <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
-                {Array.from({ length: slideCount }).map((_, index) => {
-                  const imageUrl = customization.slideImages[index];
-                  const isUploading = uploadingIndex === index;
-                  
-                  return (
-                    <div key={index} className="relative">
-                      <div 
-                        className={cn(
-                          "aspect-square rounded-lg border-2 border-dashed overflow-hidden transition-all",
-                          imageUrl ? "border-accent" : "border-border hover:border-accent/50",
-                          isUploading && "opacity-50"
-                        )}
-                      >
-                        {isUploading ? (
-                          <div className="w-full h-full flex items-center justify-center bg-muted/50">
-                            <Loader2 className="w-6 h-6 animate-spin text-accent" />
-                          </div>
-                        ) : imageUrl ? (
-                          <img 
-                            src={imageUrl} 
-                            alt={`Slide ${index + 1}`}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <button
-                            onClick={() => fileInputRefs.current[index]?.click()}
-                            className="w-full h-full flex flex-col items-center justify-center gap-1 hover:bg-accent/5 transition-colors"
-                          >
-                            <Upload className="w-4 h-4 text-muted-foreground" />
-                            <span className="text-xs text-muted-foreground">
-                              {t("advancedEditor", "slide", language)} {index + 1}
-                            </span>
-                          </button>
-                        )}
+          <div>
+            <h4 className="text-sm font-medium mb-1">Imagem de Capa</h4>
+            <p className="text-sm text-muted-foreground mb-4">
+              Adicione uma imagem de fundo para o primeiro slide (capa) do carrossel.
+              Os demais slides terão fundo sólido ou gradiente.
+            </p>
+          </div>
+
+          {(() => {
+            const coverImageUrl = customization.slideImages[0];
+            const isUploading = uploadingIndex === 0;
+
+            return (
+              <div className="flex justify-center">
+                <div className="relative w-48">
+                  <div
+                    className={cn(
+                      "aspect-square rounded-lg border-2 border-dashed overflow-hidden transition-all",
+                      coverImageUrl ? "border-accent" : "border-border hover:border-accent/50",
+                      isUploading && "opacity-50"
+                    )}
+                  >
+                    {isUploading ? (
+                      <div className="w-full h-full flex items-center justify-center bg-muted/50">
+                        <Loader2 className="w-6 h-6 animate-spin text-accent" />
                       </div>
-                      
-                      {/* Remove button */}
-                      {imageUrl && !isUploading && (
-                        <button
-                          onClick={() => handleRemoveImage(index)}
-                          className="absolute -top-2 -right-2 w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-transform"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      )}
-                      
-                      {/* Hidden file input */}
-                      <input
-                        ref={el => fileInputRefs.current[index] = el}
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) handleImageUpload(index, file);
-                          e.target.value = '';
-                        }}
+                    ) : coverImageUrl ? (
+                      <img
+                        src={coverImageUrl}
+                        alt="Capa do carrossel"
+                        className="w-full h-full object-cover"
                       />
-                    </div>
-                  );
-                })}
+                    ) : (
+                      <button
+                        onClick={() => fileInputRefs.current[0]?.click()}
+                        className="w-full h-full flex flex-col items-center justify-center gap-2 hover:bg-accent/5 transition-colors"
+                      >
+                        <Upload className="w-6 h-6 text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground text-center px-2">
+                          Clique para adicionar imagem de capa
+                        </span>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Remove button */}
+                  {coverImageUrl && !isUploading && (
+                    <button
+                      onClick={() => handleRemoveImage(0)}
+                      className="absolute -top-2 -right-2 w-6 h-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-transform"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+
+                  {/* Hidden file input */}
+                  <input
+                    ref={el => fileInputRefs.current[0] = el}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleImageUpload(0, file);
+                      e.target.value = '';
+                    }}
+                  />
+                </div>
               </div>
-            </>
-          )}
+            );
+          })()}
+
+          <p className="text-xs text-muted-foreground text-center">
+            💡 A imagem de capa aparecerá no primeiro slide com o título do carrossel sobreposto.
+          </p>
         </TabsContent>
       </Tabs>
     </div>

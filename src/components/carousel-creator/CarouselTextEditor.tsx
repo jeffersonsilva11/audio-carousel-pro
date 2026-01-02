@@ -70,6 +70,7 @@ interface TemplateCustomization {
   gradientId: string;
   customGradientColors?: string[];
   slideImages?: (string | null)[];
+  textAlignment?: 'left' | 'center' | 'right';
 }
 
 interface CarouselTextEditorProps {
@@ -81,17 +82,21 @@ interface CarouselTextEditorProps {
   format?: string;
   profile?: ProfileIdentity;
   customization?: TemplateCustomization;
+  isLocked?: boolean;
+  onFirstExport?: () => Promise<void>;
 }
 
-const CarouselTextEditor = ({ 
-  slides: initialSlides, 
-  onSlidesUpdate, 
+const CarouselTextEditor = ({
+  slides: initialSlides,
+  onSlidesUpdate,
   isPro = false,
   carouselId,
   style = 'BLACK_WHITE',
   format = 'POST_SQUARE',
   profile,
-  customization
+  customization,
+  isLocked = false,
+  onFirstExport
 }: CarouselTextEditorProps) => {
   const { t } = useTranslation();
   
@@ -356,7 +361,12 @@ const CarouselTextEditor = ({
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
       }
-      
+
+      // Mark as exported on first download (locks editing)
+      if (onFirstExport && !isLocked) {
+        await onFirstExport();
+      }
+
       toast({
         title: t("carouselPreview", "downloadStarted"),
         description: t("carouselPreview", "slideDownloaded").replace("{number}", String(slide.number)),
@@ -408,6 +418,11 @@ const CarouselTextEditor = ({
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+
+      // Mark as exported on first download (locks editing)
+      if (onFirstExport && !isLocked) {
+        await onFirstExport();
+      }
 
       toast({
         title: t("carouselPreview", "downloadComplete"),
@@ -469,8 +484,8 @@ const CarouselTextEditor = ({
               <ChevronRight className="w-5 h-5" />
             </button>
 
-            {/* Edit button overlay */}
-            {isPro && editingSlide === null && (
+            {/* Edit button overlay - hidden when locked */}
+            {isPro && editingSlide === null && !isLocked && (
               <button
                 onClick={() => startEdit(currentSlide)}
                 className="absolute top-3 right-3 p-2 rounded-full bg-background/80 backdrop-blur hover:bg-background transition-colors"
@@ -478,6 +493,14 @@ const CarouselTextEditor = ({
               >
                 <Edit2 className="w-4 h-4" />
               </button>
+            )}
+
+            {/* Locked indicator */}
+            {isLocked && (
+              <div className="absolute top-3 right-3 px-2 py-1 rounded-full bg-amber-500/90 backdrop-blur text-white text-xs font-medium flex items-center gap-1">
+                <CheckCircle className="w-3 h-3" />
+                Exportado
+              </div>
             )}
 
             {/* Regenerating overlay */}
@@ -620,7 +643,7 @@ const CarouselTextEditor = ({
               )}
             </div>
             
-            {isPro && editingSlide === null && (
+            {isPro && editingSlide === null && !isLocked && (
               <div className="flex gap-2">
                 {hasChanges && (
                   <Button
@@ -671,8 +694,8 @@ const CarouselTextEditor = ({
         </CardContent>
       </Card>
 
-      {/* Regenerate Button */}
-      {isPro && hasChanges && editingSlide === null && (
+      {/* Regenerate Button - hidden when locked */}
+      {isPro && hasChanges && editingSlide === null && !isLocked && (
         <div className="flex justify-center">
           <Button
             variant="outline"

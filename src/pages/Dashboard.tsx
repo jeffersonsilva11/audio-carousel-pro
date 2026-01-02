@@ -420,6 +420,22 @@ const Dashboard = () => {
                       {formatRelativeTime(carousel.created_at, language)}
                     </div>
                     
+                    {/* Retry button for failed carousels */}
+                    {carousel.status === "FAILED" && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full text-xs border-red-500/50 text-red-500 hover:bg-red-500/10"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/create?retry=${carousel.id}`);
+                        }}
+                      >
+                        <RefreshCw className="w-3 h-3 mr-1" />
+                        Tentar Novamente
+                      </Button>
+                    )}
+
                     {carousel.has_watermark && carousel.status === "COMPLETED" && isPro && (
                       <Button
                         variant="outline"

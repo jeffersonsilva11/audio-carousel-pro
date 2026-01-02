@@ -62,6 +62,7 @@ interface TemplateCustomization {
   gradientId?: string;
   customGradientColors?: string[];
   slideImages?: (string | null)[];
+  textAlignment?: 'left' | 'center' | 'right';
 }
 
 const logStep = (step: string, details?: unknown) => {
@@ -351,10 +352,19 @@ function generateSlideSVG(
   const totalTextHeight = lines.length * lineHeight;
   const startY = (height - totalTextHeight) / 2 + fontSize;
 
+  // Get text alignment (default: center)
+  const textAlignment = customization?.textAlignment || 'center';
+  const alignmentConfig = {
+    'left': { x: 80, anchor: 'start' },
+    'center': { x: width / 2, anchor: 'middle' },
+    'right': { x: width - 80, anchor: 'end' }
+  };
+  const { x: textX, anchor: textAnchor } = alignmentConfig[textAlignment];
+
   // Generate text elements
   const textElements = lines.map((line, index) => {
     const y = startY + (index * lineHeight);
-    return `<text x="${width / 2}" y="${y}" text-anchor="middle" fill="${textColor}" font-family="${fontFamily}" font-size="${fontSize}" font-weight="${isSignature ? '700' : '500'}">${escapeXml(line)}</text>`;
+    return `<text x="${textX}" y="${y}" text-anchor="${textAnchor}" fill="${textColor}" font-family="${fontFamily}" font-size="${fontSize}" font-weight="${isSignature ? '700' : '500'}">${escapeXml(line)}</text>`;
   }).join('\n    ');
 
   // Slide counter
