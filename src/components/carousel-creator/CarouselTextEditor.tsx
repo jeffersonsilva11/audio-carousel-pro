@@ -2,15 +2,15 @@ import { useState, useCallback, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { 
-  ChevronLeft, 
-  ChevronRight, 
-  Download, 
-  FolderArchive, 
-  Loader2, 
-  Edit2, 
-  Check, 
-  X, 
+import {
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  FolderArchive,
+  Loader2,
+  Edit2,
+  Check,
+  X,
   RotateCcw,
   Wand2,
   Undo2,
@@ -18,12 +18,22 @@ import {
   Save,
   CheckCircle,
   AlertCircle,
-  Loader2 as LoaderIcon
+  Loader2 as LoaderIcon,
+  ChevronDown,
+  Image,
+  FileImage
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import JSZip from "jszip";
 import { useTranslation } from "@/hooks/useLanguage";
+import { ExportFormat, convertSvgToFormat, getFileExtension } from "@/lib/imageConverter";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { useUndoRedo } from "@/hooks/useUndoRedo";
 import { useAutoSave } from "@/hooks/useAutoSave";
@@ -117,6 +127,7 @@ const CarouselTextEditor = ({
   const [originalSlides] = useState<Slide[]>(initialSlides);
   const [isDownloadingZip, setIsDownloadingZip] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
+  const [exportFormat, setExportFormat] = useState<ExportFormat>('png');
   const { toast } = useToast();
 
   // Auto-save with debounce (3 seconds)
@@ -347,15 +358,14 @@ const CarouselTextEditor = ({
     }
   };
 
-  const downloadSlide = async (slide: Slide) => {
+  const downloadSlide = async (slide: Slide, format: ExportFormat = exportFormat) => {
     try {
       if (slide.imageUrl) {
-        const response = await fetch(slide.imageUrl);
-        const blob = await response.blob();
+        const blob = await convertSvgToFormat(slide.imageUrl, { format });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `slide-${slide.number}.svg`;
+        a.download = `slide-${slide.number}.${getFileExtension(format)}`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -372,6 +382,7 @@ const CarouselTextEditor = ({
         description: t("carouselPreview", "slideDownloaded").replace("{number}", String(slide.number)),
       });
     } catch (error) {
+      console.error("Download error:", error);
       toast({
         title: t("carouselPreview", "downloadError"),
         description: t("carouselPreview", "couldNotDownload"),
@@ -380,7 +391,7 @@ const CarouselTextEditor = ({
     }
   };
 
-  const downloadAsZip = async () => {
+  const downloadAsZip = async (format: ExportFormat = exportFormat) => {
     if (!isPro) {
       toast({
         title: t("carouselPreview", "proFeature"),
@@ -400,11 +411,10 @@ const CarouselTextEditor = ({
       for (const slide of slides) {
         if (slide.imageUrl) {
           try {
-            const response = await fetch(slide.imageUrl);
-            const blob = await response.blob();
-            folder.file(`slide-${slide.number}.svg`, blob);
+            const blob = await convertSvgToFormat(slide.imageUrl, { format });
+            folder.file(`slide-${slide.number}.${getFileExtension(format)}`, blob);
           } catch (err) {
-            console.error(`Error fetching slide ${slide.number}:`, err);
+            console.error(`Error converting slide ${slide.number}:`, err);
           }
         }
       }
@@ -713,13 +723,48 @@ const CarouselTextEditor = ({
         </div>
       )}
 
+      {/* Export Format Selector */}
+      <div className="flex items-center justify-center gap-2">
+        <span className="text-sm text-muted-foreground">Formato:</span>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="min-w-[100px] justify-between">
+              <span className="flex items-center gap-2">
+                {exportFormat === 'svg' && <FileImage className="w-4 h-4" />}
+                {exportFormat === 'png' && <Image className="w-4 h-4" />}
+                {exportFormat === 'jpg' && <Image className="w-4 h-4" />}
+                {exportFormat.toUpperCase()}
+              </span>
+              <ChevronDown className="w-4 h-4 ml-2 opacity-50" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="center">
+            <DropdownMenuItem onClick={() => setExportFormat('png')} className="cursor-pointer">
+              <Image className="w-4 h-4 mr-2" />
+              PNG
+              <span className="ml-2 text-xs text-muted-foreground">(Recomendado)</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setExportFormat('jpg')} className="cursor-pointer">
+              <Image className="w-4 h-4 mr-2" />
+              JPG
+              <span className="ml-2 text-xs text-muted-foreground">(Menor tamanho)</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setExportFormat('svg')} className="cursor-pointer">
+              <FileImage className="w-4 h-4 mr-2" />
+              SVG
+              <span className="ml-2 text-xs text-muted-foreground">(Vetorial)</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
       {/* Actions */}
       <div className="flex flex-col sm:flex-row gap-3 justify-center">
         {isPro ? (
-          <Button 
-            variant="accent" 
-            size="lg" 
-            onClick={downloadAsZip}
+          <Button
+            variant="accent"
+            size="lg"
+            onClick={() => downloadAsZip()}
             disabled={isDownloadingZip}
             className="flex-1 sm:flex-initial"
           >
@@ -731,17 +776,17 @@ const CarouselTextEditor = ({
             {isDownloadingZip ? t("carouselPreview", "creatingZip") : t("carouselPreview", "downloadZip").replace("{count}", String(slides.length))}
           </Button>
         ) : (
-          <Button 
-            variant="accent" 
-            size="lg" 
+          <Button
+            variant="accent"
+            size="lg"
             className="flex-1 sm:flex-initial"
           >
             <Download className="w-4 h-4 mr-2" />
             {t("carouselPreview", "downloadAll").replace("{count}", String(slides.length))}
           </Button>
         )}
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           size="lg"
           onClick={() => downloadSlide(currentSlideData)}
           className="flex-1 sm:flex-initial"
