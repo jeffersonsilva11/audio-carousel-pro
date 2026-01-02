@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useRecaptcha } from "@/hooks/useRecaptcha";
@@ -187,9 +187,10 @@ const Auth = () => {
           await recordSuccessfulAttempt();
           toast({
             title: t("auth", "accountCreated", language),
-            description: `${t("auth", "welcomeTo", language)} ${BRAND.name}!`,
+            description: t("auth", "checkEmailVerification", language),
           });
-          navigate("/dashboard");
+          // Redirect to email verification page
+          navigate(`/auth/verify?email=${encodeURIComponent(email)}`);
         }
       }
     } finally {
@@ -393,6 +394,18 @@ const Auth = () => {
                   />
                 </div>
                 {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
+
+                {/* Forgot password link - only show on login */}
+                {isLogin && (
+                  <div className="text-right">
+                    <Link
+                      to="/auth/forgot-password"
+                      className="text-sm text-accent hover:underline"
+                    >
+                      {t("auth", "forgotPassword", language)}
+                    </Link>
+                  </div>
+                )}
               </div>
 
               <Button 

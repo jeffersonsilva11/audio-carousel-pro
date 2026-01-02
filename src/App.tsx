@@ -12,6 +12,9 @@ import { initSentry, setUser } from "@/lib/sentry";
 import { useEffect } from "react";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
+import VerifyEmail from "./pages/VerifyEmail";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
 import CreateCarousel from "./pages/CreateCarousel";
 import CarouselDetail from "./pages/CarouselDetail";
@@ -48,6 +51,9 @@ const App = () => {
                     <Routes>
                       <Route path="/" element={<Index />} />
                       <Route path="/auth" element={<Auth />} />
+                      <Route path="/auth/verify" element={<VerifyEmail />} />
+                      <Route path="/auth/forgot-password" element={<ForgotPassword />} />
+                      <Route path="/auth/reset-password" element={<ResetPassword />} />
                       <Route path="/dashboard" element={<Dashboard />} />
                       <Route path="/create" element={<CreateCarousel />} />
                       <Route path="/carousel/:id" element={<CarouselDetail />} />
