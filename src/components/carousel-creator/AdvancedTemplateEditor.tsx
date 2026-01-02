@@ -463,81 +463,83 @@ const AdvancedTemplateEditor = ({
           )}
         </TabsContent>
 
-        {/* Slide Images Tab */}
+        {/* Cover Image Tab - Only slide 1 */}
         <TabsContent value="images" className="space-y-4">
-          {slideCount === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <ImagePlus className="w-8 h-8 mx-auto mb-2 opacity-50" />
-              <p className="text-sm">{t("advancedEditor", "noSlides", language)}</p>
-            </div>
-          ) : (
-            <>
-              <p className="text-sm text-muted-foreground">{t("advancedEditor", "uploadImage", language)}</p>
-              <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
-                {Array.from({ length: slideCount }).map((_, index) => {
-                  const imageUrl = customization.slideImages[index];
-                  const isUploading = uploadingIndex === index;
-                  
-                  return (
-                    <div key={index} className="relative">
-                      <div 
-                        className={cn(
-                          "aspect-square rounded-lg border-2 border-dashed overflow-hidden transition-all",
-                          imageUrl ? "border-accent" : "border-border hover:border-accent/50",
-                          isUploading && "opacity-50"
-                        )}
-                      >
-                        {isUploading ? (
-                          <div className="w-full h-full flex items-center justify-center bg-muted/50">
-                            <Loader2 className="w-6 h-6 animate-spin text-accent" />
-                          </div>
-                        ) : imageUrl ? (
-                          <img 
-                            src={imageUrl} 
-                            alt={`Slide ${index + 1}`}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <button
-                            onClick={() => fileInputRefs.current[index]?.click()}
-                            className="w-full h-full flex flex-col items-center justify-center gap-1 hover:bg-accent/5 transition-colors"
-                          >
-                            <Upload className="w-4 h-4 text-muted-foreground" />
-                            <span className="text-xs text-muted-foreground">
-                              {t("advancedEditor", "slide", language)} {index + 1}
-                            </span>
-                          </button>
-                        )}
+          <div>
+            <h4 className="text-sm font-medium mb-1">Imagem de Capa</h4>
+            <p className="text-sm text-muted-foreground mb-4">
+              Adicione uma imagem de fundo para o primeiro slide (capa) do carrossel.
+              Os demais slides terão fundo sólido ou gradiente.
+            </p>
+          </div>
+
+          {(() => {
+            const coverImageUrl = customization.slideImages[0];
+            const isUploading = uploadingIndex === 0;
+
+            return (
+              <div className="flex justify-center">
+                <div className="relative w-48">
+                  <div
+                    className={cn(
+                      "aspect-square rounded-lg border-2 border-dashed overflow-hidden transition-all",
+                      coverImageUrl ? "border-accent" : "border-border hover:border-accent/50",
+                      isUploading && "opacity-50"
+                    )}
+                  >
+                    {isUploading ? (
+                      <div className="w-full h-full flex items-center justify-center bg-muted/50">
+                        <Loader2 className="w-6 h-6 animate-spin text-accent" />
                       </div>
-                      
-                      {/* Remove button */}
-                      {imageUrl && !isUploading && (
-                        <button
-                          onClick={() => handleRemoveImage(index)}
-                          className="absolute -top-2 -right-2 w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-transform"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      )}
-                      
-                      {/* Hidden file input */}
-                      <input
-                        ref={el => fileInputRefs.current[index] = el}
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) handleImageUpload(index, file);
-                          e.target.value = '';
-                        }}
+                    ) : coverImageUrl ? (
+                      <img
+                        src={coverImageUrl}
+                        alt="Capa do carrossel"
+                        className="w-full h-full object-cover"
                       />
-                    </div>
-                  );
-                })}
+                    ) : (
+                      <button
+                        onClick={() => fileInputRefs.current[0]?.click()}
+                        className="w-full h-full flex flex-col items-center justify-center gap-2 hover:bg-accent/5 transition-colors"
+                      >
+                        <Upload className="w-6 h-6 text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground text-center px-2">
+                          Clique para adicionar imagem de capa
+                        </span>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Remove button */}
+                  {coverImageUrl && !isUploading && (
+                    <button
+                      onClick={() => handleRemoveImage(0)}
+                      className="absolute -top-2 -right-2 w-6 h-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-transform"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+
+                  {/* Hidden file input */}
+                  <input
+                    ref={el => fileInputRefs.current[0] = el}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleImageUpload(0, file);
+                      e.target.value = '';
+                    }}
+                  />
+                </div>
               </div>
-            </>
-          )}
+            );
+          })()}
+
+          <p className="text-xs text-muted-foreground text-center">
+            💡 A imagem de capa aparecerá no primeiro slide com o título do carrossel sobreposto.
+          </p>
         </TabsContent>
       </Tabs>
     </div>
