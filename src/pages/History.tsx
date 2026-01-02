@@ -248,55 +248,118 @@ const History = () => {
     return formats[format] || format;
   };
 
+  // Helper to get month/year key from date
+  const getMonthKey = (dateStr: string): string => {
+    const date = new Date(dateStr);
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+  };
+
+  // Helper to format month label
+  const getMonthLabel = (monthKey: string): string => {
+    const [year, month] = monthKey.split('-').map(Number);
+    const date = new Date(year, month - 1, 1);
+    const monthName = date.toLocaleDateString(language, { month: 'long', year: 'numeric' });
+    return monthName.charAt(0).toUpperCase() + monthName.slice(1);
+  };
+
   // Filtered and sorted carousels
   const filteredCarousels = useMemo(() => {
     let result = [...carousels];
-    
+
     // Search filter (searches in transcription)
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      result = result.filter(c => 
+      result = result.filter(c =>
         c.transcription?.toLowerCase().includes(query) ||
         getToneLabel(c.tone).toLowerCase().includes(query)
       );
     }
-    
+
     // Tone filter
     if (toneFilter !== "all") {
       result = result.filter(c => c.tone === toneFilter);
     }
-    
+
     // Style filter
     if (styleFilter !== "all") {
       result = result.filter(c => c.style === styleFilter);
     }
-    
+
     // Format filter
     if (formatFilter !== "all") {
       result = result.filter(c => c.format === formatFilter);
     }
-    
+
     // Status filter
     if (statusFilter !== "all") {
       result = result.filter(c => c.status === statusFilter);
     }
-    
+
     // Date sort
     result.sort((a, b) => {
       const dateA = new Date(a.created_at).getTime();
       const dateB = new Date(b.created_at).getTime();
       return dateSort === "newest" ? dateB - dateA : dateA - dateB;
     });
-    
+
     return result;
   }, [carousels, searchQuery, toneFilter, styleFilter, formatFilter, statusFilter, dateSort, language]);
 
-  // Pagination
+  // Group carousels by month
+  const groupedCarousels = useMemo(() => {
+    const groups: Record<string, Carousel[]> = {};
+
+    for (const carousel of filteredCarousels) {
+      const monthKey = getMonthKey(carousel.created_at);
+      if (!groups[monthKey]) {
+        groups[monthKey] = [];
+      }
+      groups[monthKey].push(carousel);
+    }
+
+    // Sort month keys
+    const sortedKeys = Object.keys(groups).sort((a, b) => {
+      return dateSort === "newest" ? b.localeCompare(a) : a.localeCompare(b);
+    });
+
+    return sortedKeys.map(key => ({
+      monthKey: key,
+      label: getMonthLabel(key),
+      carousels: groups[key],
+      count: groups[key].length
+    }));
+  }, [filteredCarousels, dateSort, language]);
+
+  // Pagination (now works on total filtered, groups are displayed without pagination)
   const totalPages = Math.ceil(filteredCarousels.length / ITEMS_PER_PAGE);
   const paginatedCarousels = useMemo(() => {
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
     return filteredCarousels.slice(start, start + ITEMS_PER_PAGE);
   }, [filteredCarousels, currentPage]);
+
+  // Group paginated carousels by month for display
+  const paginatedGroups = useMemo(() => {
+    const groups: Record<string, Carousel[]> = {};
+
+    for (const carousel of paginatedCarousels) {
+      const monthKey = getMonthKey(carousel.created_at);
+      if (!groups[monthKey]) {
+        groups[monthKey] = [];
+      }
+      groups[monthKey].push(carousel);
+    }
+
+    const sortedKeys = Object.keys(groups).sort((a, b) => {
+      return dateSort === "newest" ? b.localeCompare(a) : a.localeCompare(b);
+    });
+
+    return sortedKeys.map(key => ({
+      monthKey: key,
+      label: getMonthLabel(key),
+      carousels: groups[key],
+      count: groups[key].length
+    }));
+  }, [paginatedCarousels, dateSort, language]);
 
   // Reset to page 1 when filters change
   useEffect(() => {
@@ -594,25 +657,42 @@ const History = () => {
           </Card>
         ) : (
           <>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {paginatedCarousels.map((carousel) => {
-                const isSelected = selectedIds.has(carousel.id);
-                const canSelect = carousel.status === "COMPLETED" && carousel.image_urls?.length;
-                
-                return (
-                  <Card 
-                    key={carousel.id} 
-                    className={`group hover:shadow-lg transition-all cursor-pointer overflow-hidden ${
-                      isSelected ? "border-accent ring-2 ring-accent/20" : "hover:border-accent/50"
-                    }`}
-                    onClick={() => {
-                      if (isSelectionMode && canSelect) {
-                        toggleSelection(carousel.id, { stopPropagation: () => {} } as React.MouseEvent);
-                      } else {
-                        navigate(`/carousel/${carousel.id}`);
-                      }
-                    }}
-                  >
+            {/* Grouped by month */}
+            <div className="space-y-8">
+              {paginatedGroups.map((group) => (
+                <div key={group.monthKey}>
+                  {/* Month header */}
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="flex items-center gap-2 bg-accent/10 text-accent px-3 py-1.5 rounded-full">
+                      <Calendar className="w-4 h-4" />
+                      <span className="font-semibold text-sm">{group.label}</span>
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      {group.count} {group.count === 1 ? 'carrossel' : 'carrosséis'}
+                    </span>
+                    <div className="flex-1 h-px bg-border" />
+                  </div>
+
+                  {/* Carousels grid for this month */}
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    {group.carousels.map((carousel) => {
+                      const isSelected = selectedIds.has(carousel.id);
+                      const canSelect = carousel.status === "COMPLETED" && carousel.image_urls?.length;
+
+                      return (
+                        <Card
+                          key={carousel.id}
+                          className={`group hover:shadow-lg transition-all cursor-pointer overflow-hidden ${
+                            isSelected ? "border-accent ring-2 ring-accent/20" : "hover:border-accent/50"
+                          }`}
+                          onClick={() => {
+                            if (isSelectionMode && canSelect) {
+                              toggleSelection(carousel.id, { stopPropagation: () => {} } as React.MouseEvent);
+                            } else {
+                              navigate(`/carousel/${carousel.id}`);
+                            }
+                          }}
+                        >
                     {/* Thumbnail preview with hover card */}
                     <HoverCard openDelay={300} closeDelay={100}>
                       <HoverCardTrigger asChild>
@@ -730,9 +810,12 @@ const History = () => {
                         </Button>
                       )}
                     </CardContent>
-                  </Card>
-                );
-              })}
+                        </Card>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </div>
 
             {/* Pagination */}
