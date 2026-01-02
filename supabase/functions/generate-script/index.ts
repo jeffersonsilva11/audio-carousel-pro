@@ -353,7 +353,10 @@ REGRAS DE FORMATAÇÃO:
 - Use exemplos concretos, metáforas ou analogias quando apropriado
 - Cada slide deve ter valor standalone mas fluir para o próximo
 - Evite bullet points excessivos - prefira texto corrido e envolvente
-- O primeiro slide (HOOK) deve capturar atenção imediatamente
+- O primeiro slide (HOOK) DEVE ter:
+  * "subtitle": frase de contexto curta (4-8 palavras) que introduz o tema
+  * "text": título principal impactante e chamativo
+  * "highlightWord": palavra-chave do título para destaque visual (opcional, 1 palavra)
 - O último slide (CTA) deve provocar reflexão ou ação clara
 
 CONTEXTO DO TEMPLATE:
@@ -364,7 +367,9 @@ Você deve retornar APENAS um JSON válido no seguinte formato (sem markdown, se
   "textMode": "${textMode}",
   "creativeTone": "${textMode === 'creative' ? creativeTone : 'none'}",
   "slides": [
-    {"number": 1, "type": "HOOK|CONTENT|CTA|SIGNATURE", "text": "Texto do slide"}
+    {"number": 1, "type": "HOOK", "text": "Título principal da capa", "subtitle": "Contexto curto acima do título", "highlightWord": "palavra"},
+    {"number": 2, "type": "CONTENT", "text": "Texto do slide"},
+    ...
   ],
   "total_slides": <número de slides gerados>
 }`;

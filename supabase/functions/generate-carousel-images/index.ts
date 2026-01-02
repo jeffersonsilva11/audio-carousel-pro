@@ -63,6 +63,19 @@ interface TemplateCustomization {
   customGradientColors?: string[];
   slideImages?: (string | null)[];
   textAlignment?: 'left' | 'center' | 'right';
+  // Cover slide specific
+  subtitlePosition?: 'above' | 'below'; // Position relative to title
+  highlightColor?: string; // Highlight color for keyword
+  showNavigationDots?: boolean; // Show navigation dots
+  showNavigationArrow?: boolean; // Show navigation arrow indicator
+}
+
+interface SlideData {
+  number: number;
+  type: string;
+  text: string;
+  subtitle?: string; // Only for HOOK slide
+  highlightWord?: string; // Word to highlight in title
 }
 
 const logStep = (step: string, details?: unknown) => {
@@ -368,9 +381,98 @@ function wrapText(
   return lines;
 }
 
+// Generate navigation dots SVG
+function generateNavigationDots(
+  width: number,
+  height: number,
+  currentSlide: number,
+  totalSlides: number,
+  color: string = '#FFFFFF'
+): string {
+  const dotSize = 8;
+  const dotGap = 12;
+  const totalWidth = totalSlides * dotSize + (totalSlides - 1) * dotGap;
+  const startX = (width - totalWidth) / 2;
+  const y = height - 45;
+
+  const dots = Array.from({ length: totalSlides }, (_, i) => {
+    const x = startX + i * (dotSize + dotGap) + dotSize / 2;
+    const opacity = i === currentSlide - 1 ? '1' : '0.4';
+    const size = i === currentSlide - 1 ? dotSize : dotSize * 0.75;
+    return `<circle cx="${x}" cy="${y}" r="${size / 2}" fill="${color}" opacity="${opacity}"/>`;
+  }).join('\n    ');
+
+  return `<g class="navigation-dots">${dots}</g>`;
+}
+
+// Generate navigation arrow indicator SVG
+function generateNavigationArrow(
+  width: number,
+  height: number,
+  color: string = '#FFFFFF'
+): string {
+  const arrowX = width - 55;
+  const arrowY = height / 2;
+  const arrowSize = 40;
+
+  return `
+  <g class="navigation-arrow" opacity="0.7">
+    <circle cx="${arrowX}" cy="${arrowY}" r="${arrowSize / 2}" fill="rgba(255,255,255,0.15)" stroke="${color}" stroke-width="1.5" stroke-opacity="0.3"/>
+    <path d="M${arrowX - 6} ${arrowY - 8} L${arrowX + 6} ${arrowY} L${arrowX - 6} ${arrowY + 8}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>`;
+}
+
+// Apply highlight to a word in text (returns SVG with background rect)
+function applyHighlightToWord(
+  line: string,
+  highlightWord: string,
+  x: number,
+  y: number,
+  fontSize: number,
+  fontFamily: string,
+  textAnchor: string,
+  highlightColor: string = '#F97316'
+): string {
+  if (!highlightWord || !line.toLowerCase().includes(highlightWord.toLowerCase())) {
+    return `<text x="${x}" y="${y}" text-anchor="${textAnchor}" fill="#FFFFFF" font-family="${fontFamily}" font-size="${fontSize}" font-weight="800" letter-spacing="-0.02em">${escapeXml(line)}</text>`;
+  }
+
+  // Find the word position
+  const regex = new RegExp(`(${highlightWord})`, 'gi');
+  const parts = line.split(regex);
+
+  // For simplicity, wrap the entire line if it contains the highlight word
+  // Calculate approximate text width
+  const avgCharWidth = fontSize * 0.55;
+  const padding = 12;
+  const wordWidth = highlightWord.length * avgCharWidth + padding * 2;
+  const wordHeight = fontSize * 1.2;
+
+  // Find word position in line
+  const beforeWord = line.substring(0, line.toLowerCase().indexOf(highlightWord.toLowerCase()));
+  const beforeWidth = beforeWord.length * avgCharWidth;
+
+  let rectX: number;
+  if (textAnchor === 'start') {
+    rectX = x + beforeWidth - padding;
+  } else if (textAnchor === 'middle') {
+    const totalWidth = line.length * avgCharWidth;
+    rectX = x - totalWidth / 2 + beforeWidth - padding;
+  } else {
+    const totalWidth = line.length * avgCharWidth;
+    rectX = x - totalWidth + beforeWidth - padding;
+  }
+
+  return `
+    <g class="highlight-group">
+      <rect x="${rectX}" y="${y - fontSize * 0.85}" width="${wordWidth}" height="${wordHeight}" rx="4" fill="${highlightColor}"/>
+      <text x="${x}" y="${y}" text-anchor="${textAnchor}" fill="#FFFFFF" font-family="${fontFamily}" font-size="${fontSize}" font-weight="800" letter-spacing="-0.02em">${escapeXml(line)}</text>
+    </g>`;
+}
+
 // Generate SVG for COVER slide (slide 1 - HOOK)
 function generateCoverSlideSVG(
-  text: string,
+  slideData: SlideData,
   totalSlides: number,
   style: keyof typeof STYLES,
   format: keyof typeof DIMENSIONS,
@@ -386,13 +488,20 @@ function generateCoverSlideSVG(
   const slideImage = customization?.slideImages?.[0]; // Cover image
   const hasImage = !!slideImage;
 
-  // Cover slide always uses white text for readability
-  const titleColor = '#FFFFFF';
+  // Extract slide data
+  const { text, subtitle, highlightWord } = slideData;
+  const subtitlePosition = customization?.subtitlePosition || 'above';
+  const highlightColor = customization?.highlightColor || '#F97316';
+  const showDots = customization?.showNavigationDots !== false; // Default true
+  const showArrow = customization?.showNavigationArrow !== false; // Default true
 
-  // Calculate font size for cover title
-  const fontSize = calculateFontSize(text.length, 'cover', format);
-  const maxWidth = width - 160;
-  const lines = wrapText(text, maxWidth, fontSize);
+  // Cover slide uses white text when there's image, otherwise based on style
+  const textColor = hasImage ? '#FFFFFF' : (style === 'BLACK_WHITE' ? '#FFFFFF' : '#0A0A0A');
+  const counterColor = hasImage ? 'rgba(255,255,255,0.6)' : (style === 'BLACK_WHITE' ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)');
+
+  // Calculate font sizes
+  const titleFontSize = calculateFontSize(text.length, 'cover', format);
+  const subtitleFontSize = Math.round(titleFontSize * 0.38); // Smaller subtitle
 
   // Get text alignment
   const textAlignment = customization?.textAlignment || 'left';
@@ -403,28 +512,63 @@ function generateCoverSlideSVG(
   };
   const { x: textX, anchor: textAnchor } = alignmentConfig[textAlignment];
 
-  // Positioning: if image, text at bottom; otherwise centered
-  const lineHeight = fontSize * 1.15;
-  const totalTextHeight = lines.length * lineHeight;
+  // Word wrap the title
+  const maxWidth = width - 160;
+  const lines = wrapText(text, maxWidth, titleFontSize);
+  const lineHeight = titleFontSize * 1.15;
+  const totalTitleHeight = lines.length * lineHeight;
 
-  let startY: number;
+  // Calculate vertical positioning
+  const subtitleHeight = subtitle ? subtitleFontSize * 1.5 : 0;
+  const subtitleGap = subtitle ? 20 : 0;
+  const totalContentHeight = totalTitleHeight + subtitleHeight + subtitleGap;
+
+  let titleStartY: number;
+  let subtitleY: number;
+
   if (hasImage) {
-    // Position text at bottom with padding
-    startY = height - 120 - totalTextHeight + fontSize;
+    // Position at bottom with dots space
+    const bottomPadding = showDots ? 100 : 70;
+    titleStartY = height - bottomPadding - totalTitleHeight + titleFontSize;
+
+    if (subtitle) {
+      if (subtitlePosition === 'above') {
+        subtitleY = titleStartY - subtitleGap - subtitleFontSize * 0.3;
+        // Adjust title down slightly if subtitle above
+      } else {
+        subtitleY = titleStartY + totalTitleHeight + subtitleGap;
+        titleStartY -= subtitleHeight + subtitleGap;
+      }
+    }
   } else {
-    // Center text vertically
-    startY = (height - totalTextHeight) / 2 + fontSize * 0.8;
+    // Center vertically
+    titleStartY = (height - totalContentHeight) / 2 + titleFontSize * 0.8;
+
+    if (subtitle) {
+      if (subtitlePosition === 'above') {
+        subtitleY = titleStartY - subtitleGap;
+        titleStartY += subtitleHeight;
+      } else {
+        subtitleY = titleStartY + totalTitleHeight + subtitleGap;
+      }
+    }
   }
 
-  // Generate title text elements
+  // Generate subtitle element
+  const subtitleElement = subtitle ? `
+    <text x="${textX}" y="${subtitleY}" text-anchor="${textAnchor}" fill="${textColor}" opacity="0.85" font-family="${fontFamily}" font-size="${subtitleFontSize}" font-weight="500" letter-spacing="0.05em" text-transform="uppercase">${escapeXml(subtitle.toUpperCase())}</text>
+  ` : '';
+
+  // Generate title text elements with optional highlight
   const textElements = lines.map((line, index) => {
-    const y = startY + (index * lineHeight);
-    const fillColor = hasImage ? titleColor : (style === 'BLACK_WHITE' ? '#FFFFFF' : '#0A0A0A');
-    return `<text x="${textX}" y="${y}" text-anchor="${textAnchor}" fill="${fillColor}" font-family="${fontFamily}" font-size="${fontSize}" font-weight="800" letter-spacing="-0.02em">${escapeXml(line)}</text>`;
+    const y = titleStartY + (index * lineHeight);
+    if (highlightWord && line.toLowerCase().includes(highlightWord.toLowerCase())) {
+      return applyHighlightToWord(line, highlightWord, textX, y, titleFontSize, fontFamily, textAnchor, highlightColor);
+    }
+    return `<text x="${textX}" y="${y}" text-anchor="${textAnchor}" fill="${textColor}" font-family="${fontFamily}" font-size="${titleFontSize}" font-weight="800" letter-spacing="-0.02em">${escapeXml(line)}</text>`;
   }).join('\n    ');
 
   // Counter
-  const counterColor = hasImage ? 'rgba(255,255,255,0.6)' : (style === 'BLACK_WHITE' ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)');
   const counter = `<text x="${width - 50}" y="55" text-anchor="end" fill="${counterColor}" font-family="${fontFamily}" font-size="26" font-weight="500">1/${totalSlides}</text>`;
 
   // Background
@@ -445,47 +589,32 @@ function generateCoverSlideSVG(
     }
   }
 
-  // Profile on cover (optional, smaller and subtle)
-  let profileElement = '';
-  if (profile && hasImage) {
-    const avatarSize = 48;
-    const padding = 50;
-    const avatarX = padding;
-    const avatarY = height - 60;
-    const textXPos = avatarX + avatarSize + 12;
+  // Navigation dots
+  const dotsElement = showDots ? generateNavigationDots(width, height, 1, totalSlides, textColor) : '';
 
-    const initials = getInitials(profile.name);
-    const avatarEl = profile.photoUrl
-      ? `<clipPath id="coverAvatarClip"><circle cx="${avatarX + avatarSize/2}" cy="${avatarY + avatarSize/2}" r="${avatarSize/2}"/></clipPath>
-         <image href="${profile.photoUrl}" x="${avatarX}" y="${avatarY}" width="${avatarSize}" height="${avatarSize}" clip-path="url(#coverAvatarClip)" preserveAspectRatio="xMidYMid slice"/>`
-      : `<circle cx="${avatarX + avatarSize/2}" cy="${avatarY + avatarSize/2}" r="${avatarSize/2}" fill="rgba(255,255,255,0.2)"/>
-         <text x="${avatarX + avatarSize/2}" y="${avatarY + avatarSize/2 + 6}" text-anchor="middle" fill="#FFFFFF" font-family="${fontFamily}" font-size="18" font-weight="600">${initials}</text>`;
+  // Navigation arrow
+  const arrowElement = showArrow ? generateNavigationArrow(width, height, textColor) : '';
 
-    profileElement = `
-    <g class="cover-profile" opacity="0.9">
-      ${avatarEl}
-      <text x="${textXPos}" y="${avatarY + avatarSize/2 + 5}" text-anchor="start" fill="#FFFFFF" font-family="${fontFamily}" font-size="14" font-weight="600">@${escapeXml(profile.username)}</text>
-    </g>`;
-  }
-
-  // Watermark
+  // Watermark with CTA button style
   const watermark = hasWatermark ? `
-    <g opacity="0.12">
-      <text x="${width / 2}" y="${height - 30}" text-anchor="middle" fill="#FFFFFF" font-family="${fontFamily}" font-size="22" font-weight="600">Audisell</text>
+    <g class="watermark-cta">
+      <rect x="${width / 2 - 100}" y="${height - 85}" width="200" height="36" rx="18" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+      <text x="${width / 2}" y="${height - 61}" text-anchor="middle" fill="#FFFFFF" font-family="${fontFamily}" font-size="13" font-weight="600" letter-spacing="0.02em">FEITO COM AUDISELL →</text>
     </g>
-    <g opacity="0.06" transform="rotate(-30 ${width / 2} ${height / 2})">
-      <text x="${width / 2}" y="${height / 2 - 80}" text-anchor="middle" fill="#FFFFFF" font-family="${fontFamily}" font-size="72" font-weight="700">DEMO</text>
-      <text x="${width / 2}" y="${height / 2 + 40}" text-anchor="middle" fill="#FFFFFF" font-family="${fontFamily}" font-size="36" font-weight="500">audisell.com</text>
+    <g opacity="0.05" transform="rotate(-30 ${width / 2} ${height / 2})">
+      <text x="${width / 2}" y="${height / 2 - 60}" text-anchor="middle" fill="#FFFFFF" font-family="${fontFamily}" font-size="64" font-weight="700">DEMO</text>
     </g>` : '';
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
   ${backgroundElement}
   ${counter}
+  ${subtitleElement}
   <g class="title">
     ${textElements}
   </g>
-  ${profileElement}
+  ${dotsElement}
+  ${arrowElement}
   ${watermark}
 </svg>`;
 }
@@ -507,6 +636,9 @@ function generateContentSlideSVG(
 
   const fontId = customization?.fontId || 'inter';
   const fontFamily = FONTS[fontId] || FONTS['inter'];
+  const showDots = customization?.showNavigationDots !== false;
+  const showArrow = customization?.showNavigationArrow !== false;
+  const isLastSlide = slideNumber === totalSlides;
 
   // Content slides don't use individual images, only gradient or solid
   const fontSize = calculateFontSize(text.length, 'content', format);
@@ -524,7 +656,7 @@ function generateContentSlideSVG(
 
   // Calculate vertical positioning - center in available space (below profile, above footer)
   const profileHeight = profile ? 100 : 0;
-  const footerHeight = 60;
+  const footerHeight = showDots ? 80 : 60;
   const availableHeight = height - profileHeight - footerHeight;
   const lineHeight = fontSize * 1.45;
   const totalTextHeight = lines.length * lineHeight;
@@ -559,14 +691,19 @@ function generateContentSlideSVG(
     }
   }
 
+  // Navigation dots
+  const dotsElement = showDots ? generateNavigationDots(width, height, slideNumber, totalSlides, textColor) : '';
+
+  // Navigation arrow (not on last slide)
+  const arrowElement = showArrow && !isLastSlide ? generateNavigationArrow(width, height, textColor) : '';
+
   // Watermark
   const watermark = hasWatermark ? `
-    <g opacity="0.15">
-      <text x="${width / 2}" y="${height - 35}" text-anchor="middle" fill="${textColor}" font-family="${fontFamily}" font-size="22" font-weight="600">Audisell</text>
+    <g opacity="0.12">
+      <text x="${width / 2}" y="${height - 35}" text-anchor="middle" fill="${textColor}" font-family="${fontFamily}" font-size="18" font-weight="600">Feito com Audisell</text>
     </g>
-    <g opacity="0.08" transform="rotate(-30 ${width / 2} ${height / 2})">
-      <text x="${width / 2}" y="${height / 2 - 80}" text-anchor="middle" fill="${textColor}" font-family="${fontFamily}" font-size="72" font-weight="700">DEMO</text>
-      <text x="${width / 2}" y="${height / 2 + 40}" text-anchor="middle" fill="${textColor}" font-family="${fontFamily}" font-size="36" font-weight="500">audisell.com</text>
+    <g opacity="0.05" transform="rotate(-30 ${width / 2} ${height / 2})">
+      <text x="${width / 2}" y="${height / 2 - 60}" text-anchor="middle" fill="${textColor}" font-family="${fontFamily}" font-size="64" font-weight="700">DEMO</text>
     </g>` : '';
 
   return `<?xml version="1.0" encoding="UTF-8"?>
@@ -582,14 +719,15 @@ function generateContentSlideSVG(
   <g class="content">
     ${textElements}
   </g>
+  ${dotsElement}
+  ${arrowElement}
   ${watermark}
 </svg>`;
 }
 
 // Main function to generate slide SVG (routes to cover or content)
 function generateSlideSVG(
-  text: string,
-  slideNumber: number,
+  slideData: SlideData,
   totalSlides: number,
   style: keyof typeof STYLES,
   format: keyof typeof DIMENSIONS,
@@ -599,9 +737,9 @@ function generateSlideSVG(
   customization?: TemplateCustomization
 ): string {
   // Slide 1 is always the cover slide with special layout
-  if (slideNumber === 1) {
+  if (slideData.number === 1) {
     return generateCoverSlideSVG(
-      text,
+      slideData,
       totalSlides,
       style,
       format,
@@ -613,8 +751,8 @@ function generateSlideSVG(
 
   // All other slides use content layout
   return generateContentSlideSVG(
-    text,
-    slideNumber,
+    slideData.text,
+    slideData.number,
     totalSlides,
     style,
     format,
@@ -715,10 +853,18 @@ serve(async (req) => {
       const slide = script.slides[0]; // Single slide is passed as first element
       const isSignature = slide.type === 'SIGNATURE';
       const actualTotalSlides = totalSlides || 6;
-      
+
+      // Create SlideData object
+      const slideData: SlideData = {
+        number: slideIndex + 1,
+        type: slide.type,
+        text: slide.text,
+        subtitle: slide.subtitle,
+        highlightWord: slide.highlightWord
+      };
+
       const svg = generateSlideSVG(
-        slide.text,
-        slideIndex + 1,
+        slideData,
         actualTotalSlides,
         style as keyof typeof STYLES,
         format as keyof typeof DIMENSIONS,
@@ -785,9 +931,18 @@ serve(async (req) => {
     for (let index = 0; index < script.slides.length; index++) {
       const slide = script.slides[index];
       const isSignature = slide.type === 'SIGNATURE';
+
+      // Create SlideData object with all fields
+      const slideData: SlideData = {
+        number: index + 1,
+        type: slide.type,
+        text: slide.text,
+        subtitle: slide.subtitle,
+        highlightWord: slide.highlightWord
+      };
+
       const svg = generateSlideSVG(
-        slide.text,
-        index + 1,
+        slideData,
         script.slides.length,
         style as keyof typeof STYLES,
         format as keyof typeof DIMENSIONS,
