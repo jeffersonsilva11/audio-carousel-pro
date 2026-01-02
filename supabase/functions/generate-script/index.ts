@@ -213,9 +213,9 @@ async function logApiUsage(
   tokensOutput: number
 ) {
   try {
-    // Gemini pricing: $0.000125 per 1K input tokens, $0.000375 per 1K output tokens
-    const estimatedCost = (tokensInput / 1000) * 0.000125 + (tokensOutput / 1000) * 0.000375;
-    
+    // GPT-4o-mini pricing: $0.00015 per 1K input tokens, $0.0006 per 1K output tokens
+    const estimatedCost = (tokensInput / 1000) * 0.00015 + (tokensOutput / 1000) * 0.0006;
+
     await supabase.from('api_usage').insert({
       user_id: userId,
       api_name: apiName,
@@ -291,9 +291,9 @@ serve(async (req) => {
       throw new Error('No transcription provided');
     }
 
-    const GOOGLE_GEMINI_KEY = Deno.env.get('GOOGLE_GEMINI');
-    if (!GOOGLE_GEMINI_KEY) {
-      throw new Error('GOOGLE_GEMINI is not configured');
+    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+    if (!OPENAI_API_KEY) {
+      throw new Error('OPENAI_API_KEY is not configured');
     }
 
     // Determine actual slide count
@@ -360,32 +360,30 @@ Você deve retornar APENAS um JSON válido no seguinte formato (sem markdown, se
       ? `Transforme esta transcrição em exatamente ${actualSlideCount} slide${actualSlideCount > 1 ? 's' : ''} seguindo as regras acima:\n\nTRANSCRIÇÃO:\n${transcription}`
       : `Transforme esta transcrição em um carrossel seguindo as regras acima. Decida o número ideal de slides (entre 4 e 8):\n\nTRANSCRIÇÃO:\n${transcription}`;
 
-    // Use Google Gemini API directly
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GOOGLE_GEMINI_KEY}`, {
+    // Use OpenAI GPT-4o-mini API
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
-        contents: [
-          {
-            role: 'user',
-            parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }]
-          }
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
         ],
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 2048,
-        }
+        temperature: 0.7,
+        max_tokens: 2048,
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      logStep('Gemini API error', { status: response.status, error: errorText });
-      
+      logStep('OpenAI API error', { status: response.status, error: errorText });
+
       await logUsage(supabase, user.id, 'generate_script', carouselId, 'api_error', { status: response.status }, ipAddress);
-      
+
       if (response.status === 429) {
         return new Response(JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }), {
           status: 429,
@@ -393,21 +391,21 @@ Você deve retornar APENAS um JSON válido no seguinte formato (sem markdown, se
         });
       }
       if (response.status === 401 || response.status === 403) {
-        return new Response(JSON.stringify({ error: 'API key error. Please check your Google Gemini API key.' }), {
+        return new Response(JSON.stringify({ error: 'API key error. Please check your OpenAI API key.' }), {
           status: response.status,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      
+
       throw new Error(`Script generation failed: ${errorText}`);
     }
 
     const data = await response.json();
-    let scriptText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    
-    // Get usage metadata for token counting (estimate based on text length)
-    const inputTokensEstimate = Math.ceil((systemPrompt.length + userPrompt.length) / 4);
-    const outputTokensEstimate = Math.ceil(scriptText.length / 4);
+    let scriptText = data.choices?.[0]?.message?.content || '';
+
+    // Get token usage from OpenAI response (real values)
+    const inputTokensEstimate = data.usage?.prompt_tokens || Math.ceil((systemPrompt.length + userPrompt.length) / 4);
+    const outputTokensEstimate = data.usage?.completion_tokens || Math.ceil(scriptText.length / 4);
 
     logStep('Raw script response', { preview: scriptText.substring(0, 200), inputTokens: inputTokensEstimate, outputTokens: outputTokensEstimate });
 
@@ -438,7 +436,7 @@ Você deve retornar APENAS um JSON válido no seguinte formato (sem markdown, se
     logStep('Script generated successfully', { slideCount: script.slides?.length });
     
     // Log API usage for cost tracking
-    await logApiUsage(supabase, user.id, 'gemini', 'generate_script', inputTokensEstimate, outputTokensEstimate);
+    await logApiUsage(supabase, user.id, 'openai-gpt4o-mini', 'generate_script', inputTokensEstimate, outputTokensEstimate);
     
     await logUsage(supabase, user.id, 'generate_script', carouselId, 'success', { 
       slideCount: script.slides?.length,
