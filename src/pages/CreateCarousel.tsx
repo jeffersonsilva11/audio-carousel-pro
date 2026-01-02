@@ -208,6 +208,68 @@ const CreateCarousel = () => {
     }
   }, [user, loading, navigate]);
 
+  // Handle retry parameter - load failed carousel data
+  useEffect(() => {
+    const retryId = searchParams.get('retry');
+    if (retryId && user) {
+      loadFailedCarousel(retryId);
+    }
+  }, [searchParams, user]);
+
+  const loadFailedCarousel = async (carouselId: string) => {
+    try {
+      const { data: carousel, error } = await supabase
+        .from('carousels')
+        .select('*')
+        .eq('id', carouselId)
+        .eq('user_id', user?.id)
+        .single();
+
+      if (error || !carousel) {
+        toast({
+          title: "Erro",
+          description: "Carrossel não encontrado ou você não tem permissão.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (carousel.status !== 'FAILED') {
+        toast({
+          title: "Aviso",
+          description: "Este carrossel não está em estado de falha.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Load the carousel data
+      setCurrentCarouselId(carouselId);
+
+      // If there's a transcription, skip to customize step
+      if (carousel.transcription) {
+        setTranscription(carousel.transcription);
+        setAudioUrl(carousel.audio_url || null);
+        setSelectedTone(carousel.tone as ToneType || 'PROFESSIONAL');
+        setSelectedStyle(carousel.style as StyleType || 'BLACK_WHITE');
+        setSelectedFormat(carousel.format as FormatType || 'POST_SQUARE');
+        setCurrentStep('customize');
+
+        toast({
+          title: "Carrossel carregado",
+          description: "Continue de onde parou. O áudio original será usado.",
+        });
+      }
+    } catch (err) {
+      console.error('Error loading failed carousel:', err);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar o carrossel.",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Fetch carousel count for usage limits
   useEffect(() => {
     if (user) {
