@@ -82,8 +82,10 @@ export type Database = {
           audio_duration: number | null
           audio_size: number | null
           audio_url: string | null
+          cover_image_url: string | null
           created_at: string | null
           error_message: string | null
+          exported_at: string | null
           format: string | null
           has_watermark: boolean | null
           id: string
@@ -103,8 +105,10 @@ export type Database = {
           audio_duration?: number | null
           audio_size?: number | null
           audio_url?: string | null
+          cover_image_url?: string | null
           created_at?: string | null
           error_message?: string | null
+          exported_at?: string | null
           format?: string | null
           has_watermark?: boolean | null
           id?: string
@@ -124,8 +128,10 @@ export type Database = {
           audio_duration?: number | null
           audio_size?: number | null
           audio_url?: string | null
+          cover_image_url?: string | null
           created_at?: string | null
           error_message?: string | null
+          exported_at?: string | null
           format?: string | null
           has_watermark?: boolean | null
           id?: string
