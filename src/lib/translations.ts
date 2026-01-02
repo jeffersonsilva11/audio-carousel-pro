@@ -748,6 +748,16 @@ export const translations = {
       en: "Verification complete",
       es: "Verificación completada",
     },
+    forgotPassword: {
+      "pt-BR": "Esqueceu a senha?",
+      en: "Forgot password?",
+      es: "¿Olvidaste tu contraseña?",
+    },
+    checkEmailVerification: {
+      "pt-BR": "Verifique seu email para confirmar a conta",
+      en: "Check your email to verify your account",
+      es: "Revisa tu email para verificar tu cuenta",
+    },
   },
 
   // Dashboard

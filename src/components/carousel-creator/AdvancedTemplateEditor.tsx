@@ -11,12 +11,16 @@ import {
   Loader2,
   AlignLeft,
   AlignCenter,
-  AlignRight
+  AlignRight,
+  ArrowUp,
+  ArrowDown,
+  Settings2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLanguage } from "@/hooks/useLanguage";
 import { t } from "@/lib/translations";
@@ -32,6 +36,7 @@ import {
 } from "@/lib/constants";
 
 export type TextAlignment = 'left' | 'center' | 'right';
+export type SubtitlePosition = 'above' | 'below';
 
 export interface TemplateCustomization {
   fontId: FontId;
@@ -39,6 +44,10 @@ export interface TemplateCustomization {
   customGradientColors?: string[];
   slideImages: (string | null)[]; // Array of storage URLs per slide
   textAlignment: TextAlignment;
+  subtitlePosition: SubtitlePosition;
+  highlightColor: string;
+  showNavigationDots: boolean;
+  showNavigationArrow: boolean;
 }
 
 interface AdvancedTemplateEditorProps {
@@ -88,6 +97,22 @@ const AdvancedTemplateEditor = ({
 
   const handleTextAlignmentChange = (alignment: TextAlignment) => {
     setCustomization({ ...customization, textAlignment: alignment });
+  };
+
+  const handleSubtitlePositionChange = (position: SubtitlePosition) => {
+    setCustomization({ ...customization, subtitlePosition: position });
+  };
+
+  const handleHighlightColorChange = (color: string) => {
+    setCustomization({ ...customization, highlightColor: color });
+  };
+
+  const handleNavigationDotsChange = (show: boolean) => {
+    setCustomization({ ...customization, showNavigationDots: show });
+  };
+
+  const handleNavigationArrowChange = (show: boolean) => {
+    setCustomization({ ...customization, showNavigationArrow: show });
   };
 
   const handleGradientChange = (gradientId: GradientId) => {
@@ -288,7 +313,7 @@ const AdvancedTemplateEditor = ({
       </div>
 
       <Tabs defaultValue="fonts" className="p-4">
-        <TabsList className="grid w-full grid-cols-3 mb-4">
+        <TabsList className="grid w-full grid-cols-4 mb-4">
           <TabsTrigger value="fonts" className="gap-1.5">
             <Type className="w-4 h-4" />
             <span className="hidden sm:inline">{t("advancedEditor", "fonts", language)}</span>
@@ -300,6 +325,10 @@ const AdvancedTemplateEditor = ({
           <TabsTrigger value="images" className="gap-1.5">
             <ImagePlus className="w-4 h-4" />
             <span className="hidden sm:inline">{t("advancedEditor", "slideImages", language)}</span>
+          </TabsTrigger>
+          <TabsTrigger value="options" className="gap-1.5">
+            <Settings2 className="w-4 h-4" />
+            <span className="hidden sm:inline">Opções</span>
           </TabsTrigger>
         </TabsList>
 
@@ -539,6 +568,113 @@ const AdvancedTemplateEditor = ({
 
           <p className="text-xs text-muted-foreground text-center">
             💡 A imagem de capa aparecerá no primeiro slide com o título do carrossel sobreposto.
+          </p>
+        </TabsContent>
+
+        {/* Options Tab */}
+        <TabsContent value="options" className="space-y-6">
+          {/* Cover Slide Options */}
+          <div className="space-y-4">
+            <h4 className="text-sm font-medium flex items-center gap-2">
+              <span className="w-6 h-6 rounded bg-accent/20 text-accent flex items-center justify-center text-xs font-bold">1</span>
+              Opções da Capa
+            </h4>
+
+            {/* Subtitle Position */}
+            <div className="space-y-2 pl-8">
+              <Label className="text-sm">Posição do Subtítulo</Label>
+              <div className="flex gap-2">
+                {([
+                  { value: 'above' as SubtitlePosition, icon: ArrowUp, label: 'Acima do Título' },
+                  { value: 'below' as SubtitlePosition, icon: ArrowDown, label: 'Abaixo do Título' }
+                ]).map(({ value, icon: Icon, label }) => (
+                  <button
+                    key={value}
+                    onClick={() => handleSubtitlePositionChange(value)}
+                    className={cn(
+                      "flex-1 flex items-center justify-center gap-2 p-3 rounded-lg border-2 transition-all",
+                      customization.subtitlePosition === value
+                        ? "border-accent bg-accent/10"
+                        : "border-border hover:border-accent/50"
+                    )}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span className="text-sm">{label}</span>
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Define onde o subtítulo aparece em relação ao título principal na capa
+              </p>
+            </div>
+
+            {/* Highlight Color */}
+            <div className="space-y-2 pl-8">
+              <Label className="text-sm">Cor do Destaque</Label>
+              <div className="flex gap-3 items-center">
+                <input
+                  type="color"
+                  value={customization.highlightColor || "#FF6B35"}
+                  onChange={(e) => handleHighlightColorChange(e.target.value)}
+                  className="w-10 h-10 rounded border-0 cursor-pointer"
+                />
+                <Input
+                  value={customization.highlightColor || "#FF6B35"}
+                  onChange={(e) => handleHighlightColorChange(e.target.value)}
+                  className="flex-1 font-mono text-sm max-w-[120px]"
+                  maxLength={7}
+                />
+                <div
+                  className="flex-1 p-2 rounded-lg text-center text-sm font-medium"
+                  style={{
+                    backgroundColor: customization.highlightColor || "#FF6B35",
+                    color: '#ffffff'
+                  }}
+                >
+                  Exemplo
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Cor de fundo para a palavra em destaque no título da capa
+              </p>
+            </div>
+          </div>
+
+          {/* Navigation Options */}
+          <div className="space-y-4 border-t border-border pt-4">
+            <h4 className="text-sm font-medium">Navegação Visual</h4>
+
+            {/* Navigation Dots */}
+            <div className="flex items-center justify-between pl-4">
+              <div className="space-y-1">
+                <Label className="text-sm">Pontos de Navegação</Label>
+                <p className="text-xs text-muted-foreground">
+                  Mostra indicadores de posição no rodapé dos slides
+                </p>
+              </div>
+              <Switch
+                checked={customization.showNavigationDots}
+                onCheckedChange={handleNavigationDotsChange}
+              />
+            </div>
+
+            {/* Navigation Arrow */}
+            <div className="flex items-center justify-between pl-4">
+              <div className="space-y-1">
+                <Label className="text-sm">Seta de Navegação</Label>
+                <p className="text-xs text-muted-foreground">
+                  Mostra seta indicando próximo slide (exceto no último)
+                </p>
+              </div>
+              <Switch
+                checked={customization.showNavigationArrow}
+                onCheckedChange={handleNavigationArrowChange}
+              />
+            </div>
+          </div>
+
+          <p className="text-xs text-muted-foreground text-center pt-2">
+            💡 Estas opções afetam a aparência visual dos slides gerados
           </p>
         </TabsContent>
       </Tabs>

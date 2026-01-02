@@ -2,6 +2,8 @@ import { useState, useCallback, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   ChevronLeft,
   ChevronRight,
@@ -65,6 +67,8 @@ interface Slide {
   type: string;
   text: string;
   imageUrl?: string;
+  subtitle?: string; // Only for HOOK slide (slide 1)
+  highlightWord?: string; // Word to highlight in title
 }
 
 interface ProfileIdentity {
@@ -81,6 +85,10 @@ interface TemplateCustomization {
   customGradientColors?: string[];
   slideImages?: (string | null)[];
   textAlignment?: 'left' | 'center' | 'right';
+  subtitlePosition?: 'above' | 'below';
+  highlightColor?: string;
+  showNavigationDots?: boolean;
+  showNavigationArrow?: boolean;
 }
 
 interface CarouselTextEditorProps {
@@ -124,6 +132,8 @@ const CarouselTextEditor = ({
   const [currentSlide, setCurrentSlide] = useState(0);
   const [editingSlide, setEditingSlide] = useState<number | null>(null);
   const [editedText, setEditedText] = useState("");
+  const [editedSubtitle, setEditedSubtitle] = useState("");
+  const [editedHighlightWord, setEditedHighlightWord] = useState("");
   const [originalSlides] = useState<Slide[]>(initialSlides);
   const [isDownloadingZip, setIsDownloadingZip] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
@@ -249,27 +259,48 @@ const CarouselTextEditor = ({
     }
     setEditingSlide(slideIndex);
     setEditedText(slides[slideIndex].text);
+    // For cover slide (index 0), also set subtitle and highlight
+    if (slideIndex === 0) {
+      setEditedSubtitle(slides[slideIndex].subtitle || "");
+      setEditedHighlightWord(slides[slideIndex].highlightWord || "");
+    }
   };
 
   const saveEdit = useCallback(() => {
     if (editingSlide === null) return;
-    
-    const updatedSlides = slides.map((slide, index) => 
-      index === editingSlide ? { ...slide, text: editedText } : slide
-    );
+
+    const updatedSlides = slides.map((slide, index) => {
+      if (index !== editingSlide) return slide;
+
+      // For cover slide, also update subtitle and highlightWord
+      if (index === 0) {
+        return {
+          ...slide,
+          text: editedText,
+          subtitle: editedSubtitle || undefined,
+          highlightWord: editedHighlightWord || undefined,
+        };
+      }
+      return { ...slide, text: editedText };
+    });
+
     setSlides(updatedSlides);
     setEditingSlide(null);
     setEditedText("");
-    
+    setEditedSubtitle("");
+    setEditedHighlightWord("");
+
     toast({
       title: t("carouselEditor", "textUpdated"),
       description: t("carouselEditor", "regenerateHint"),
     });
-  }, [editingSlide, editedText, slides, setSlides, toast, t]);
+  }, [editingSlide, editedText, editedSubtitle, editedHighlightWord, slides, setSlides, toast, t]);
 
   const cancelEdit = () => {
     setEditingSlide(null);
     setEditedText("");
+    setEditedSubtitle("");
+    setEditedHighlightWord("");
   };
 
   const resetSlide = (slideIndex: number) => {
@@ -680,13 +711,62 @@ const CarouselTextEditor = ({
           </div>
           
           {editingSlide === currentSlide ? (
-            <div className="space-y-3">
-              <Textarea
-                value={editedText}
-                onChange={(e) => setEditedText(e.target.value)}
-                className="min-h-[120px] resize-none"
-                placeholder={t("carouselEditor", "enterText")}
-              />
+            <div className="space-y-4">
+              {/* Cover slide specific fields */}
+              {currentSlide === 0 && (
+                <div className="space-y-3 p-3 bg-muted/50 rounded-lg border border-border/50">
+                  <h5 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                    Opções da Capa
+                  </h5>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="subtitle" className="text-sm">
+                      Subtítulo
+                      <span className="text-xs text-muted-foreground ml-1">(opcional)</span>
+                    </Label>
+                    <Input
+                      id="subtitle"
+                      value={editedSubtitle}
+                      onChange={(e) => setEditedSubtitle(e.target.value)}
+                      placeholder="Ex: O segredo que ninguém te contou..."
+                      className="text-sm"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Aparece acima ou abaixo do título principal
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="highlightWord" className="text-sm">
+                      Palavra em Destaque
+                      <span className="text-xs text-muted-foreground ml-1">(opcional)</span>
+                    </Label>
+                    <Input
+                      id="highlightWord"
+                      value={editedHighlightWord}
+                      onChange={(e) => setEditedHighlightWord(e.target.value)}
+                      placeholder="Ex: segredo"
+                      className="text-sm"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Uma palavra do título que será destacada com cor de fundo
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Label className="text-sm">
+                  {currentSlide === 0 ? "Título Principal" : "Texto do Slide"}
+                </Label>
+                <Textarea
+                  value={editedText}
+                  onChange={(e) => setEditedText(e.target.value)}
+                  className="min-h-[120px] resize-none"
+                  placeholder={t("carouselEditor", "enterText")}
+                />
+              </div>
+
               <div className="flex gap-2 justify-end">
                 <Button variant="ghost" size="sm" onClick={cancelEdit}>
                   <X className="w-4 h-4 mr-1" />
@@ -699,7 +779,21 @@ const CarouselTextEditor = ({
               </div>
             </div>
           ) : (
-            <p className="text-foreground whitespace-pre-wrap">{currentSlideData?.text}</p>
+            <div className="space-y-2">
+              {/* Show subtitle for cover slide */}
+              {currentSlide === 0 && currentSlideData?.subtitle && (
+                <p className="text-sm text-muted-foreground italic">
+                  Subtítulo: {currentSlideData.subtitle}
+                </p>
+              )}
+              <p className="text-foreground whitespace-pre-wrap">{currentSlideData?.text}</p>
+              {/* Show highlight word for cover slide */}
+              {currentSlide === 0 && currentSlideData?.highlightWord && (
+                <p className="text-xs text-muted-foreground">
+                  Destaque: <span className="bg-accent/20 text-accent px-1 rounded">{currentSlideData.highlightWord}</span>
+                </p>
+              )}
+            </div>
           )}
         </CardContent>
       </Card>
