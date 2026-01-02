@@ -13,19 +13,23 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
-import { 
+import {
   ArrowLeft,
   Calendar,
   Clock,
+  Copy,
   Crown,
   Download,
   FileArchive,
+  FileText,
   Image as ImageIcon,
   Loader2,
+  Mic,
   Mic2,
   RefreshCw,
   Share2,
-  Trash2
+  Trash2,
+  Type
 } from "lucide-react";
 import { toast } from "sonner";
 import JSZip from "jszip";
@@ -42,6 +46,27 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+
+interface SlideScript {
+  number: number;
+  type: string;
+  text: string;
+  emoji?: string;
+}
+
+interface CarouselScript {
+  slides: SlideScript[];
+  title?: string;
+  subtitle?: string;
+  highlightWord?: string;
+}
 
 interface CarouselData {
   id: string;
@@ -57,6 +82,10 @@ interface CarouselData {
   transcription: string | null;
   processing_time: number | null;
   audio_duration: number | null;
+  audio_size: number | null;
+  script: CarouselScript | null;
+  language: string | null;
+  images_cleaned_at: string | null;
 }
 
 const CarouselDetail = () => {
@@ -212,6 +241,31 @@ const CarouselDetail = () => {
     } catch {
       toast.error(t("carouselDetail", "copyError"));
     }
+  };
+
+  const handleCopyTranscription = async () => {
+    if (!carousel?.transcription) return;
+
+    try {
+      await navigator.clipboard.writeText(carousel.transcription);
+      toast.success(t("carouselDetail", "transcriptionCopied"));
+    } catch {
+      toast.error(t("carouselDetail", "copyError"));
+    }
+  };
+
+  const getWordCount = (text: string | null): number => {
+    if (!text) return 0;
+    return text.trim().split(/\s+/).filter(word => word.length > 0).length;
+  };
+
+  const getSlideTypeLabel = (type: string): string => {
+    const types: Record<string, string> = {
+      cover: t("carouselDetail", "slideCover"),
+      content: t("carouselDetail", "slideContent"),
+      cta: t("carouselDetail", "slideCta"),
+    };
+    return types[type] || type;
   };
 
   const getToneLabel = (tone: string) => {
@@ -399,13 +453,13 @@ const CarouselDetail = () => {
             </div>
 
             {/* Info Cards */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               <Card>
-                <CardContent className="flex items-center gap-3 p-4">
-                  <Calendar className="w-5 h-5 text-muted-foreground" />
-                  <div>
+                <CardContent className="flex items-center gap-3 p-3">
+                  <Calendar className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                  <div className="min-w-0">
                     <p className="text-xs text-muted-foreground">{t("carouselDetail", "createdAt")}</p>
-                    <p className="text-sm font-medium" title={formatLocalizedDate(carousel.created_at, language, "withTime")}>
+                    <p className="text-sm font-medium truncate" title={formatLocalizedDate(carousel.created_at, language, "withTime")}>
                       {formatRelativeTime(carousel.created_at, language)}
                     </p>
                   </div>
@@ -413,9 +467,9 @@ const CarouselDetail = () => {
               </Card>
               {carousel.processing_time && (
                 <Card>
-                  <CardContent className="flex items-center gap-3 p-4">
-                    <Clock className="w-5 h-5 text-muted-foreground" />
-                    <div>
+                  <CardContent className="flex items-center gap-3 p-3">
+                    <Clock className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                    <div className="min-w-0">
                       <p className="text-xs text-muted-foreground">{t("carouselDetail", "processingTime")}</p>
                       <p className="text-sm font-medium">
                         {formatDuration(carousel.processing_time, language)}
@@ -424,7 +478,41 @@ const CarouselDetail = () => {
                   </CardContent>
                 </Card>
               )}
+              {carousel.audio_duration && (
+                <Card>
+                  <CardContent className="flex items-center gap-3 p-3">
+                    <Mic className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-xs text-muted-foreground">{t("carouselDetail", "audioDuration")}</p>
+                      <p className="text-sm font-medium">
+                        {formatDuration(carousel.audio_duration, language)}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+              {carousel.transcription && (
+                <Card>
+                  <CardContent className="flex items-center gap-3 p-3">
+                    <Type className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-xs text-muted-foreground">{t("carouselDetail", "wordCount")}</p>
+                      <p className="text-sm font-medium">
+                        {formatInteger(getWordCount(carousel.transcription), language)} {t("carouselDetail", "words")}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
+
+            {/* Images expiration warning */}
+            {carousel.images_cleaned_at && (
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 text-sm">
+                <ImageIcon className="w-4 h-4 flex-shrink-0" />
+                <span>{t("carouselDetail", "imagesExpired")}</span>
+              </div>
+            )}
 
             {/* Actions */}
             <Card>
@@ -506,18 +594,76 @@ const CarouselDetail = () => {
               </CardContent>
             </Card>
 
-            {/* Transcription */}
-            {carousel.transcription && (
+            {/* Script & Transcription Tabs */}
+            {(carousel.script || carousel.transcription) && (
               <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base">{t("carouselDetail", "transcription")}</CardTitle>
-                  <CardDescription>{t("carouselDetail", "transcriptionDesc")}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                    {carousel.transcription}
-                  </p>
-                </CardContent>
+                <Tabs defaultValue={carousel.script ? "script" : "transcription"}>
+                  <CardHeader className="pb-0">
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="script" disabled={!carousel.script}>
+                        <FileText className="w-4 h-4 mr-2" />
+                        {t("carouselDetail", "scriptContent")}
+                      </TabsTrigger>
+                      <TabsTrigger value="transcription" disabled={!carousel.transcription}>
+                        <Mic className="w-4 h-4 mr-2" />
+                        {t("carouselDetail", "transcription")}
+                      </TabsTrigger>
+                    </TabsList>
+                  </CardHeader>
+
+                  <CardContent className="pt-4">
+                    {/* Script Tab */}
+                    <TabsContent value="script" className="mt-0 space-y-3">
+                      {carousel.script?.slides?.map((slide, index) => (
+                        <div
+                          key={index}
+                          className="p-3 rounded-lg bg-muted/50 border border-border/50"
+                        >
+                          <div className="flex items-center gap-2 mb-2">
+                            <Badge variant="outline" className="text-xs">
+                              {slide.number}
+                            </Badge>
+                            <Badge variant="secondary" className="text-xs">
+                              {getSlideTypeLabel(slide.type)}
+                            </Badge>
+                            {slide.emoji && (
+                              <span className="text-sm">{slide.emoji}</span>
+                            )}
+                          </div>
+                          <p className="text-sm">{slide.text}</p>
+                        </div>
+                      ))}
+                      {!carousel.script?.slides?.length && (
+                        <p className="text-sm text-muted-foreground text-center py-4">
+                          {t("carouselDetail", "noScriptContent")}
+                        </p>
+                      )}
+                    </TabsContent>
+
+                    {/* Transcription Tab */}
+                    <TabsContent value="transcription" className="mt-0">
+                      <div className="flex items-center justify-between mb-3">
+                        <p className="text-xs text-muted-foreground">
+                          {t("carouselDetail", "transcriptionDesc")}
+                        </p>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleCopyTranscription}
+                          className="h-7 text-xs"
+                        >
+                          <Copy className="w-3 h-3 mr-1" />
+                          {t("carouselDetail", "copyText")}
+                        </Button>
+                      </div>
+                      <div className="p-3 rounded-lg bg-muted/30 border border-border/50 max-h-60 overflow-y-auto">
+                        <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                          {carousel.transcription}
+                        </p>
+                      </div>
+                    </TabsContent>
+                  </CardContent>
+                </Tabs>
               </Card>
             )}
           </div>

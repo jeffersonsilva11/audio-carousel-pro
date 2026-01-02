@@ -1693,6 +1693,61 @@ export const translations = {
       en: "Vertical Reels",
       es: "Reels Vertical",
     },
+    audioDuration: {
+      "pt-BR": "Duração do áudio",
+      en: "Audio duration",
+      es: "Duración del audio",
+    },
+    wordCount: {
+      "pt-BR": "Palavras",
+      en: "Word count",
+      es: "Palabras",
+    },
+    words: {
+      "pt-BR": "palavras",
+      en: "words",
+      es: "palabras",
+    },
+    imagesExpired: {
+      "pt-BR": "As imagens deste carrossel foram removidas após 30 dias. O conteúdo ainda está disponível.",
+      en: "Images from this carousel have been removed after 30 days. The content is still available.",
+      es: "Las imágenes de este carrusel se eliminaron después de 30 días. El contenido todavía está disponible.",
+    },
+    scriptContent: {
+      "pt-BR": "Conteúdo do Script",
+      en: "Script Content",
+      es: "Contenido del Script",
+    },
+    noScriptContent: {
+      "pt-BR": "Nenhum conteúdo de script disponível",
+      en: "No script content available",
+      es: "No hay contenido de script disponible",
+    },
+    copyText: {
+      "pt-BR": "Copiar",
+      en: "Copy",
+      es: "Copiar",
+    },
+    transcriptionCopied: {
+      "pt-BR": "Transcrição copiada!",
+      en: "Transcription copied!",
+      es: "¡Transcripción copiada!",
+    },
+    slideCover: {
+      "pt-BR": "Capa",
+      en: "Cover",
+      es: "Portada",
+    },
+    slideContent: {
+      "pt-BR": "Conteúdo",
+      en: "Content",
+      es: "Contenido",
+    },
+    slideCta: {
+      "pt-BR": "CTA",
+      en: "CTA",
+      es: "CTA",
+    },
   },
 
   // Not Found
