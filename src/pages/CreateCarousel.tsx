@@ -135,6 +135,31 @@ const CreateCarousel = () => {
   // Carousel ID for editing
   const [currentCarouselId, setCurrentCarouselId] = useState<string | null>(null);
 
+  // Lock state - carousel is locked after first export
+  const [isCarouselLocked, setIsCarouselLocked] = useState(false);
+
+  // Function to mark carousel as exported (locks editing)
+  const handleFirstExport = async () => {
+    if (!currentCarouselId) return;
+
+    try {
+      const { error } = await supabase
+        .from('carousels')
+        .update({ exported_at: new Date().toISOString() })
+        .eq('id', currentCarouselId);
+
+      if (error) throw error;
+
+      setIsCarouselLocked(true);
+      toast({
+        title: "Carrossel exportado",
+        description: "O carrossel foi bloqueado para edição.",
+      });
+    } catch (err) {
+      console.error('Error marking carousel as exported:', err);
+    }
+  };
+
   // Initialize state from preferences when loaded
   useEffect(() => {
     if (!prefsLoading && !prefsInitialized) {
@@ -724,6 +749,8 @@ const CreateCarousel = () => {
                     format={selectedFormat}
                     profile={profileIdentity.username ? profileIdentity : undefined}
                     customization={isCreator ? templateCustomization : undefined}
+                    isLocked={isCarouselLocked}
+                    onFirstExport={handleFirstExport}
                   />
                 </TabsContent>
               </Tabs>
