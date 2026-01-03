@@ -608,36 +608,6 @@ const AdvancedTemplateEditor = ({
               </p>
             </div>
 
-            {/* Highlight Color */}
-            <div className="space-y-2 pl-8">
-              <Label className="text-sm">Cor do Destaque</Label>
-              <div className="flex gap-3 items-center">
-                <input
-                  type="color"
-                  value={customization.highlightColor || "#FF6B35"}
-                  onChange={(e) => handleHighlightColorChange(e.target.value)}
-                  className="w-10 h-10 rounded border-0 cursor-pointer"
-                />
-                <Input
-                  value={customization.highlightColor || "#FF6B35"}
-                  onChange={(e) => handleHighlightColorChange(e.target.value)}
-                  className="flex-1 font-mono text-sm max-w-[120px]"
-                  maxLength={7}
-                />
-                <div
-                  className="flex-1 p-2 rounded-lg text-center text-sm font-medium"
-                  style={{
-                    backgroundColor: customization.highlightColor || "#FF6B35",
-                    color: '#ffffff'
-                  }}
-                >
-                  Exemplo
-                </div>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Cor de fundo para a palavra em destaque no título da capa
-              </p>
-            </div>
           </div>
 
           {/* Navigation Options */}

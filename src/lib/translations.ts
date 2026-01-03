@@ -1116,6 +1116,21 @@ export const translations = {
       en: "Generating...",
       es: "Generando...",
     },
+    carouselReady: {
+      "pt-BR": "Carrossel pronto!",
+      en: "Carousel ready!",
+      es: "¡Carrusel listo!",
+    },
+    generatedSuccess: {
+      "pt-BR": "Seu carrossel foi gerado com sucesso",
+      en: "Your carousel was generated successfully",
+      es: "Tu carrusel fue generado con éxito",
+    },
+    viewDashboard: {
+      "pt-BR": "Ver no Dashboard",
+      en: "View in Dashboard",
+      es: "Ver en Dashboard",
+    },
   },
 
   // Plans
