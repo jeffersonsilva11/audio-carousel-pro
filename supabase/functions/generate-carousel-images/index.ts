@@ -197,16 +197,29 @@ function generateProfileIdentitySVG(
   // Use white text when forced (gradient/image backgrounds) or based on style
   const textColor = forceWhiteText ? '#FFFFFF' : STYLES[style].text;
 
-  // Avatar size and positioning - INCREASED for better visibility
-  const avatarSize = 80;
-  const padding = 50;
-  const textGap = 14;
-  
+  // Scale factor based on format - STORY needs bigger elements due to taller canvas
+  const scaleFactors: Record<string, number> = {
+    POST_SQUARE: 1.0,      // 1080x1080 - base
+    POST_PORTRAIT: 1.15,   // 1080x1350 - 15% bigger
+    STORY: 1.4             // 1080x1920 - 40% bigger
+  };
+  const scale = scaleFactors[format] || 1.0;
+
+  // Avatar size and positioning - SCALED for each format
+  const avatarSize = Math.round(80 * scale);
+  const padding = Math.round(50 * scale);
+  const textGap = Math.round(14 * scale);
+
+  // Text sizes - SCALED for each format
+  const nameFontSize = Math.round(24 * scale);
+  const usernameFontSize = Math.round(20 * scale);
+  const initialsFontSize = Math.round(32 * scale);
+
   // Calculate position based on avatarPosition
   let x = padding;
   let y = padding;
   let textAnchor = 'start';
-  
+
   switch (profile.avatarPosition) {
     case 'top-right':
       x = width - padding;
@@ -223,36 +236,36 @@ function generateProfileIdentitySVG(
     default: // top-left
       break;
   }
-  
+
   const isRight = profile.avatarPosition.includes('right');
   const avatarX = isRight ? x - avatarSize : x;
   const textX = isRight ? avatarX - textGap : x + avatarSize + textGap;
-  
-  // Avatar (circle with initials if no photo) - INCREASED sizes
+
+  // Avatar (circle with initials if no photo) - SCALED sizes
   const initials = getInitials(profile.name);
   const avatarElement = profile.photoUrl
     ? `<clipPath id="avatarClip"><circle cx="${avatarX + avatarSize/2}" cy="${y + avatarSize/2}" r="${avatarSize/2}"/></clipPath>
        <image href="${profile.photoUrl}" x="${avatarX}" y="${y}" width="${avatarSize}" height="${avatarSize}" clip-path="url(#avatarClip)" preserveAspectRatio="xMidYMid slice"/>`
     : `<circle cx="${avatarX + avatarSize/2}" cy="${y + avatarSize/2}" r="${avatarSize/2}" fill="${textColor}" opacity="0.15"/>
-       <text x="${avatarX + avatarSize/2}" y="${y + avatarSize/2 + 10}" text-anchor="middle" fill="${textColor}" font-family="${fontFamily}" font-size="32" font-weight="600">${initials}</text>`;
+       <text x="${avatarX + avatarSize/2}" y="${y + avatarSize/2 + initialsFontSize/3}" text-anchor="middle" fill="${textColor}" font-family="${fontFamily}" font-size="${initialsFontSize}" font-weight="600">${initials}</text>`;
 
-  // Name and username text - INCREASED sizes for better readability
+  // Name and username text - SCALED sizes for better readability
   let identityText = '';
-  const nameY = y + avatarSize/2 - 8;
-  const usernameY = y + avatarSize/2 + 18;
+  const nameY = y + avatarSize/2 - Math.round(8 * scale);
+  const usernameY = y + avatarSize/2 + Math.round(18 * scale);
 
   if (profile.displayMode === 'name_and_username' && profile.name) {
     identityText = `
-      <text x="${textX}" y="${nameY}" text-anchor="${textAnchor}" fill="${textColor}" font-family="${fontFamily}" font-size="24" font-weight="700">${escapeXml(profile.name)}</text>
-      <text x="${textX}" y="${usernameY}" text-anchor="${textAnchor}" fill="${textColor}" opacity="0.8" font-family="${fontFamily}" font-size="20" font-weight="500">@${escapeXml(profile.username)}</text>
+      <text x="${textX}" y="${nameY}" text-anchor="${textAnchor}" fill="${textColor}" font-family="${fontFamily}" font-size="${nameFontSize}" font-weight="700">${escapeXml(profile.name)}</text>
+      <text x="${textX}" y="${usernameY}" text-anchor="${textAnchor}" fill="${textColor}" opacity="0.8" font-family="${fontFamily}" font-size="${usernameFontSize}" font-weight="500">@${escapeXml(profile.username)}</text>
     `;
   } else {
-    const singleY = y + avatarSize/2 + 6;
+    const singleY = y + avatarSize/2 + Math.round(6 * scale);
     identityText = `
-      <text x="${textX}" y="${singleY}" text-anchor="${textAnchor}" fill="${textColor}" font-family="${fontFamily}" font-size="24" font-weight="600">@${escapeXml(profile.username)}</text>
+      <text x="${textX}" y="${singleY}" text-anchor="${textAnchor}" fill="${textColor}" font-family="${fontFamily}" font-size="${nameFontSize}" font-weight="600">@${escapeXml(profile.username)}</text>
     `;
   }
-  
+
   return `
     <g class="profile-identity">
       ${avatarElement}

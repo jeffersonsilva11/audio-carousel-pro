@@ -28,7 +28,7 @@ import FormatSelector, { FormatType } from "@/components/carousel-creator/Format
 import ProcessingStatus from "@/components/carousel-creator/ProcessingStatus";
 import CarouselPreview from "@/components/carousel-creator/CarouselPreview";
 import CarouselTextEditor from "@/components/carousel-creator/CarouselTextEditor";
-import ExportFormatSelector, { PlatformFormat, PLATFORM_FORMATS } from "@/components/carousel-creator/ExportFormatSelector";
+// ExportFormatSelector removed - format is already chosen in customize step
 import ProfileIdentitySelector, { ProfileIdentity } from "@/components/carousel-creator/ProfileIdentitySelector";
 import TemplateSelector from "@/components/carousel-creator/TemplateSelector";
 import TextModeSelector, { CreativeTone } from "@/components/carousel-creator/TextModeSelector";
@@ -129,11 +129,6 @@ const CreateCarousel = () => {
   const [carouselCount, setCarouselCount] = useState<number>(0);
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
-  
-  // Export format state
-  const [exportFormat, setExportFormat] = useState<PlatformFormat | null>(
-    PLATFORM_FORMATS.find(f => f.platform === 'instagram' && f.format === 'feed') || null
-  );
   
   // Preview mode state
   const [previewMode, setPreviewMode] = useState<'preview' | 'edit'>('preview');
@@ -834,16 +829,8 @@ const CreateCarousel = () => {
                   />
                 </TabsContent>
               </Tabs>
-              
-              {/* Export Format Selector */}
-              <div className="border-t border-border pt-6 mt-6">
-                <ExportFormatSelector
-                  selectedFormat={exportFormat}
-                  onSelectFormat={setExportFormat}
-                />
-              </div>
 
-              <div className="flex flex-col sm:flex-row justify-center gap-3 mt-6">
+              <div className="flex flex-col sm:flex-row justify-center gap-3 mt-6 border-t border-border pt-6">
                 {!isPro && (
                   <Button 
                     variant="accent"
