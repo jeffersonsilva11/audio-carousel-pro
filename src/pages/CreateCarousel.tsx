@@ -401,6 +401,9 @@ const CreateCarousel = () => {
           customGradientColors: templateCustomization.customGradientColors,
           slideImages: templateCustomization.slideImages,
           textAlignment: templateCustomization.textAlignment,
+          subtitlePosition: templateCustomization.subtitlePosition,
+          showNavigationDots: templateCustomization.showNavigationDots,
+          showNavigationArrow: templateCustomization.showNavigationArrow,
         } : undefined
       });
 

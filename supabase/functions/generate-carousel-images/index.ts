@@ -188,17 +188,19 @@ function generateProfileIdentitySVG(
   profile: ProfileIdentity,
   style: keyof typeof STYLES,
   format: keyof typeof DIMENSIONS,
-  fontFamily: string
+  fontFamily: string,
+  forceWhiteText: boolean = false
 ): string {
   if (!profile.username) return '';
-  
+
   const { width, height } = DIMENSIONS[format];
-  const { text: textColor } = STYLES[style];
-  
-  // Avatar size and positioning
-  const avatarSize = 60;
-  const padding = 40;
-  const textGap = 12;
+  // Use white text when forced (gradient/image backgrounds) or based on style
+  const textColor = forceWhiteText ? '#FFFFFF' : STYLES[style].text;
+
+  // Avatar size and positioning - INCREASED for better visibility
+  const avatarSize = 80;
+  const padding = 50;
+  const textGap = 14;
   
   // Calculate position based on avatarPosition
   let x = padding;
@@ -226,28 +228,28 @@ function generateProfileIdentitySVG(
   const avatarX = isRight ? x - avatarSize : x;
   const textX = isRight ? avatarX - textGap : x + avatarSize + textGap;
   
-  // Avatar (circle with initials if no photo)
+  // Avatar (circle with initials if no photo) - INCREASED sizes
   const initials = getInitials(profile.name);
-  const avatarElement = profile.photoUrl 
+  const avatarElement = profile.photoUrl
     ? `<clipPath id="avatarClip"><circle cx="${avatarX + avatarSize/2}" cy="${y + avatarSize/2}" r="${avatarSize/2}"/></clipPath>
        <image href="${profile.photoUrl}" x="${avatarX}" y="${y}" width="${avatarSize}" height="${avatarSize}" clip-path="url(#avatarClip)" preserveAspectRatio="xMidYMid slice"/>`
     : `<circle cx="${avatarX + avatarSize/2}" cy="${y + avatarSize/2}" r="${avatarSize/2}" fill="${textColor}" opacity="0.15"/>
-       <text x="${avatarX + avatarSize/2}" y="${y + avatarSize/2 + 8}" text-anchor="middle" fill="${textColor}" font-family="${fontFamily}" font-size="24" font-weight="600">${initials}</text>`;
-  
-  // Name and username text
+       <text x="${avatarX + avatarSize/2}" y="${y + avatarSize/2 + 10}" text-anchor="middle" fill="${textColor}" font-family="${fontFamily}" font-size="32" font-weight="600">${initials}</text>`;
+
+  // Name and username text - INCREASED sizes for better readability
   let identityText = '';
-  const nameY = y + avatarSize/2 - 6;
-  const usernameY = y + avatarSize/2 + 14;
-  
+  const nameY = y + avatarSize/2 - 8;
+  const usernameY = y + avatarSize/2 + 18;
+
   if (profile.displayMode === 'name_and_username' && profile.name) {
     identityText = `
-      <text x="${textX}" y="${nameY}" text-anchor="${textAnchor}" fill="${textColor}" font-family="${fontFamily}" font-size="18" font-weight="600">${escapeXml(profile.name)}</text>
-      <text x="${textX}" y="${usernameY}" text-anchor="${textAnchor}" fill="${textColor}" opacity="0.7" font-family="${fontFamily}" font-size="16" font-weight="500">@${escapeXml(profile.username)}</text>
+      <text x="${textX}" y="${nameY}" text-anchor="${textAnchor}" fill="${textColor}" font-family="${fontFamily}" font-size="24" font-weight="700">${escapeXml(profile.name)}</text>
+      <text x="${textX}" y="${usernameY}" text-anchor="${textAnchor}" fill="${textColor}" opacity="0.8" font-family="${fontFamily}" font-size="20" font-weight="500">@${escapeXml(profile.username)}</text>
     `;
   } else {
-    const singleY = y + avatarSize/2 + 5;
+    const singleY = y + avatarSize/2 + 6;
     identityText = `
-      <text x="${textX}" y="${singleY}" text-anchor="${textAnchor}" fill="${textColor}" font-family="${fontFamily}" font-size="18" font-weight="600">@${escapeXml(profile.username)}</text>
+      <text x="${textX}" y="${singleY}" text-anchor="${textAnchor}" fill="${textColor}" font-family="${fontFamily}" font-size="24" font-weight="600">@${escapeXml(profile.username)}</text>
     `;
   }
   
@@ -330,25 +332,26 @@ function generateSlideImageBackground(
 }
 
 // Calculate dynamic font size based on text length and slide type
+// INCREASED base sizes for more impactful titles
 function calculateFontSize(
   textLength: number,
   slideType: 'cover' | 'content',
   format: keyof typeof DIMENSIONS
 ): number {
   const baseSizes: Record<string, { cover: number; content: number }> = {
-    POST_SQUARE: { cover: 64, content: 44 },
-    POST_PORTRAIT: { cover: 72, content: 48 },
-    STORY: { cover: 80, content: 52 }
+    POST_SQUARE: { cover: 72, content: 48 },
+    POST_PORTRAIT: { cover: 80, content: 52 },
+    STORY: { cover: 88, content: 56 }
   };
 
-  const base = baseSizes[format]?.[slideType] || 48;
+  const base = baseSizes[format]?.[slideType] || 52;
 
-  // Adjust for text length
-  if (textLength > 400) return Math.round(base * 0.65);
-  if (textLength > 300) return Math.round(base * 0.75);
-  if (textLength > 200) return Math.round(base * 0.85);
+  // Adjust for text length - less aggressive reduction
+  if (textLength > 400) return Math.round(base * 0.7);
+  if (textLength > 300) return Math.round(base * 0.8);
+  if (textLength > 200) return Math.round(base * 0.9);
   if (textLength > 100) return Math.round(base * 0.95);
-  if (textLength < 50) return Math.round(base * 1.15);
+  if (textLength < 50) return Math.round(base * 1.1);
 
   return base;
 }
@@ -486,22 +489,23 @@ function generateCoverSlideSVG(
   const fontId = customization?.fontId || 'inter';
   const fontFamily = FONTS[fontId] || FONTS['inter'];
   const slideImage = customization?.slideImages?.[0]; // Cover image
+  const hasGradient = customization?.gradientId && customization.gradientId !== 'none';
   const hasImage = !!slideImage;
+  const hasDarkBackground = hasImage || hasGradient;
 
   // Extract slide data
-  const { text, subtitle, highlightWord } = slideData;
+  const { text, subtitle } = slideData;
   const subtitlePosition = customization?.subtitlePosition || 'above';
-  const highlightColor = customization?.highlightColor || '#F97316';
   const showDots = customization?.showNavigationDots !== false; // Default true
   const showArrow = customization?.showNavigationArrow !== false; // Default true
 
-  // Cover slide uses white text when there's image, otherwise based on style
-  const textColor = hasImage ? '#FFFFFF' : (style === 'BLACK_WHITE' ? '#FFFFFF' : '#0A0A0A');
-  const counterColor = hasImage ? 'rgba(255,255,255,0.6)' : (style === 'BLACK_WHITE' ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)');
+  // Cover slide uses white text when there's image/gradient, otherwise based on style
+  const textColor = hasDarkBackground ? '#FFFFFF' : (style === 'BLACK_WHITE' ? '#FFFFFF' : '#0A0A0A');
+  const counterColor = hasDarkBackground ? 'rgba(255,255,255,0.6)' : (style === 'BLACK_WHITE' ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)');
 
-  // Calculate font sizes
+  // Calculate font sizes - LARGER title, proportional subtitle
   const titleFontSize = calculateFontSize(text.length, 'cover', format);
-  const subtitleFontSize = Math.round(titleFontSize * 0.38); // Smaller subtitle
+  const subtitleFontSize = Math.round(titleFontSize * 0.32); // Smaller subtitle relative to larger title
 
   // Get text alignment
   const textAlignment = customization?.textAlignment || 'left';
@@ -554,17 +558,14 @@ function generateCoverSlideSVG(
     }
   }
 
-  // Generate subtitle element
+  // Generate subtitle element with better styling
   const subtitleElement = subtitle ? `
-    <text x="${textX}" y="${subtitleY}" text-anchor="${textAnchor}" fill="${textColor}" opacity="0.85" font-family="${fontFamily}" font-size="${subtitleFontSize}" font-weight="500" letter-spacing="0.05em" text-transform="uppercase">${escapeXml(subtitle.toUpperCase())}</text>
+    <text x="${textX}" y="${subtitleY}" text-anchor="${textAnchor}" fill="${textColor}" opacity="0.9" font-family="${fontFamily}" font-size="${subtitleFontSize}" font-weight="600" letter-spacing="0.08em">${escapeXml(subtitle.toUpperCase())}</text>
   ` : '';
 
-  // Generate title text elements with optional highlight
+  // Generate title text elements (simplified - no highlight)
   const textElements = lines.map((line, index) => {
     const y = titleStartY + (index * lineHeight);
-    if (highlightWord && line.toLowerCase().includes(highlightWord.toLowerCase())) {
-      return applyHighlightToWord(line, highlightWord, textX, y, titleFontSize, fontFamily, textAnchor, highlightColor);
-    }
     return `<text x="${textX}" y="${y}" text-anchor="${textAnchor}" fill="${textColor}" font-family="${fontFamily}" font-size="${titleFontSize}" font-weight="800" letter-spacing="-0.02em">${escapeXml(line)}</text>`;
   }).join('\n    ');
 
@@ -595,6 +596,9 @@ function generateCoverSlideSVG(
   // Navigation arrow
   const arrowElement = showArrow ? generateNavigationArrow(width, height, textColor) : '';
 
+  // Profile identity for cover slide
+  const profileIdentity = profile ? generateProfileIdentitySVG(profile, style, format, fontFamily, hasDarkBackground) : '';
+
   // Watermark with CTA button style
   const watermark = hasWatermark ? `
     <g class="watermark-cta">
@@ -608,6 +612,7 @@ function generateCoverSlideSVG(
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
   ${backgroundElement}
+  ${profileIdentity}
   ${counter}
   ${subtitleElement}
   <g class="title">
@@ -620,6 +625,7 @@ function generateCoverSlideSVG(
 }
 
 // Generate SVG for CONTENT slides (slides 2+)
+// Content slides use SOLID background only - gradients are only for cover
 function generateContentSlideSVG(
   text: string,
   slideNumber: number,
@@ -640,7 +646,7 @@ function generateContentSlideSVG(
   const showArrow = customization?.showNavigationArrow !== false;
   const isLastSlide = slideNumber === totalSlides;
 
-  // Content slides don't use individual images, only gradient or solid
+  // Content slides use SOLID background only (no gradient)
   const fontSize = calculateFontSize(text.length, 'content', format);
   const maxWidth = width - 160;
   const lines = wrapText(text, maxWidth, fontSize);
@@ -655,7 +661,7 @@ function generateContentSlideSVG(
   const { x: textX, anchor: textAnchor } = alignmentConfig[textAlignment];
 
   // Calculate vertical positioning - center in available space (below profile, above footer)
-  const profileHeight = profile ? 100 : 0;
+  const profileHeight = profile ? 120 : 0; // Increased for larger profile
   const footerHeight = showDots ? 80 : 60;
   const availableHeight = height - profileHeight - footerHeight;
   const lineHeight = fontSize * 1.45;
@@ -672,24 +678,11 @@ function generateContentSlideSVG(
   // Counter
   const counter = `<text x="${width - 50}" y="55" text-anchor="end" fill="${textColor}" opacity="0.5" font-family="${fontFamily}" font-size="26" font-weight="500">${slideNumber}/${totalSlides}</text>`;
 
-  // Profile identity
-  const profileIdentity = profile ? generateProfileIdentitySVG(profile, style, format, fontFamily) : '';
+  // Profile identity - no forced white text for content slides (uses style color)
+  const profileIdentity = profile ? generateProfileIdentitySVG(profile, style, format, fontFamily, false) : '';
 
-  // Background
-  let backgroundElement = `<rect width="${width}" height="${height}" fill="${background}"/>`;
-
-  if (customization?.gradientId && customization.gradientId !== 'none') {
-    const gradientBg = generateGradientBackground(
-      width,
-      height,
-      customization.gradientId,
-      customization.customGradientColors,
-      slideNumber
-    );
-    if (gradientBg) {
-      backgroundElement = gradientBg;
-    }
-  }
+  // Background - SOLID ONLY for content slides (no gradient)
+  const backgroundElement = `<rect width="${width}" height="${height}" fill="${background}"/>`;
 
   // Navigation dots
   const dotsElement = showDots ? generateNavigationDots(width, height, slideNumber, totalSlides, textColor) : '';
