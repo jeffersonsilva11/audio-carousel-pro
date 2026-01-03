@@ -43,7 +43,7 @@ interface Carousel {
 }
 
 const Dashboard = () => {
-  const { user, loading, signOut } = useAuth();
+  const { user, loading, signOut, isEmailConfirmed } = useAuth();
   const { isAdmin } = useAdminAccess();
   const { isPro, plan, dailyUsed, dailyLimit, subscriptionEnd, createCheckout, openCustomerPortal, loading: subLoading, getRemainingCarousels } = useSubscription();
   const { language, setLanguage } = useLanguage();
@@ -74,6 +74,16 @@ const Dashboard = () => {
       navigate("/auth");
     }
   }, [user, loading, navigate]);
+
+  // Redirect to email verification if user exists but email not confirmed
+  useEffect(() => {
+    if (!loading && user && !isEmailConfirmed) {
+      // Sign out and redirect to verify page
+      signOut().then(() => {
+        navigate(`/auth/verify?email=${encodeURIComponent(user.email || "")}`);
+      });
+    }
+  }, [user, loading, isEmailConfirmed, navigate, signOut]);
 
   useEffect(() => {
     if (user) {

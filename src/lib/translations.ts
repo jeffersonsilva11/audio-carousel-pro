@@ -758,6 +758,16 @@ export const translations = {
       en: "Check your email to verify your account",
       es: "Revisa tu email para verificar tu cuenta",
     },
+    emailNotVerified: {
+      "pt-BR": "Email não verificado",
+      en: "Email not verified",
+      es: "Email no verificado",
+    },
+    pleaseVerifyEmail: {
+      "pt-BR": "Por favor, verifique seu email antes de fazer login.",
+      en: "Please verify your email before logging in.",
+      es: "Por favor, verifica tu email antes de iniciar sesión.",
+    },
   },
 
   // Dashboard
