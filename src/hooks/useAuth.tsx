@@ -6,8 +6,9 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  isEmailConfirmed: boolean;
   signUp: (email: string, password: string, name?: string) => Promise<{ error: AuthError | null }>;
-  signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>;
+  signIn: (email: string, password: string) => Promise<{ error: AuthError | null; needsEmailVerification?: boolean; email?: string }>;
   signInWithGoogle: () => Promise<{ error: AuthError | null }>;
   signOut: () => Promise<void>;
 }
@@ -54,10 +55,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password
     });
+
+    // Check if user exists but email is not confirmed
+    if (!error && data.user && !data.user.email_confirmed_at) {
+      // Sign out immediately - user needs to confirm email first
+      await supabase.auth.signOut();
+      return { error: null, needsEmailVerification: true, email };
+    }
+
     return { error };
   };
 
@@ -77,8 +86,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
   };
 
+  // Check if user's email is confirmed
+  const isEmailConfirmed = Boolean(user?.email_confirmed_at);
+
   return (
-    <AuthContext.Provider value={{ user, session, loading, signUp, signIn, signInWithGoogle, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, isEmailConfirmed, signUp, signIn, signInWithGoogle, signOut }}>
       {children}
     </AuthContext.Provider>
   );

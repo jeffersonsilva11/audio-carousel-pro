@@ -66,7 +66,7 @@ interface Slide {
 }
 
 const CreateCarousel = () => {
-  const { user, loading } = useAuth();
+  const { user, loading, isEmailConfirmed, signOut } = useAuth();
   const { isPro, isCreator, createCheckout, loading: subLoading } = useSubscription();
   const { preferences, loading: prefsLoading, savePreferences } = useUserPreferences();
   const { language: siteLanguage } = useLanguage();
@@ -213,6 +213,15 @@ const CreateCarousel = () => {
       navigate("/auth");
     }
   }, [user, loading, navigate]);
+
+  // Redirect to email verification if email not confirmed
+  useEffect(() => {
+    if (!loading && user && !isEmailConfirmed) {
+      signOut().then(() => {
+        navigate(`/auth/verify?email=${encodeURIComponent(user.email || "")}`);
+      });
+    }
+  }, [user, loading, isEmailConfirmed, navigate, signOut]);
 
   // Handle retry parameter - load failed carousel data
   useEffect(() => {

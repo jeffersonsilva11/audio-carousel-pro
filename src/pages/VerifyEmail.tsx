@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { useLanguage } from "@/hooks/useLanguage";
 import { t } from "@/lib/translations";
 import { supabase } from "@/integrations/supabase/client";
@@ -191,17 +191,23 @@ const VerifyEmail = () => {
     );
   }
 
+  const handleBackToLogin = async () => {
+    // Sign out any existing session before going back to login
+    await supabase.auth.signOut();
+    navigate("/auth");
+  };
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Back to auth */}
-        <a
-          href="/auth"
+        <button
+          onClick={handleBackToLogin}
           className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-8"
         >
           <ArrowLeft className="w-4 h-4" />
           Voltar para login
-        </a>
+        </button>
 
         <Card className="border-border/50 shadow-2xl">
           <CardHeader className="text-center pb-2">

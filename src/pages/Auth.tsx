@@ -27,7 +27,7 @@ const Auth = () => {
   const [errors, setErrors] = useState<{ email?: string; password?: string; name?: string }>({});
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   
-  const { user, signIn, signUp, signInWithGoogle } = useAuth();
+  const { user, signIn, signUp, signInWithGoogle, isEmailConfirmed } = useAuth();
   const { verifyRecaptcha } = useRecaptcha();
   const { 
     isLocked, 
@@ -46,10 +46,11 @@ const Auth = () => {
   const nameSchema = z.string().min(2, t("auth", "nameMinLength", language)).optional();
 
   useEffect(() => {
-    if (user) {
+    // Only redirect to dashboard if user exists AND email is confirmed
+    if (user && isEmailConfirmed) {
       navigate("/dashboard");
     }
-  }, [user, navigate]);
+  }, [user, isEmailConfirmed, navigate]);
 
   // Update lockout countdown
   useEffect(() => {
@@ -140,7 +141,18 @@ const Auth = () => {
       }
 
       if (isLogin) {
-        const { error } = await signIn(email, password);
+        const { error, needsEmailVerification, email: unverifiedEmail } = await signIn(email, password);
+
+        // Check if user needs to verify email first
+        if (needsEmailVerification && unverifiedEmail) {
+          toast({
+            title: t("auth", "emailNotVerified", language),
+            description: t("auth", "pleaseVerifyEmail", language),
+          });
+          navigate(`/auth/verify?email=${encodeURIComponent(unverifiedEmail)}`);
+          return;
+        }
+
         if (error) {
           await recordFailedAttempt();
           setCaptchaToken(null);
