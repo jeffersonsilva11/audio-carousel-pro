@@ -451,3 +451,85 @@ export function formatRelativeTimeWithDate(
     full: formatLocalizedDate(date, language, "withTime"),
   };
 }
+
+// ============================================
+// IMAGE EXPIRATION UTILITIES
+// ============================================
+
+const IMAGE_RETENTION_DAYS = 30;
+
+/**
+ * Labels for remaining days per language
+ */
+const DAYS_REMAINING_LABELS: Record<SupportedLanguage, {
+  daysRemaining: (n: number) => string;
+  lastDay: string;
+  expired: string;
+}> = {
+  "pt-BR": {
+    daysRemaining: (n) => n === 1 ? "1 dia restante" : `${n} dias restantes`,
+    lastDay: "Último dia para baixar",
+    expired: "Imagens expiradas",
+  },
+  en: {
+    daysRemaining: (n) => n === 1 ? "1 day remaining" : `${n} days remaining`,
+    lastDay: "Last day to download",
+    expired: "Images expired",
+  },
+  es: {
+    daysRemaining: (n) => n === 1 ? "1 día restante" : `${n} días restantes`,
+    lastDay: "Último día para descargar",
+    expired: "Imágenes expiradas",
+  },
+};
+
+/**
+ * Calculate remaining days until image expiration (30 days from creation)
+ * Returns number of days remaining, or 0 if already expired
+ */
+export function calculateDaysRemaining(createdAt: Date | string): number {
+  const dateObj = typeof createdAt === "string" ? new Date(createdAt) : createdAt;
+  const expirationDate = new Date(dateObj);
+  expirationDate.setDate(expirationDate.getDate() + IMAGE_RETENTION_DAYS);
+
+  const now = new Date();
+  const daysRemaining = differenceInDays(expirationDate, now);
+
+  return Math.max(0, daysRemaining);
+}
+
+/**
+ * Format remaining days as localized string
+ */
+export function formatDaysRemaining(
+  createdAt: Date | string,
+  language: SupportedLanguage
+): string {
+  const daysRemaining = calculateDaysRemaining(createdAt);
+  const labels = DAYS_REMAINING_LABELS[language];
+
+  if (daysRemaining <= 0) {
+    return labels.expired;
+  }
+
+  if (daysRemaining === 1) {
+    return labels.lastDay;
+  }
+
+  return labels.daysRemaining(daysRemaining);
+}
+
+/**
+ * Get urgency level for remaining days (for styling purposes)
+ * Returns: 'critical' (<=3 days), 'warning' (<=7 days), 'normal' (>7 days), 'expired' (0 days)
+ */
+export function getDaysRemainingUrgency(
+  createdAt: Date | string
+): 'critical' | 'warning' | 'normal' | 'expired' {
+  const daysRemaining = calculateDaysRemaining(createdAt);
+
+  if (daysRemaining <= 0) return 'expired';
+  if (daysRemaining <= 3) return 'critical';
+  if (daysRemaining <= 7) return 'warning';
+  return 'normal';
+}
