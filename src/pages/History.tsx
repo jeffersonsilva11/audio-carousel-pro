@@ -9,14 +9,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { 
+import {
   Mic2, ArrowLeft, Loader2, Image as ImageIcon, Calendar, Search,
-  Crown, RefreshCw, AlertTriangle, X, Download, Eye, CheckSquare, Square, Package
+  Crown, RefreshCw, AlertTriangle, X, Download, Eye, CheckSquare, Square, Package, Clock
 } from "lucide-react";
 import { toast } from "sonner";
 import { BRAND } from "@/lib/constants";
 import HistorySkeleton from "@/components/skeletons/HistorySkeleton";
-import { formatLocalizedDate, formatRelativeTime, formatInteger } from "@/lib/localization";
+import { formatLocalizedDate, formatRelativeTime, formatInteger, formatDaysRemaining, getDaysRemainingUrgency } from "@/lib/localization";
 import {
   Select,
   SelectContent,
@@ -787,7 +787,24 @@ const History = () => {
                         <Calendar className="w-3 h-3" />
                         {formatRelativeTime(carousel.created_at, language)}
                       </div>
-                      
+
+                      {/* Days remaining indicator */}
+                      {carousel.status === "COMPLETED" && carousel.image_urls && carousel.image_urls.length > 0 && (() => {
+                        const urgency = getDaysRemainingUrgency(carousel.created_at);
+                        const urgencyStyles = {
+                          critical: "text-red-500",
+                          warning: "text-amber-500",
+                          normal: "text-blue-500",
+                          expired: "text-gray-400"
+                        };
+                        return (
+                          <div className={`flex items-center gap-1.5 text-xs ${urgencyStyles[urgency]}`}>
+                            <Clock className="w-3 h-3" />
+                            <span>{formatDaysRemaining(carousel.created_at, language)}</span>
+                          </div>
+                        );
+                      })()}
+
                       {carousel.has_watermark && carousel.status === "COMPLETED" && isPro && !isSelectionMode && (
                         <Button
                           variant="outline"

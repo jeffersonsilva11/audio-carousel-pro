@@ -33,7 +33,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import JSZip from "jszip";
-import { formatLocalizedDate, formatDuration, formatInteger, formatFileSize, formatRelativeTime } from "@/lib/localization";
+import { formatLocalizedDate, formatDuration, formatInteger, formatFileSize, formatRelativeTime, formatDaysRemaining, getDaysRemainingUrgency } from "@/lib/localization";
 import CarouselDetailSkeleton from "@/components/skeletons/CarouselDetailSkeleton";
 import {
   AlertDialog,
@@ -506,12 +506,28 @@ const CarouselDetail = () => {
               )}
             </div>
 
-            {/* Images expiration warning */}
-            {carousel.images_cleaned_at && (
+            {/* Images expiration status */}
+            {carousel.images_cleaned_at ? (
               <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 text-sm">
                 <ImageIcon className="w-4 h-4 flex-shrink-0" />
                 <span>{t("carouselDetail", "imagesExpired")}</span>
               </div>
+            ) : carousel.status === "COMPLETED" && carousel.image_urls && carousel.image_urls.length > 0 && (
+              (() => {
+                const urgency = getDaysRemainingUrgency(carousel.created_at);
+                const urgencyStyles = {
+                  critical: "bg-red-500/10 border-red-500/20 text-red-700 dark:text-red-400",
+                  warning: "bg-amber-500/10 border-amber-500/20 text-amber-700 dark:text-amber-400",
+                  normal: "bg-blue-500/10 border-blue-500/20 text-blue-700 dark:text-blue-400",
+                  expired: "bg-gray-500/10 border-gray-500/20 text-gray-700 dark:text-gray-400"
+                };
+                return (
+                  <div className={`flex items-center gap-2 p-3 rounded-lg border text-sm ${urgencyStyles[urgency]}`}>
+                    <Clock className="w-4 h-4 flex-shrink-0" />
+                    <span>{formatDaysRemaining(carousel.created_at, language)}</span>
+                  </div>
+                );
+              })()
             )}
 
             {/* Actions */}

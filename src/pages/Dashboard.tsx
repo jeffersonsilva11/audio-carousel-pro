@@ -8,9 +8,9 @@ import { t } from "@/lib/translations";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
+import {
   Mic2, Plus, LogOut, Loader2, Image as ImageIcon, Calendar,
-  Sparkles, FolderOpen, Crown, CreditCard, RefreshCw, AlertTriangle, Globe, Settings, History, Shield
+  Sparkles, FolderOpen, Crown, CreditCard, RefreshCw, AlertTriangle, Globe, Settings, History, Shield, Clock
 } from "lucide-react";
 import UsageStats from "@/components/dashboard/UsageStats";
 import CustomTemplatesManager from "@/components/dashboard/CustomTemplatesManager";
@@ -21,7 +21,7 @@ import { useAdminAccess } from "@/hooks/useAdminAccess";
 import { toast } from "sonner";
 import { BRAND } from "@/lib/constants";
 import { PLANS } from "@/lib/plans";
-import { formatLocalizedDate, formatSubscriptionDate, formatCount, formatInteger, formatRelativeTime } from "@/lib/localization";
+import { formatLocalizedDate, formatSubscriptionDate, formatCount, formatInteger, formatRelativeTime, formatDaysRemaining, getDaysRemainingUrgency } from "@/lib/localization";
 import {
   Select,
   SelectContent,
@@ -419,7 +419,24 @@ const Dashboard = () => {
                       <Calendar className="w-3 h-3" />
                       {formatRelativeTime(carousel.created_at, language)}
                     </div>
-                    
+
+                    {/* Days remaining indicator */}
+                    {carousel.status === "COMPLETED" && carousel.image_urls && carousel.image_urls.length > 0 && (() => {
+                      const urgency = getDaysRemainingUrgency(carousel.created_at);
+                      const urgencyStyles = {
+                        critical: "text-red-500",
+                        warning: "text-amber-500",
+                        normal: "text-blue-500",
+                        expired: "text-gray-400"
+                      };
+                      return (
+                        <div className={`flex items-center gap-1.5 text-xs ${urgencyStyles[urgency]}`}>
+                          <Clock className="w-3 h-3" />
+                          <span>{formatDaysRemaining(carousel.created_at, language)}</span>
+                        </div>
+                      );
+                    })()}
+
                     {/* Retry button for failed carousels */}
                     {carousel.status === "FAILED" && (
                       <Button
