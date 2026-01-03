@@ -83,6 +83,38 @@ const logStep = (step: string, details?: unknown) => {
   console.log(`[GENERATE-IMAGES] ${step}${detailsStr}`);
 };
 
+// Fetch an image URL and convert to base64 data URI for SVG embedding
+async function imageUrlToBase64(url: string): Promise<string | null> {
+  if (!url) return null;
+
+  try {
+    logStep('Fetching image for base64 conversion', { url: url.substring(0, 100) });
+
+    const response = await fetch(url);
+    if (!response.ok) {
+      logStep('Failed to fetch image', { status: response.status });
+      return null;
+    }
+
+    const contentType = response.headers.get('content-type') || 'image/jpeg';
+    const arrayBuffer = await response.arrayBuffer();
+    const uint8Array = new Uint8Array(arrayBuffer);
+
+    // Convert to base64
+    let binary = '';
+    for (let i = 0; i < uint8Array.length; i++) {
+      binary += String.fromCharCode(uint8Array[i]);
+    }
+    const base64 = btoa(binary);
+
+    logStep('Image converted to base64', { size: base64.length, contentType });
+    return `data:${contentType};base64,${base64}`;
+  } catch (error) {
+    logStep('Error converting image to base64', { error: String(error) });
+    return null;
+  }
+}
+
 // Get user's current plan from Stripe
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function getUserPlan(supabase: any, userId: string, email: string): Promise<{ plan: string; dailyUsed: number; dailyLimit: number; isAdmin: boolean }> {
@@ -829,14 +861,14 @@ serve(async (req) => {
       });
     }
 
-    const { 
-      script, 
-      style, 
-      format, 
-      carouselId, 
-      userId, 
-      hasWatermark = true, 
-      profile, 
+    const {
+      script,
+      style,
+      format,
+      carouselId,
+      userId,
+      hasWatermark = true,
+      profile,
       customization,
       // Single slide regeneration params
       regenerateSingle = false,
@@ -847,6 +879,43 @@ serve(async (req) => {
     if (!script || !script.slides) {
       await logUsage(supabase, user.id, 'generate_images', carouselId, 'invalid_request', { error: 'No script provided' }, ipAddress);
       throw new Error('No script provided');
+    }
+
+    // Pre-process images: convert URLs to base64 for SVG embedding
+    // This is required because SVG <image> tags with external URLs don't work when rendered
+    let processedProfile = profile;
+    let processedCustomization = customization;
+
+    // Convert profile photo to base64
+    if (profile?.photoUrl) {
+      logStep('Converting profile photo to base64...');
+      const photoBase64 = await imageUrlToBase64(profile.photoUrl);
+      if (photoBase64) {
+        processedProfile = { ...profile, photoUrl: photoBase64 };
+        logStep('Profile photo converted successfully');
+      } else {
+        logStep('Failed to convert profile photo, will use initials fallback');
+        processedProfile = { ...profile, photoUrl: null };
+      }
+    }
+
+    // Convert cover/slide images to base64
+    if (customization?.slideImages && customization.slideImages.length > 0) {
+      logStep('Converting slide images to base64...');
+      const processedSlideImages: (string | null)[] = [];
+
+      for (let i = 0; i < customization.slideImages.length; i++) {
+        const imageUrl = customization.slideImages[i];
+        if (imageUrl) {
+          const imageBase64 = await imageUrlToBase64(imageUrl);
+          processedSlideImages.push(imageBase64);
+          logStep(`Slide image ${i} converted: ${imageBase64 ? 'success' : 'failed'}`);
+        } else {
+          processedSlideImages.push(null);
+        }
+      }
+
+      processedCustomization = { ...customization, slideImages: processedSlideImages };
     }
 
     // Handle single slide regeneration
@@ -876,8 +945,8 @@ serve(async (req) => {
         format as keyof typeof DIMENSIONS,
         isSignature,
         hasWatermark,
-        profile,
-        customization
+        processedProfile,
+        processedCustomization
       );
 
       const svgBuffer = new TextEncoder().encode(svg);
@@ -954,8 +1023,8 @@ serve(async (req) => {
         format as keyof typeof DIMENSIONS,
         isSignature,
         hasWatermark,
-        profile,
-        customization
+        processedProfile,
+        processedCustomization
       );
 
       // Convert to base64
