@@ -187,7 +187,7 @@ const ProfileIdentitySelector = ({ profile, setProfile }: ProfileIdentitySelecto
             )}
           </Button>
           <p className="text-xs text-muted-foreground">
-            JPG, PNG ou WebP. Máx 5MB.
+            JPG, PNG ou WebP. Máx 5MB. <span className="text-accent">Recomendado: 400x400px ou maior</span>
           </p>
         </div>
       </div>

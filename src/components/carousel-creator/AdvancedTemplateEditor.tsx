@@ -566,9 +566,15 @@ const AdvancedTemplateEditor = ({
             );
           })()}
 
-          <p className="text-xs text-muted-foreground text-center">
-            💡 A imagem de capa aparecerá no primeiro slide com o título do carrossel sobreposto.
-          </p>
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground text-center">
+              💡 A imagem de capa aparecerá no primeiro slide com o título do carrossel sobreposto.
+            </p>
+            <p className="text-xs text-center px-4 py-2 bg-accent/10 rounded-lg text-accent">
+              <strong>Tamanho recomendado:</strong> Mínimo 1080x1080px para Feed, 1080x1350px para Retrato, ou 1080x1920px para Stories/Reels.
+              Use imagens em alta resolução para melhor qualidade.
+            </p>
+          </div>
         </TabsContent>
 
         {/* Options Tab */}
