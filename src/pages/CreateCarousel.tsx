@@ -22,7 +22,7 @@ import { cn } from "@/lib/utils";
 import { BRAND, TemplateId, TextModeId, SlideCountMode } from "@/lib/constants";
 
 import AudioUploader from "@/components/carousel-creator/AudioUploader";
-import ToneSelector, { ToneType } from "@/components/carousel-creator/ToneSelector";
+import { ToneType } from "@/components/carousel-creator/ToneSelector";
 import StyleSelector, { StyleType } from "@/components/carousel-creator/StyleSelector";
 import FormatSelector, { FormatType } from "@/components/carousel-creator/FormatSelector";
 import ProcessingStatus from "@/components/carousel-creator/ProcessingStatus";
@@ -30,7 +30,7 @@ import CarouselPreview from "@/components/carousel-creator/CarouselPreview";
 import CarouselTextEditor from "@/components/carousel-creator/CarouselTextEditor";
 // ExportFormatSelector removed - format is already chosen in customize step
 import ProfileIdentitySelector, { ProfileIdentity } from "@/components/carousel-creator/ProfileIdentitySelector";
-import TemplateSelector from "@/components/carousel-creator/TemplateSelector";
+// TemplateSelector removed - cover options now in AdvancedTemplateEditor
 import TextModeSelector, { CreativeTone } from "@/components/carousel-creator/TextModeSelector";
 import SlideCountSelector from "@/components/carousel-creator/SlideCountSelector";
 import LanguageSelector from "@/components/carousel-creator/LanguageSelector";
@@ -103,7 +103,16 @@ const CreateCarousel = () => {
   const [creativeTone, setCreativeTone] = useState<CreativeTone>("professional");
   const [slideCountMode, setSlideCountMode] = useState<SlideCountMode>("auto");
   const [manualSlideCount, setManualSlideCount] = useState(6);
-  const [selectedTone, setSelectedTone] = useState<ToneType>("PROFESSIONAL");
+  // selectedTone is derived from creativeTone for DB storage
+  const getToneTypeFromCreativeTone = (tone: CreativeTone): ToneType => {
+    const map: Record<CreativeTone, ToneType> = {
+      emotional: "EMOTIONAL",
+      professional: "PROFESSIONAL",
+      provocative: "PROVOCATIVE"
+    };
+    return map[tone];
+  };
+  const selectedTone = getToneTypeFromCreativeTone(creativeTone);
   const [selectedStyle, setSelectedStyle] = useState<StyleType>("BLACK_WHITE");
   const [selectedFormat, setSelectedFormat] = useState<FormatType>("POST_SQUARE");
   const [prefsInitialized, setPrefsInitialized] = useState(false);
@@ -173,10 +182,20 @@ const CreateCarousel = () => {
       });
       setSelectedTemplate(preferences.defaultTemplate);
       setSelectedTextMode(preferences.defaultTextMode);
-      setCreativeTone(preferences.defaultCreativeTone);
+      // Use defaultCreativeTone if available, otherwise derive from defaultTone
+      if (preferences.defaultCreativeTone) {
+        setCreativeTone(preferences.defaultCreativeTone);
+      } else if (preferences.defaultTone) {
+        // Convert legacy ToneType to CreativeTone
+        const toneMap: Record<string, CreativeTone> = {
+          EMOTIONAL: "emotional",
+          PROFESSIONAL: "professional",
+          PROVOCATIVE: "provocative"
+        };
+        setCreativeTone(toneMap[preferences.defaultTone] || "professional");
+      }
       setSlideCountMode(preferences.defaultSlideCountMode);
       setManualSlideCount(preferences.defaultManualSlideCount);
-      setSelectedTone(preferences.defaultTone as ToneType);
       setSelectedStyle(preferences.defaultStyle as StyleType);
       setPrefsInitialized(true);
     }
@@ -195,7 +214,7 @@ const CreateCarousel = () => {
       defaultCreativeTone: creativeTone,
       defaultSlideCountMode: slideCountMode,
       defaultManualSlideCount: manualSlideCount,
-      defaultTone: selectedTone,
+      defaultTone: selectedTone, // Derived from creativeTone
       defaultStyle: selectedStyle,
     });
   }, [
@@ -673,29 +692,15 @@ const CreateCarousel = () => {
               </div>
               
               <div className="lg:grid lg:grid-cols-[1fr,280px] lg:gap-8">
-                {/* Form options */}
+                {/* Form options - Organized in logical order */}
                 <div className="space-y-8">
+                  {/* 1. Profile Identity */}
                   <ProfileIdentitySelector
                     profile={profileIdentity}
                     setProfile={setProfileIdentity}
                   />
-                  
-                  <div className="border-t border-border pt-8">
-                    <TemplateSelector
-                      selectedTemplate={selectedTemplate}
-                      setSelectedTemplate={setSelectedTemplate}
-                    />
-                  </div>
-                  
-                  <div className="border-t border-border pt-8">
-                    <TextModeSelector
-                      selectedMode={selectedTextMode}
-                      setSelectedMode={setSelectedTextMode}
-                      creativeTone={creativeTone}
-                      setCreativeTone={setCreativeTone}
-                    />
-                  </div>
-                  
+
+                  {/* 2. Slide Count */}
                   <div className="border-t border-border pt-8">
                     <SlideCountSelector
                       mode={slideCountMode}
@@ -704,31 +709,42 @@ const CreateCarousel = () => {
                       setManualCount={setManualSlideCount}
                     />
                   </div>
-                  
+
+                  {/* 3. Language */}
                   <div className="border-t border-border pt-8">
                     <LanguageSelector
                       value={carouselLanguage}
                       onChange={setCarouselLanguage}
                     />
                   </div>
-                  
+
+                  {/* 4. Text Mode + Tone (unified) */}
                   <div className="border-t border-border pt-8">
-                    <ToneSelector 
-                      selectedTone={selectedTone} 
-                      setSelectedTone={setSelectedTone} 
+                    <TextModeSelector
+                      selectedMode={selectedTextMode}
+                      setSelectedMode={setSelectedTextMode}
+                      creativeTone={creativeTone}
+                      setCreativeTone={setCreativeTone}
                     />
                   </div>
-                  
-                  <StyleSelector 
-                    selectedStyle={selectedStyle} 
-                    setSelectedStyle={setSelectedStyle} 
-                  />
-                  <FormatSelector 
-                    selectedFormat={selectedFormat} 
-                    setSelectedFormat={setSelectedFormat} 
-                  />
-                  
-                  {/* Advanced Template Editor - Creator+ only */}
+
+                  {/* 5. Visual Style */}
+                  <div className="border-t border-border pt-8">
+                    <StyleSelector
+                      selectedStyle={selectedStyle}
+                      setSelectedStyle={setSelectedStyle}
+                    />
+                  </div>
+
+                  {/* 6. Format */}
+                  <div className="border-t border-border pt-8">
+                    <FormatSelector
+                      selectedFormat={selectedFormat}
+                      setSelectedFormat={setSelectedFormat}
+                    />
+                  </div>
+
+                  {/* 7. Advanced Customization (Cover, Fonts, etc.) - Creator+ only */}
                   <div className="border-t border-border pt-8">
                     <AdvancedTemplateEditor
                       customization={templateCustomization}

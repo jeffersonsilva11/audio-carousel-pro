@@ -7,25 +7,29 @@ import {
   Upload,
   Sparkles,
   Crown,
-  Eye,
   Loader2,
   AlignLeft,
   AlignCenter,
   AlignRight,
   ArrowUp,
   ArrowDown,
-  Settings2
+  Settings2,
+  Lock,
+  Check
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLanguage } from "@/hooks/useLanguage";
 import { t } from "@/lib/translations";
+import { getPlanPrice } from "@/lib/localization";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useSubscription } from "@/hooks/useSubscription";
 import { 
   AVAILABLE_FONTS, 
   GRADIENT_PRESETS, 
@@ -75,18 +79,112 @@ const AdvancedTemplateEditor = ({
   const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
   const [activeGradientCategory, setActiveGradientCategory] = useState<GradientCategory | 'basic'>('warm');
 
+  const { createCheckout } = useSubscription();
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+
+  const handleUpgrade = async () => {
+    setCheckoutLoading(true);
+    try {
+      await createCheckout("creator");
+    } catch (error) {
+      toast({
+        title: language === "pt-BR" ? "Erro" : "Error",
+        description: language === "pt-BR"
+          ? "Não foi possível iniciar o checkout."
+          : "Could not start checkout.",
+        variant: "destructive",
+      });
+    } finally {
+      setCheckoutLoading(false);
+    }
+  };
+
   if (!isCreator) {
+    const lockedFeatures = [
+      {
+        icon: Type,
+        label: language === "pt-BR" ? "Fontes personalizadas" : language === "es" ? "Fuentes personalizadas" : "Custom fonts",
+        desc: language === "pt-BR" ? "12 fontes exclusivas" : language === "es" ? "12 fuentes exclusivas" : "12 exclusive fonts"
+      },
+      {
+        icon: Palette,
+        label: language === "pt-BR" ? "Gradientes premium" : language === "es" ? "Gradientes premium" : "Premium gradients",
+        desc: language === "pt-BR" ? "40+ opções de cores" : language === "es" ? "40+ opciones de colores" : "40+ color options"
+      },
+      {
+        icon: ImagePlus,
+        label: language === "pt-BR" ? "Imagem de capa" : language === "es" ? "Imagen de portada" : "Cover image",
+        desc: language === "pt-BR" ? "Upload personalizado" : language === "es" ? "Carga personalizada" : "Custom upload"
+      },
+      {
+        icon: Settings2,
+        label: language === "pt-BR" ? "Opções avançadas" : language === "es" ? "Opciones avanzadas" : "Advanced options",
+        desc: language === "pt-BR" ? "Navegação, subtítulos..." : language === "es" ? "Navegación, subtítulos..." : "Navigation, subtitles..."
+      },
+    ];
+
     return (
-      <div className="border border-border/50 rounded-xl p-6 bg-muted/30 text-center">
-        <Crown className="w-8 h-8 text-accent mx-auto mb-3" />
-        <h3 className="font-semibold text-lg mb-1">{t("advancedEditor", "customization", language)}</h3>
-        <p className="text-sm text-muted-foreground mb-4">
-          {t("advancedEditor", "creatorFeature", language)}
-        </p>
-        <Badge variant="secondary">
-          <Sparkles className="w-3 h-3 mr-1" />
-          Creator+
-        </Badge>
+      <div className="border border-accent/30 rounded-xl overflow-hidden bg-gradient-to-br from-accent/5 to-transparent">
+        {/* Header */}
+        <div className="p-4 bg-accent/10 border-b border-accent/20">
+          <div className="flex items-center gap-2">
+            <Crown className="w-5 h-5 text-accent" />
+            <h3 className="font-semibold">{t("advancedEditor", "customization", language)}</h3>
+            <Badge variant="secondary" className="text-[10px] ml-auto bg-accent/20 text-accent border-accent/30">
+              Creator+
+            </Badge>
+          </div>
+        </div>
+
+        {/* Features preview */}
+        <div className="p-4 space-y-3">
+          <p className="text-sm text-muted-foreground">
+            {language === "pt-BR"
+              ? "Desbloqueie recursos avançados de personalização:"
+              : language === "es"
+              ? "Desbloquea funciones avanzadas de personalización:"
+              : "Unlock advanced customization features:"}
+          </p>
+
+          <div className="grid grid-cols-2 gap-2">
+            {lockedFeatures.map((feature, idx) => (
+              <div
+                key={idx}
+                className="flex items-start gap-2 p-2.5 rounded-lg bg-background/50 border border-border/50"
+              >
+                <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                  <feature.icon className="w-4 h-4 text-muted-foreground" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-medium truncate">{feature.label}</p>
+                  <p className="text-[10px] text-muted-foreground truncate">{feature.desc}</p>
+                </div>
+                <Lock className="w-3 h-3 text-muted-foreground shrink-0 mt-0.5" />
+              </div>
+            ))}
+          </div>
+
+          {/* Upgrade CTA */}
+          <div className="pt-2">
+            <Button
+              variant="accent"
+              className="w-full"
+              onClick={handleUpgrade}
+              disabled={checkoutLoading}
+            >
+              {checkoutLoading ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Sparkles className="w-4 h-4 mr-2" />
+              )}
+              {language === "pt-BR"
+                ? `Upgrade para Creator ${getPlanPrice("creator", language)}/mês`
+                : language === "es"
+                ? `Upgrade a Creator ${getPlanPrice("creator", language)}/mes`
+                : `Upgrade to Creator ${getPlanPrice("creator", language)}/mo`}
+            </Button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -265,50 +363,6 @@ const AdvancedTemplateEditor = ({
           <Sparkles className="w-4 h-4 text-accent" />
           <h3 className="font-semibold">{t("advancedEditor", "customization", language)}</h3>
           <Badge variant="secondary" className="text-[10px] ml-auto">Creator+</Badge>
-        </div>
-      </div>
-
-      {/* Live Preview Section */}
-      <div className="p-4 border-b border-border/50 bg-muted/20">
-        <div className="flex items-center gap-2 mb-3">
-          <Eye className="w-4 h-4 text-muted-foreground" />
-          <span className="text-sm font-medium">{t("advancedEditor", "previewMode", language)}</span>
-        </div>
-        <div 
-          className="relative aspect-square max-w-[200px] mx-auto rounded-lg overflow-hidden shadow-lg"
-          style={{
-            background: currentGradientColors 
-              ? getGradientStyle(currentGradientColors)
-              : 'hsl(var(--background))'
-          }}
-        >
-          <div className="absolute inset-0 flex items-center justify-center p-4">
-            <p
-              className="text-foreground leading-relaxed w-full"
-              style={{
-                fontFamily: selectedFont?.family || 'Inter, sans-serif',
-                fontSize: '16px',
-                color: currentGradientColors ? '#ffffff' : 'hsl(var(--foreground))',
-                textShadow: currentGradientColors ? '0 1px 3px rgba(0,0,0,0.3)' : 'none',
-                textAlign: customization.textAlignment || 'center'
-              }}
-            >
-              Exemplo de texto com a fonte {selectedFont?.name || 'Inter'}
-            </p>
-          </div>
-          {/* Profile indicator */}
-          <div className="absolute top-2 left-2 flex items-center gap-1.5">
-            <div className="w-6 h-6 rounded-full bg-white/20 backdrop-blur-sm" />
-            <span 
-              className="text-[10px] font-medium"
-              style={{ 
-                fontFamily: selectedFont?.family,
-                color: currentGradientColors ? '#ffffff' : 'hsl(var(--foreground))'
-              }}
-            >
-              @usuario
-            </span>
-          </div>
         </div>
       </div>
 
