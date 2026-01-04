@@ -94,7 +94,7 @@ const StructuredData = () => {
         "mainEntity": [
           {
             "@type": "Question",
-            "name": "Como funciona o Carrossel AI?",
+            "name": "Como funciona o Audisell?",
             "acceptedAnswer": {
               "@type": "Answer",
               "text": "Você grava ou envia um áudio de até 60 segundos. Nossa IA transcreve o conteúdo, roteiriza em slides e gera imagens profissionais prontas para postar no Instagram."

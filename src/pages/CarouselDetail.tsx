@@ -166,9 +166,15 @@ const CarouselDetail = () => {
     try {
       const response = await fetch(url);
       const blob = await response.blob();
+
+      // Detect file type from URL or content-type
+      const contentType = response.headers.get("content-type") || "";
+      const isSvg = url.endsWith(".svg") || contentType.includes("svg");
+      const extension = isSvg ? "svg" : "png";
+
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
-      link.download = `slide-${index + 1}.png`;
+      link.download = `slide-${index + 1}.${extension}`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -184,12 +190,18 @@ const CarouselDetail = () => {
     setDownloading(true);
     try {
       const zip = new JSZip();
-      
+
       await Promise.all(
         carousel.image_urls.map(async (url, index) => {
           const response = await fetch(url);
           const blob = await response.blob();
-          zip.file(`slide-${index + 1}.png`, blob);
+
+          // Detect file type from URL or content-type
+          const contentType = response.headers.get("content-type") || "";
+          const isSvg = url.endsWith(".svg") || contentType.includes("svg");
+          const extension = isSvg ? "svg" : "png";
+
+          zip.file(`slide-${index + 1}.${extension}`, blob);
         })
       );
 
@@ -201,7 +213,7 @@ const CarouselDetail = () => {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(link.href);
-      
+
       toast.success(t("carouselDetail", "downloadStarted"));
     } catch (error) {
       toast.error(t("carouselDetail", "zipError"));
@@ -325,9 +337,7 @@ const CarouselDetail = () => {
                 <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
                   <Mic2 className="w-4 h-4 text-primary-foreground" />
                 </div>
-                <span className="font-bold text-sm">
-                  Carrossel<span className="text-accent">AI</span>
-                </span>
+                <span className="font-bold text-sm">Audisell</span>
               </a>
             </div>
             <div className="flex items-center gap-2">
