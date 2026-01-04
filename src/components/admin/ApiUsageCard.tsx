@@ -10,7 +10,7 @@ interface ApiUsageStats {
     totalSeconds: number;
     estimatedCost: number;
   };
-  gemini: {
+  openai: {
     totalCalls: number;
     tokensInput: number;
     tokensOutput: number;
@@ -19,12 +19,12 @@ interface ApiUsageStats {
   totalCost: number;
 }
 
-// Pricing estimates (USD)
+// Pricing estimates (USD) - GPT-4o-mini
 const PRICING = {
-  whisper: 0.006, // $0.006 per second
-  gemini: {
-    input: 0.000125, // $0.000125 per 1K tokens
-    output: 0.000375, // $0.000375 per 1K tokens
+  whisper: 0.006, // $0.006 per minute (not second)
+  openai: {
+    input: 0.00015, // $0.15 per 1M tokens = $0.00015 per 1K tokens
+    output: 0.0006, // $0.60 per 1M tokens = $0.0006 per 1K tokens
   },
 };
 
@@ -60,16 +60,21 @@ export default function ApiUsageCard() {
       if (error) throw error;
 
       const whisperData = (data || []).filter((d) => d.api_name === "whisper");
-      const geminiData = (data || []).filter((d) => d.api_name === "gemini");
+      // Support both "openai" and "gemini" api_name for backwards compatibility
+      const openaiData = (data || []).filter((d) =>
+        d.api_name === "openai" || d.api_name === "gemini" || d.api_name === "gpt-4o-mini"
+      );
 
+      // Whisper charges per minute, not second
       const whisperSeconds = whisperData.reduce((acc, d) => acc + Number(d.audio_seconds || 0), 0);
-      const whisperCost = whisperSeconds * PRICING.whisper;
+      const whisperMinutes = whisperSeconds / 60;
+      const whisperCost = whisperMinutes * PRICING.whisper;
 
-      const geminiInputTokens = geminiData.reduce((acc, d) => acc + (d.tokens_input || 0), 0);
-      const geminiOutputTokens = geminiData.reduce((acc, d) => acc + (d.tokens_output || 0), 0);
-      const geminiCost = 
-        (geminiInputTokens / 1000) * PRICING.gemini.input +
-        (geminiOutputTokens / 1000) * PRICING.gemini.output;
+      const openaiInputTokens = openaiData.reduce((acc, d) => acc + (d.tokens_input || 0), 0);
+      const openaiOutputTokens = openaiData.reduce((acc, d) => acc + (d.tokens_output || 0), 0);
+      const openaiCost =
+        (openaiInputTokens / 1000) * PRICING.openai.input +
+        (openaiOutputTokens / 1000) * PRICING.openai.output;
 
       setStats({
         whisper: {
@@ -77,13 +82,13 @@ export default function ApiUsageCard() {
           totalSeconds: whisperSeconds,
           estimatedCost: whisperCost,
         },
-        gemini: {
-          totalCalls: geminiData.length,
-          tokensInput: geminiInputTokens,
-          tokensOutput: geminiOutputTokens,
-          estimatedCost: geminiCost,
+        openai: {
+          totalCalls: openaiData.length,
+          tokensInput: openaiInputTokens,
+          tokensOutput: openaiOutputTokens,
+          estimatedCost: openaiCost,
         },
-        totalCost: whisperCost + geminiCost,
+        totalCost: whisperCost + openaiCost,
       });
     } catch (error) {
       console.error("Error fetching API usage:", error);
@@ -118,11 +123,11 @@ export default function ApiUsageCard() {
               {language === "pt-BR" ? "Uso de APIs" : language === "es" ? "Uso de APIs" : "API Usage"}
             </CardTitle>
             <CardDescription>
-              {language === "pt-BR" 
-                ? "Custos estimados das APIs Whisper e Gemini" 
-                : language === "es" 
-                ? "Costos estimados de las APIs Whisper y Gemini" 
-                : "Estimated costs for Whisper and Gemini APIs"}
+              {language === "pt-BR"
+                ? "Custos estimados das APIs Whisper e OpenAI"
+                : language === "es"
+                ? "Costos estimados de las APIs Whisper y OpenAI"
+                : "Estimated costs for Whisper and OpenAI APIs"}
             </CardDescription>
           </div>
           <div className="flex gap-1 bg-muted rounded-lg p-1">
@@ -174,31 +179,31 @@ export default function ApiUsageCard() {
             </div>
           </div>
 
-          {/* Gemini Card */}
+          {/* OpenAI GPT Card */}
           <div className="p-4 rounded-lg border border-border bg-muted/30">
             <div className="flex items-center gap-2 mb-3">
-              <Sparkles className="w-5 h-5 text-purple-500" />
-              <h4 className="font-semibold">Google Gemini</h4>
+              <Sparkles className="w-5 h-5 text-green-500" />
+              <h4 className="font-semibold">OpenAI GPT-4o-mini</h4>
             </div>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">
                   {language === "pt-BR" ? "Chamadas" : language === "es" ? "Llamadas" : "Calls"}
                 </span>
-                <span className="font-medium">{stats?.gemini.totalCalls || 0}</span>
+                <span className="font-medium">{stats?.openai.totalCalls || 0}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Tokens (in/out)</span>
                 <span className="font-medium">
-                  {((stats?.gemini.tokensInput || 0) / 1000).toFixed(1)}K / {((stats?.gemini.tokensOutput || 0) / 1000).toFixed(1)}K
+                  {((stats?.openai.tokensInput || 0) / 1000).toFixed(1)}K / {((stats?.openai.tokensOutput || 0) / 1000).toFixed(1)}K
                 </span>
               </div>
               <div className="flex justify-between pt-2 border-t border-border">
                 <span className="text-muted-foreground">
                   {language === "pt-BR" ? "Custo estimado" : language === "es" ? "Costo estimado" : "Est. cost"}
                 </span>
-                <span className="font-semibold text-purple-500">
-                  ${(stats?.gemini.estimatedCost || 0).toFixed(4)}
+                <span className="font-semibold text-green-500">
+                  ${(stats?.openai.estimatedCost || 0).toFixed(4)}
                 </span>
               </div>
             </div>
