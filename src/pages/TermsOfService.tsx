@@ -55,7 +55,7 @@ const TermsOfService = () => {
         },
         {
           title: "11. Contato",
-          content: "Para questões sobre estes Termos de Uso, entre em contato conosco através do email: suporte@carrosselai.com"
+          content: "Para questões sobre estes Termos de Uso, entre em contato conosco através do email: suporte@audisell.com"
         }
       ]
     },
@@ -105,7 +105,7 @@ const TermsOfService = () => {
         },
         {
           title: "11. Contact",
-          content: "For questions about these Terms of Service, contact us at: support@carrosselai.com"
+          content: "For questions about these Terms of Service, contact us at: support@audisell.com"
         }
       ]
     },
@@ -155,7 +155,7 @@ const TermsOfService = () => {
         },
         {
           title: "11. Contacto",
-          content: "Para preguntas sobre estos Términos de Uso, contáctenos en: soporte@carrosselai.com"
+          content: "Para preguntas sobre estos Términos de Uso, contáctenos en: soporte@audisell.com"
         }
       ]
     }

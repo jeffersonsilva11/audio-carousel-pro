@@ -2924,9 +2924,9 @@ export const translations = {
       es: "Omitir",
     },
     welcomeTitle: {
-      "pt-BR": "Bem-vindo ao Carrossel AI! 🎉",
-      en: "Welcome to Carrossel AI! 🎉",
-      es: "¡Bienvenido a Carrossel AI! 🎉",
+      "pt-BR": "Bem-vindo ao Audisell! 🎉",
+      en: "Welcome to Audisell! 🎉",
+      es: "¡Bienvenido a Audisell! 🎉",
     },
     welcomeDesc: {
       "pt-BR": "Transforme sua voz em carrosséis profissionais para Instagram em segundos.",

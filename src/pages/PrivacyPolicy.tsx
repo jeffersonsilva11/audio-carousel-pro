@@ -43,7 +43,7 @@ const PrivacyPolicy = () => {
         },
         {
           title: "8. Exercício dos Direitos",
-          content: "Para exercer seus direitos, acesse a página de Configurações da sua conta ou envie um email para privacidade@carrosselai.com. Responderemos em até 15 dias úteis. Você também pode exportar todos os seus dados diretamente nas configurações do perfil."
+          content: "Para exercer seus direitos, acesse a página de Configurações da sua conta ou envie um email para privacidade@audisell.com. Responderemos em até 15 dias úteis. Você também pode exportar todos os seus dados diretamente nas configurações do perfil."
         },
         {
           title: "9. Segurança dos Dados",
@@ -67,11 +67,11 @@ const PrivacyPolicy = () => {
         },
         {
           title: "14. Encarregado de Dados (DPO)",
-          content: "Para questões relacionadas à proteção de dados, entre em contato com nosso Encarregado de Dados através do email: dpo@carrosselai.com"
+          content: "Para questões relacionadas à proteção de dados, entre em contato com nosso Encarregado de Dados através do email: dpo@audisell.com"
         },
         {
           title: "15. Contato",
-          content: "Para dúvidas sobre esta Política de Privacidade: Email: privacidade@carrosselai.com"
+          content: "Para dúvidas sobre esta Política de Privacidade: Email: privacidade@audisell.com"
         }
       ]
     },
@@ -109,7 +109,7 @@ const PrivacyPolicy = () => {
         },
         {
           title: "8. Exercising Your Rights",
-          content: "To exercise your rights, access the Settings page of your account or send an email to privacy@carrosselai.com. We will respond within 15 business days. You can also export all your data directly in profile settings."
+          content: "To exercise your rights, access the Settings page of your account or send an email to privacy@audisell.com. We will respond within 15 business days. You can also export all your data directly in profile settings."
         },
         {
           title: "9. Data Security",
@@ -133,11 +133,11 @@ const PrivacyPolicy = () => {
         },
         {
           title: "14. Data Protection Officer",
-          content: "For data protection questions, contact our Data Protection Officer at: dpo@carrosselai.com"
+          content: "For data protection questions, contact our Data Protection Officer at: dpo@audisell.com"
         },
         {
           title: "15. Contact",
-          content: "For questions about this Privacy Policy: Email: privacy@carrosselai.com"
+          content: "For questions about this Privacy Policy: Email: privacy@audisell.com"
         }
       ]
     },
@@ -175,7 +175,7 @@ const PrivacyPolicy = () => {
         },
         {
           title: "8. Ejercicio de sus Derechos",
-          content: "Para ejercer sus derechos, acceda a la página de Configuración de su cuenta o envíe un correo a privacidad@carrosselai.com. Responderemos en un plazo de 15 días hábiles. También puede exportar todos sus datos directamente en la configuración del perfil."
+          content: "Para ejercer sus derechos, acceda a la página de Configuración de su cuenta o envíe un correo a privacidad@audisell.com. Responderemos en un plazo de 15 días hábiles. También puede exportar todos sus datos directamente en la configuración del perfil."
         },
         {
           title: "9. Seguridad de los Datos",
@@ -199,11 +199,11 @@ const PrivacyPolicy = () => {
         },
         {
           title: "14. Oficial de Protección de Datos",
-          content: "Para preguntas relacionadas con la protección de datos, contacte a nuestro Oficial de Protección de Datos en: dpo@carrosselai.com"
+          content: "Para preguntas relacionadas con la protección de datos, contacte a nuestro Oficial de Protección de Datos en: dpo@audisell.com"
         },
         {
           title: "15. Contacto",
-          content: "Para preguntas sobre esta Política de Privacidad: Correo: privacidad@carrosselai.com"
+          content: "Para preguntas sobre esta Política de Privacidad: Correo: privacidad@audisell.com"
         }
       ]
     }
