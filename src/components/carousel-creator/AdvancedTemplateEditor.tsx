@@ -261,7 +261,6 @@ const AdvancedTemplateEditor = ({
     return gradient?.colors ? [...gradient.colors] : null;
   };
 
-  const selectedFont = AVAILABLE_FONTS.find(f => f.id === customization.fontId);
   const currentGradientColors = getCurrentGradientColors();
 
   // Filter gradients by category
