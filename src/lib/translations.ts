@@ -2900,6 +2900,21 @@ export const translations = {
       en: "Finalized",
       es: "Finalizado",
     },
+    editWarningTitle: {
+      "pt-BR": "Revise todos os slides",
+      en: "Review all slides",
+      es: "Revisa todos los slides",
+    },
+    editWarningDesc: {
+      "pt-BR": "Após finalizar, os slides editados serão regenerados e você poderá baixá-los.",
+      en: "After finalizing, edited slides will be regenerated and you can download them.",
+      es: "Después de finalizar, los slides editados serán regenerados y podrás descargarlos.",
+    },
+    regeneratingSlides: {
+      "pt-BR": "Regenerando slides...",
+      en: "Regenerating slides...",
+      es: "Regenerando slides...",
+    },
   },
 
   // Cookie Consent

@@ -261,27 +261,27 @@ const CarouselEditView = ({
                   </div>
                 )}
 
-                {/* Navigation arrows */}
+                {/* Navigation arrows - smaller and more transparent */}
                 <button
                   onClick={() => goToSlide(currentSlide - 1)}
                   disabled={currentSlide === 0}
                   className={cn(
-                    "absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-background/80 backdrop-blur flex items-center justify-center transition-opacity",
-                    currentSlide === 0 ? "opacity-30 cursor-not-allowed" : "hover:bg-background"
+                    "absolute left-1 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-background/50 backdrop-blur-sm flex items-center justify-center transition-all",
+                    currentSlide === 0 ? "opacity-20 cursor-not-allowed" : "opacity-60 hover:opacity-100 hover:bg-background/80"
                   )}
                 >
-                  <ChevronLeft className="w-5 h-5" />
+                  <ChevronLeft className="w-4 h-4" />
                 </button>
 
                 <button
                   onClick={() => goToSlide(currentSlide + 1)}
                   disabled={currentSlide === slides.length - 1}
                   className={cn(
-                    "absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-background/80 backdrop-blur flex items-center justify-center transition-opacity",
-                    currentSlide === slides.length - 1 ? "opacity-30 cursor-not-allowed" : "hover:bg-background"
+                    "absolute right-1 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-background/50 backdrop-blur-sm flex items-center justify-center transition-all",
+                    currentSlide === slides.length - 1 ? "opacity-20 cursor-not-allowed" : "opacity-60 hover:opacity-100 hover:bg-background/80"
                   )}
                 >
-                  <ChevronRight className="w-5 h-5" />
+                  <ChevronRight className="w-4 h-4" />
                 </button>
 
                 {/* Modified indicator */}
@@ -419,10 +419,17 @@ const CarouselEditView = ({
                     <Input
                       id="subtitle"
                       value={editedSubtitle}
-                      onChange={(e) => setEditedSubtitle(e.target.value)}
+                      onChange={(e) => setEditedSubtitle(e.target.value.slice(0, 80))}
                       placeholder="Ex: O segredo que ninguém te contou..."
                       className="text-sm"
+                      maxLength={80}
                     />
+                    <p className={cn(
+                      "text-xs",
+                      editedSubtitle.length > 60 ? "text-amber-500" : "text-muted-foreground"
+                    )}>
+                      {editedSubtitle.length}/80
+                    </p>
                   </div>
 
                   <div className="space-y-2">
@@ -432,9 +439,10 @@ const CarouselEditView = ({
                     <Input
                       id="highlightWord"
                       value={editedHighlightWord}
-                      onChange={(e) => setEditedHighlightWord(e.target.value)}
+                      onChange={(e) => setEditedHighlightWord(e.target.value.slice(0, 30))}
                       placeholder="Ex: segredo"
                       className="text-sm"
+                      maxLength={30}
                     />
                   </div>
                 </div>
@@ -442,17 +450,34 @@ const CarouselEditView = ({
 
               {/* Main text */}
               <div className="space-y-2">
-                <Label className="text-sm">
-                  {isCoverSlide ? "Título Principal" : "Texto do Slide"}
-                </Label>
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm">
+                    {isCoverSlide ? "Título Principal" : "Texto do Slide"}
+                  </Label>
+                  <span className="text-xs text-muted-foreground">
+                    máx. {isCoverSlide ? 150 : 300} caracteres
+                  </span>
+                </div>
                 <Textarea
                   value={editedText}
-                  onChange={(e) => setEditedText(e.target.value)}
-                  className="min-h-[150px] resize-none"
+                  onChange={(e) => setEditedText(e.target.value.slice(0, isCoverSlide ? 150 : 300))}
+                  className={cn(
+                    "min-h-[150px] resize-none",
+                    editedText.length > (isCoverSlide ? 130 : 270) && "border-amber-500 focus-visible:ring-amber-500"
+                  )}
                   placeholder="Digite o texto..."
+                  maxLength={isCoverSlide ? 150 : 300}
                 />
-                <p className="text-xs text-muted-foreground">
-                  {editedText.length} caracteres
+                <p className={cn(
+                  "text-xs",
+                  editedText.length > (isCoverSlide ? 130 : 270)
+                    ? "text-amber-500"
+                    : "text-muted-foreground"
+                )}>
+                  {editedText.length}/{isCoverSlide ? 150 : 300} caracteres
+                  {editedText.length > (isCoverSlide ? 130 : 270) && (
+                    <span className="ml-2">(texto pode ficar pequeno)</span>
+                  )}
                 </p>
               </div>
             </CardContent>

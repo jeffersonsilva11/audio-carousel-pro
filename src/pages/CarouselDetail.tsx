@@ -475,7 +475,7 @@ const CarouselDetail = () => {
                   </div>
                 </CardContent>
               </Card>
-              {carousel.processing_time && (
+              {carousel.processing_time != null && carousel.processing_time > 0 && (
                 <Card>
                   <CardContent className="flex items-center gap-3 p-3">
                     <Clock className="w-4 h-4 text-muted-foreground flex-shrink-0" />
@@ -488,7 +488,7 @@ const CarouselDetail = () => {
                   </CardContent>
                 </Card>
               )}
-              {carousel.audio_duration && (
+              {carousel.audio_duration != null && carousel.audio_duration > 0 && (
                 <Card>
                   <CardContent className="flex items-center gap-3 p-3">
                     <Mic className="w-4 h-4 text-muted-foreground flex-shrink-0" />

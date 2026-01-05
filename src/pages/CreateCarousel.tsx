@@ -721,8 +721,8 @@ const CreateCarousel = () => {
         "container mx-auto px-4 py-8",
         currentStep === "customize" ? "max-w-4xl" : "max-w-2xl"
       )}>
-        {/* Free user warning */}
-        {!isPro && currentStep !== "processing" && currentStep !== "preview" && (
+        {/* Free user warning - only show when subscription status is loaded and user is not Pro */}
+        {!subLoading && !isPro && currentStep !== "processing" && currentStep !== "preview" && (
           <div className="bg-muted/50 border border-border rounded-lg p-4 mb-6 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center">
