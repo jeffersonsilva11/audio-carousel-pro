@@ -29,16 +29,50 @@ const FONTS: Record<string, string> = {
   'poppins': 'Poppins, sans-serif',
 };
 
-// Gradient presets
+// Gradient presets - MUST match frontend constants.ts
 const GRADIENT_PRESETS: Record<string, string[] | null> = {
+  // None/Custom
   'none': null,
-  'sunset': ['#ff6b6b', '#feca57', '#ff9ff3'],
-  'ocean': ['#667eea', '#764ba2', '#f093fb'],
-  'forest': ['#11998e', '#38ef7d'],
-  'night': ['#232526', '#414345'],
-  'fire': ['#f12711', '#f5af19'],
-  'candy': ['#a18cd1', '#fbc2eb'],
   'custom': null,
+
+  // Warm tones
+  'sunset': ['#ff6b6b', '#feca57'],
+  'fire': ['#f12711', '#f5af19'],
+  'peach': ['#ffecd2', '#fcb69f'],
+  'coral': ['#ff9a9e', '#fad0c4'],
+  'mango': ['#ffe259', '#ffa751'],
+
+  // Cool tones
+  'ocean': ['#667eea', '#764ba2'],
+  'frost': ['#c2e9fb', '#a1c4fd'],
+  'sky': ['#56ccf2', '#2f80ed'],
+  'electric': ['#4776e6', '#8e54e9'],
+  'midnight': ['#0f2027', '#203a43', '#2c5364'],
+
+  // Nature tones
+  'forest': ['#11998e', '#38ef7d'],
+  'meadow': ['#a8e063', '#56ab2f'],
+  'mint': ['#00b09b', '#96c93d'],
+  'aurora': ['#7f7fd5', '#86a8e7', '#91eae4'],
+
+  // Dark/Professional
+  'night': ['#232526', '#414345'],
+  'charcoal': ['#3a3a3a', '#1a1a1a'],
+  'slate': ['#373b44', '#4286f4'],
+  'noir': ['#000000', '#434343'],
+
+  // Pastel/Soft
+  'candy': ['#a18cd1', '#fbc2eb'],
+  'lavender': ['#e0c3fc', '#8ec5fc'],
+  'cotton': ['#ffecd2', '#fcb69f'],
+  'rose': ['#ff9a9e', '#fecfef'],
+  'blush': ['#fbc2eb', '#a6c1ee'],
+
+  // Bold/Vibrant
+  'neon': ['#00f260', '#0575e6'],
+  'rave': ['#fc466b', '#3f5efb'],
+  'cyber': ['#00d9ff', '#9d00ff'],
+  'magma': ['#f857a6', '#ff5858'],
 };
 
 // Plan daily limits

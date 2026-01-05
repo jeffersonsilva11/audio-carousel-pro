@@ -885,6 +885,10 @@ const CreateCarousel = () => {
                       template={selectedTemplate}
                       tone={selectedTone}
                       slideCount={slideCountMode === "auto" ? 6 : manualSlideCount}
+                      fontId={templateCustomization.fontId}
+                      gradientId={templateCustomization.gradientId}
+                      customGradientColors={templateCustomization.customGradientColors}
+                      textAlignment={templateCustomization.textAlignment}
                     />
                   </div>
                 </div>
@@ -899,6 +903,10 @@ const CreateCarousel = () => {
                   template={selectedTemplate}
                   tone={selectedTone}
                   slideCount={slideCountMode === "auto" ? 6 : manualSlideCount}
+                  fontId={templateCustomization.fontId}
+                  gradientId={templateCustomization.gradientId}
+                  customGradientColors={templateCustomization.customGradientColors}
+                  textAlignment={templateCustomization.textAlignment}
                 />
               </div>
             </>
