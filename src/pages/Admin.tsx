@@ -5,12 +5,12 @@ import { useAdminAccess } from "@/hooks/useAdminAccess";
 import { useLanguage } from "@/hooks/useLanguage";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  ChevronLeft, 
-  Shield, 
-  Loader2, 
-  Users, 
-  Activity, 
+import {
+  ChevronLeft,
+  Shield,
+  Loader2,
+  Users,
+  Activity,
   CreditCard,
   AlertTriangle,
   Flag,
@@ -21,7 +21,9 @@ import {
   HelpCircle,
   Quote,
   Building,
-  BarChart3
+  BarChart3,
+  Crown,
+  Gift,
 } from "lucide-react";
 import { BRAND } from "@/lib/constants";
 import AdminStats from "@/components/admin/AdminStats";
@@ -37,6 +39,8 @@ import FAQManager from "@/components/admin/FAQManager";
 import TestimonialsManager from "@/components/admin/TestimonialsManager";
 import TrustedCompaniesManager from "@/components/admin/TrustedCompaniesManager";
 import AdvancedAnalytics from "@/components/admin/AdvancedAnalytics";
+import PlansConfigManager from "@/components/admin/PlansConfigManager";
+import ManualSubscriptionManager from "@/components/admin/ManualSubscriptionManager";
 
 const Admin = () => {
   const { user, loading: authLoading } = useAuth();
@@ -139,6 +143,14 @@ const Admin = () => {
               <BarChart3 className="w-4 h-4" />
               Analytics
             </TabsTrigger>
+            <TabsTrigger value="plans" className="gap-2">
+              <Crown className="w-4 h-4" />
+              {language === "pt-BR" ? "Planos" : "Plans"}
+            </TabsTrigger>
+            <TabsTrigger value="manual-subs" className="gap-2">
+              <Gift className="w-4 h-4" />
+              {language === "pt-BR" ? "Assinaturas" : "Subscriptions"}
+            </TabsTrigger>
             <TabsTrigger value="landing" className="gap-2">
               <FileText className="w-4 h-4" />
               Landing
@@ -187,6 +199,14 @@ const Admin = () => {
 
           <TabsContent value="analytics">
             <AdvancedAnalytics />
+          </TabsContent>
+
+          <TabsContent value="plans">
+            <PlansConfigManager />
+          </TabsContent>
+
+          <TabsContent value="manual-subs">
+            <ManualSubscriptionManager />
           </TabsContent>
 
           <TabsContent value="landing">

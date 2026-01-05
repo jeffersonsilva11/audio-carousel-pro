@@ -87,6 +87,56 @@ serve(async (req) => {
       });
     }
 
+    // CHECK MANUAL SUBSCRIPTION SECOND (priority over Stripe)
+    const { data: manualSub } = await supabaseClient
+      .from("manual_subscriptions")
+      .select("plan_tier, custom_daily_limit, expires_at")
+      .eq("user_id", user.id)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    if (manualSub) {
+      // Check if not expired
+      const isExpired = manualSub.expires_at && new Date(manualSub.expires_at) < new Date();
+
+      if (!isExpired) {
+        // Get plan config from database
+        const { data: planConfig } = await supabaseClient
+          .from("plans_config")
+          .select("daily_limit, has_watermark, has_editor, has_history")
+          .eq("tier", manualSub.plan_tier)
+          .single();
+
+        const dailyLimit = manualSub.custom_daily_limit || planConfig?.daily_limit || 8;
+
+        logStep("User has active manual subscription", {
+          plan: manualSub.plan_tier,
+          expiresAt: manualSub.expires_at,
+          dailyLimit
+        });
+
+        return new Response(JSON.stringify({
+          subscribed: true,
+          plan: manualSub.plan_tier,
+          price_id: null,
+          subscription_end: manualSub.expires_at,
+          daily_limit: dailyLimit,
+          daily_used: dailyUsed,
+          has_watermark: planConfig?.has_watermark ?? false,
+          has_editor: planConfig?.has_editor ?? true,
+          has_history: planConfig?.has_history ?? true,
+          has_image_generation: true,
+          is_admin: false,
+          is_manual: true
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      } else {
+        logStep("Manual subscription expired", { expiresAt: manualSub.expires_at });
+      }
+    }
+
     // For non-admin users, check Stripe subscription
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
 

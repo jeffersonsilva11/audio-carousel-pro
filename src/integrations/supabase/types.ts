@@ -443,6 +443,171 @@ export type Database = {
         }
         Relationships: []
       }
+      plans_config: {
+        Row: {
+          id: string
+          tier: string
+          name_pt: string
+          name_en: string | null
+          name_es: string | null
+          description_pt: string | null
+          description_en: string | null
+          description_es: string | null
+          price_brl: number
+          price_usd: number | null
+          price_eur: number | null
+          stripe_price_id_brl: string | null
+          stripe_price_id_usd: string | null
+          stripe_price_id_eur: string | null
+          checkout_link_brl: string | null
+          checkout_link_usd: string | null
+          checkout_link_eur: string | null
+          daily_limit: number
+          monthly_limit: number | null
+          has_watermark: boolean
+          has_editor: boolean
+          has_history: boolean
+          has_zip_download: boolean
+          has_custom_fonts: boolean
+          has_gradients: boolean
+          has_slide_images: boolean
+          features_pt: string[] | null
+          features_en: string[] | null
+          features_es: string[] | null
+          limitations_pt: string[] | null
+          limitations_en: string[] | null
+          limitations_es: string[] | null
+          is_active: boolean
+          display_order: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          tier: string
+          name_pt: string
+          name_en?: string | null
+          name_es?: string | null
+          description_pt?: string | null
+          description_en?: string | null
+          description_es?: string | null
+          price_brl?: number
+          price_usd?: number | null
+          price_eur?: number | null
+          stripe_price_id_brl?: string | null
+          stripe_price_id_usd?: string | null
+          stripe_price_id_eur?: string | null
+          checkout_link_brl?: string | null
+          checkout_link_usd?: string | null
+          checkout_link_eur?: string | null
+          daily_limit?: number
+          monthly_limit?: number | null
+          has_watermark?: boolean
+          has_editor?: boolean
+          has_history?: boolean
+          has_zip_download?: boolean
+          has_custom_fonts?: boolean
+          has_gradients?: boolean
+          has_slide_images?: boolean
+          features_pt?: string[] | null
+          features_en?: string[] | null
+          features_es?: string[] | null
+          limitations_pt?: string[] | null
+          limitations_en?: string[] | null
+          limitations_es?: string[] | null
+          is_active?: boolean
+          display_order?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          tier?: string
+          name_pt?: string
+          name_en?: string | null
+          name_es?: string | null
+          description_pt?: string | null
+          description_en?: string | null
+          description_es?: string | null
+          price_brl?: number
+          price_usd?: number | null
+          price_eur?: number | null
+          stripe_price_id_brl?: string | null
+          stripe_price_id_usd?: string | null
+          stripe_price_id_eur?: string | null
+          checkout_link_brl?: string | null
+          checkout_link_usd?: string | null
+          checkout_link_eur?: string | null
+          daily_limit?: number
+          monthly_limit?: number | null
+          has_watermark?: boolean
+          has_editor?: boolean
+          has_history?: boolean
+          has_zip_download?: boolean
+          has_custom_fonts?: boolean
+          has_gradients?: boolean
+          has_slide_images?: boolean
+          features_pt?: string[] | null
+          features_en?: string[] | null
+          features_es?: string[] | null
+          limitations_pt?: string[] | null
+          limitations_en?: string[] | null
+          limitations_es?: string[] | null
+          is_active?: boolean
+          display_order?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      manual_subscriptions: {
+        Row: {
+          id: string
+          user_id: string
+          plan_tier: string
+          reason: string | null
+          notes: string | null
+          granted_by: string | null
+          starts_at: string
+          expires_at: string | null
+          custom_daily_limit: number | null
+          custom_features: Record<string, unknown> | null
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          plan_tier: string
+          reason?: string | null
+          notes?: string | null
+          granted_by?: string | null
+          starts_at?: string
+          expires_at?: string | null
+          custom_daily_limit?: number | null
+          custom_features?: Record<string, unknown> | null
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          plan_tier?: string
+          reason?: string | null
+          notes?: string | null
+          granted_by?: string | null
+          starts_at?: string
+          expires_at?: string | null
+          custom_daily_limit?: number | null
+          custom_features?: Record<string, unknown> | null
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           created_at: string
