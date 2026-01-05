@@ -12,6 +12,12 @@ export interface SystemSettings {
   customEmailFromName: string;
   customEmailFromAddress: string;
 
+  // SMTP Configuration
+  smtpHost: string;
+  smtpPort: string;
+  smtpUser: string;
+  smtpSecure: boolean; // true = TLS/SSL
+
   // Maintenance mode
   maintenanceMode: boolean;
   maintenanceMessage: string;
@@ -30,6 +36,10 @@ const DEFAULT_SETTINGS: SystemSettings = {
   useCustomEmailSending: false,
   customEmailFromName: "Audisell",
   customEmailFromAddress: "noreply@audisell.com",
+  smtpHost: "",
+  smtpPort: "587",
+  smtpUser: "",
+  smtpSecure: true,
   maintenanceMode: false,
   maintenanceMessage: "Estamos realizando uma manutenção programada para melhorar sua experiência. Voltaremos em breve!",
   maintenanceEndTime: null,
@@ -46,6 +56,10 @@ const KEY_MAP: Record<string, keyof SystemSettings> = {
   'use_custom_email_sending': 'useCustomEmailSending',
   'custom_email_from_name': 'customEmailFromName',
   'custom_email_from_address': 'customEmailFromAddress',
+  'smtp_host': 'smtpHost',
+  'smtp_port': 'smtpPort',
+  'smtp_user': 'smtpUser',
+  'smtp_secure': 'smtpSecure',
   'maintenance_mode': 'maintenanceMode',
   'maintenance_message': 'maintenanceMessage',
   'maintenance_end_time': 'maintenanceEndTime',
@@ -59,7 +73,7 @@ function parseValue(key: string, value: string | null): boolean | string | null 
   if (value === null || value === '') return null;
 
   // Boolean fields
-  if (['registration_disabled', 'maintenance_mode', 'version_notification_enabled', 'email_verification_enabled', 'use_custom_email_sending'].includes(key)) {
+  if (['registration_disabled', 'maintenance_mode', 'version_notification_enabled', 'email_verification_enabled', 'use_custom_email_sending', 'smtp_secure'].includes(key)) {
     return value === 'true';
   }
 
