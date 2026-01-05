@@ -5,11 +5,13 @@ import {
   X,
   Upload,
   Loader2,
+  Info,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLanguage } from "@/hooks/useLanguage";
 import { t } from "@/lib/translations";
 import { supabase } from "@/integrations/supabase/client";
@@ -51,24 +53,25 @@ const CoverOptionsEditor = ({
   const [customColor1, setCustomColor1] = useState(customGradientColors?.[0] || "#667eea");
   const [customColor2, setCustomColor2] = useState(customGradientColors?.[1] || "#764ba2");
   const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
-  const [activeGradientCategory, setActiveGradientCategory] = useState<GradientCategory | 'basic'>('warm');
+  // Default to 'basic' category so "Sem gradiente" is visible
+  const [activeGradientCategory, setActiveGradientCategory] = useState<GradientCategory | 'basic'>('basic');
 
   // Get localized feature list for locked state
   const getLockedFeatures = () => {
     const features = {
       "pt-BR": [
-        "40+ gradientes premium",
         "Upload de imagem de capa personalizada",
+        "40+ gradientes premium",
         "Cores personalizadas"
       ],
       "es": [
-        "40+ gradientes premium",
         "Carga de imagen de portada personalizada",
+        "40+ gradientes premium",
         "Colores personalizados"
       ],
       "en": [
-        "40+ premium gradients",
         "Custom cover image upload",
+        "40+ premium gradients",
         "Custom colors"
       ]
     };
@@ -217,6 +220,7 @@ const CoverOptionsEditor = ({
 
   const coverImageUrl = slideImages[0];
   const isUploading = uploadingIndex === 0;
+  const hasImage = !!coverImageUrl;
 
   return (
     <div className="border border-border/50 rounded-xl overflow-hidden">
@@ -230,128 +234,34 @@ const CoverOptionsEditor = ({
         </div>
       </div>
 
-      <div className="p-4 space-y-6">
-        {/* Gradient Selection */}
-        <div className="space-y-4">
+      <Tabs defaultValue="image" className="p-4">
+        <TabsList className="grid w-full grid-cols-2 mb-4">
+          <TabsTrigger value="image" className="gap-1.5">
+            <ImagePlus className="w-4 h-4" />
+            <span>
+              {language === "pt-BR" ? "Imagem" : language === "es" ? "Imagen" : "Image"}
+            </span>
+            {hasImage && (
+              <span className="w-2 h-2 rounded-full bg-green-500" />
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="gradient" className="gap-1.5">
+            <Palette className="w-4 h-4" />
+            <span>
+              {language === "pt-BR" ? "Gradiente" : language === "es" ? "Gradiente" : "Gradient"}
+            </span>
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Image Tab */}
+        <TabsContent value="image" className="space-y-4">
           <div>
-            <h4 className="text-sm font-medium mb-1">
-              {language === "pt-BR" ? "Gradiente de Fundo" : language === "es" ? "Gradiente de Fondo" : "Background Gradient"}
-            </h4>
-            <p className="text-sm text-muted-foreground">
-              {t("advancedEditor", "selectGradient", language)}
-            </p>
-          </div>
-
-          {/* Category Tabs */}
-          <div className="flex flex-wrap gap-1">
-            <button
-              onClick={() => setActiveGradientCategory('basic')}
-              className={cn(
-                "px-2 py-1 text-xs rounded-md transition-colors",
-                activeGradientCategory === 'basic'
-                  ? "bg-accent text-accent-foreground"
-                  : "bg-muted hover:bg-muted/80"
-              )}
-            >
-              {GRADIENT_CATEGORY_LABELS.basic[language]}
-            </button>
-            {GRADIENT_CATEGORIES.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setActiveGradientCategory(cat)}
-                className={cn(
-                  "px-2 py-1 text-xs rounded-md transition-colors",
-                  activeGradientCategory === cat
-                    ? "bg-accent text-accent-foreground"
-                    : "bg-muted hover:bg-muted/80"
-                )}
-              >
-                {GRADIENT_CATEGORY_LABELS[cat][language]}
-              </button>
-            ))}
-          </div>
-
-          <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-            {getFilteredGradients().map((gradient) => (
-              <button
-                key={gradient.id}
-                onClick={() => handleGradientChange(gradient.id)}
-                className={cn(
-                  "p-2 rounded-lg border-2 transition-all",
-                  gradientId === gradient.id
-                    ? "border-accent"
-                    : "border-border hover:border-accent/50"
-                )}
-              >
-                <div
-                  className="w-full h-10 rounded-md mb-1"
-                  style={{
-                    background: gradient.colors
-                      ? getGradientStyle(gradient.colors)
-                      : gradient.id === 'custom'
-                        ? getGradientStyle([customColor1, customColor2])
-                        : 'transparent',
-                    border: gradient.id === 'none' ? '2px dashed hsl(var(--border))' : 'none'
-                  }}
-                />
-                <span className="text-[10px] font-medium truncate block">{gradient.name}</span>
-              </button>
-            ))}
-          </div>
-
-          {/* Custom gradient color pickers */}
-          {gradientId === 'custom' && (
-            <div className="flex gap-4 pt-2">
-              <div className="flex-1">
-                <Label className="text-xs text-muted-foreground mb-1 block">{t("advancedEditor", "colorStart", language)}</Label>
-                <div className="flex gap-2 items-center">
-                  <input
-                    type="color"
-                    value={customColor1}
-                    onChange={(e) => handleCustomColorChange(0, e.target.value)}
-                    className="w-10 h-10 rounded border-0 cursor-pointer"
-                  />
-                  <Input
-                    value={customColor1}
-                    onChange={(e) => handleCustomColorChange(0, e.target.value)}
-                    className="flex-1 font-mono text-sm"
-                    maxLength={7}
-                  />
-                </div>
-              </div>
-              <div className="flex-1">
-                <Label className="text-xs text-muted-foreground mb-1 block">{t("advancedEditor", "colorEnd", language)}</Label>
-                <div className="flex gap-2 items-center">
-                  <input
-                    type="color"
-                    value={customColor2}
-                    onChange={(e) => handleCustomColorChange(1, e.target.value)}
-                    className="w-10 h-10 rounded border-0 cursor-pointer"
-                  />
-                  <Input
-                    value={customColor2}
-                    onChange={(e) => handleCustomColorChange(1, e.target.value)}
-                    className="flex-1 font-mono text-sm"
-                    maxLength={7}
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Cover Image Section */}
-        <div className="space-y-4 pt-4 border-t border-border">
-          <div>
-            <h4 className="text-sm font-medium mb-1">
-              {language === "pt-BR" ? "Imagem de Capa" : language === "es" ? "Imagen de Portada" : "Cover Image"}
-            </h4>
             <p className="text-sm text-muted-foreground">
               {language === "pt-BR"
-                ? "Adicione uma imagem de fundo para o primeiro slide (capa) do carrossel."
+                ? "Adicione uma imagem de fundo para a capa do seu carrossel."
                 : language === "es"
-                ? "Agregue una imagen de fondo para el primer slide (portada) del carrusel."
-                : "Add a background image for the first slide (cover) of the carousel."}
+                ? "Agregue una imagen de fondo para la portada de tu carrusel."
+                : "Add a background image for your carousel cover."}
             </p>
           </div>
 
@@ -424,8 +334,144 @@ const CoverOptionsEditor = ({
               ? "1080x1080px (Feed), 1080x1350px (Retrato), o 1080x1920px (Stories)"
               : "1080x1080px (Feed), 1080x1350px (Portrait), or 1080x1920px (Stories)"}
           </p>
-        </div>
-      </div>
+
+          {/* Priority notice */}
+          <div className="flex items-start gap-2 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+            <Info className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
+            <p className="text-xs text-blue-600 dark:text-blue-400">
+              {language === "pt-BR"
+                ? "A imagem de capa tem prioridade sobre o gradiente. Se você enviar uma imagem, ela será usada no lugar do gradiente."
+                : language === "es"
+                ? "La imagen de portada tiene prioridad sobre el gradiente. Si envías una imagen, se usará en lugar del gradiente."
+                : "The cover image takes priority over the gradient. If you upload an image, it will be used instead of the gradient."}
+            </p>
+          </div>
+        </TabsContent>
+
+        {/* Gradient Tab */}
+        <TabsContent value="gradient" className="space-y-4">
+          {/* Warning if image is uploaded */}
+          {hasImage && (
+            <div className="flex items-start gap-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg mb-4">
+              <Info className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+              <p className="text-xs text-amber-600 dark:text-amber-400">
+                {language === "pt-BR"
+                  ? "Você já enviou uma imagem de capa. O gradiente não será aplicado enquanto houver uma imagem. Remova a imagem para usar o gradiente."
+                  : language === "es"
+                  ? "Ya has enviado una imagen de portada. El gradiente no se aplicará mientras haya una imagen. Elimina la imagen para usar el gradiente."
+                  : "You already uploaded a cover image. The gradient will not be applied while there's an image. Remove the image to use the gradient."}
+              </p>
+            </div>
+          )}
+
+          <div>
+            <p className="text-sm text-muted-foreground">
+              {t("advancedEditor", "selectGradient", language)}
+            </p>
+          </div>
+
+          {/* Category Tabs */}
+          <div className="flex flex-wrap gap-1">
+            <button
+              onClick={() => setActiveGradientCategory('basic')}
+              className={cn(
+                "px-2 py-1 text-xs rounded-md transition-colors",
+                activeGradientCategory === 'basic'
+                  ? "bg-accent text-accent-foreground"
+                  : "bg-muted hover:bg-muted/80"
+              )}
+            >
+              {GRADIENT_CATEGORY_LABELS.basic[language]}
+            </button>
+            {GRADIENT_CATEGORIES.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setActiveGradientCategory(cat)}
+                className={cn(
+                  "px-2 py-1 text-xs rounded-md transition-colors",
+                  activeGradientCategory === cat
+                    ? "bg-accent text-accent-foreground"
+                    : "bg-muted hover:bg-muted/80"
+                )}
+              >
+                {GRADIENT_CATEGORY_LABELS[cat][language]}
+              </button>
+            ))}
+          </div>
+
+          <div className={cn(
+            "grid grid-cols-3 sm:grid-cols-5 gap-2",
+            hasImage && "opacity-50 pointer-events-none"
+          )}>
+            {getFilteredGradients().map((gradient) => (
+              <button
+                key={gradient.id}
+                onClick={() => handleGradientChange(gradient.id)}
+                disabled={hasImage}
+                className={cn(
+                  "p-2 rounded-lg border-2 transition-all",
+                  gradientId === gradient.id
+                    ? "border-accent"
+                    : "border-border hover:border-accent/50"
+                )}
+              >
+                <div
+                  className="w-full h-10 rounded-md mb-1"
+                  style={{
+                    background: gradient.colors
+                      ? getGradientStyle(gradient.colors)
+                      : gradient.id === 'custom'
+                        ? getGradientStyle([customColor1, customColor2])
+                        : 'transparent',
+                    border: gradient.id === 'none' ? '2px dashed hsl(var(--border))' : 'none'
+                  }}
+                />
+                <span className="text-[10px] font-medium truncate block">{gradient.name}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Custom gradient color pickers */}
+          {gradientId === 'custom' && !hasImage && (
+            <div className="flex gap-4 pt-2">
+              <div className="flex-1">
+                <Label className="text-xs text-muted-foreground mb-1 block">{t("advancedEditor", "colorStart", language)}</Label>
+                <div className="flex gap-2 items-center">
+                  <input
+                    type="color"
+                    value={customColor1}
+                    onChange={(e) => handleCustomColorChange(0, e.target.value)}
+                    className="w-10 h-10 rounded border-0 cursor-pointer"
+                  />
+                  <Input
+                    value={customColor1}
+                    onChange={(e) => handleCustomColorChange(0, e.target.value)}
+                    className="flex-1 font-mono text-sm"
+                    maxLength={7}
+                  />
+                </div>
+              </div>
+              <div className="flex-1">
+                <Label className="text-xs text-muted-foreground mb-1 block">{t("advancedEditor", "colorEnd", language)}</Label>
+                <div className="flex gap-2 items-center">
+                  <input
+                    type="color"
+                    value={customColor2}
+                    onChange={(e) => handleCustomColorChange(1, e.target.value)}
+                    className="w-10 h-10 rounded border-0 cursor-pointer"
+                  />
+                  <Input
+                    value={customColor2}
+                    onChange={(e) => handleCustomColorChange(1, e.target.value)}
+                    className="flex-1 font-mono text-sm"
+                    maxLength={7}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
