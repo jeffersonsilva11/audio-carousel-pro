@@ -58,11 +58,11 @@ const Hero = () => {
   const heroTitle1 = getContent("hero", "title_part1", language) || (language === "pt-BR" ? "Transforme sua" : language === "es" ? "Transforma tu" : "Transform your");
   const heroHighlight = getContent("hero", "title_highlight", language) || (language === "pt-BR" ? "voz" : language === "es" ? "voz" : "voice");
   const heroTitle2 = getContent("hero", "title_part2", language) || (language === "pt-BR" ? "em carrosséis profissionais" : language === "es" ? "en carruseles profesionales" : "into professional carousels");
-  const heroSubtitle = getContent("hero", "subtitle", language) || (language === "pt-BR" 
-    ? "Grave um áudio de 60 segundos. Receba slides profissionais prontos para Instagram, LinkedIn, TikTok e mais."
+  const heroSubtitle = getContent("hero", "subtitle", language) || (language === "pt-BR"
+    ? "Grave um áudio de 30 segundos. Receba slides profissionais prontos para Instagram, LinkedIn, TikTok e mais."
     : language === "es"
-      ? "Graba un audio de 60 segundos. Recibe slides profesionales listos para Instagram, LinkedIn, TikTok y más."
-      : "Record a 60-second audio. Get professional slides ready for Instagram, LinkedIn, TikTok, and more.");
+      ? "Graba un audio de 30 segundos. Recibe slides profesionales listos para Instagram, LinkedIn, TikTok y más."
+      : "Record a 30-second audio. Get professional slides ready for Instagram, LinkedIn, TikTok, and more.");
   const ctaPrimary = getContent("hero", "cta_primary", language) || (language === "pt-BR" ? "Criar meu primeiro carrossel grátis" : language === "es" ? "Crear mi primer carrusel gratis" : "Create my first free carousel");
   const ctaSecondary = getContent("hero", "cta_secondary", language) || (language === "pt-BR" ? "Ver demonstração" : language === "es" ? "Ver demostración" : "Watch demo");
 

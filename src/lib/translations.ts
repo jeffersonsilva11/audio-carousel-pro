@@ -437,9 +437,9 @@ export const translations = {
       es: "¿Qué formatos de audio se aceptan?",
     },
     a2: {
-      "pt-BR": "Aceitamos MP3, WAV e M4A com até 60 segundos de duração e máximo de 10MB. Você pode gravar diretamente na plataforma ou fazer upload de um arquivo.",
-      en: "We accept MP3, WAV, and M4A with up to 60 seconds and a maximum of 10MB. You can record directly on the platform or upload a file.",
-      es: "Aceptamos MP3, WAV y M4A con hasta 60 segundos de duración y máximo de 10MB. Puedes grabar directamente en la plataforma o subir un archivo.",
+      "pt-BR": "Aceitamos MP3, WAV e M4A com até 30 segundos de duração e máximo de 10MB. Você pode gravar diretamente na plataforma ou fazer upload de um arquivo.",
+      en: "We accept MP3, WAV, and M4A with up to 30 seconds and a maximum of 10MB. You can record directly on the platform or upload a file.",
+      es: "Aceptamos MP3, WAV y M4A con hasta 30 segundos de duración y máximo de 10MB. Puedes grabar directamente en la plataforma o subir un archivo.",
     },
     q3: {
       "pt-BR": "Posso usar as imagens comercialmente?",
@@ -942,9 +942,9 @@ export const translations = {
       es: "Sube tu audio",
     },
     uploadSubtitle: {
-      "pt-BR": "Grave ou faça upload de um áudio de até 60 segundos",
-      en: "Record or upload an audio up to 60 seconds",
-      es: "Graba o sube un audio de hasta 60 segundos",
+      "pt-BR": "Grave ou faça upload de um áudio de até 30 segundos",
+      en: "Record or upload an audio up to 30 seconds",
+      es: "Graba o sube un audio de hasta 30 segundos",
     },
     customizeCarousel: {
       "pt-BR": "Personalize seu carrossel",
@@ -1980,9 +1980,9 @@ export const translations = {
       es: "Archivo demasiado grande. Máximo 10MB.",
     },
     audioTooLong: {
-      "pt-BR": "Áudio muito longo. Máximo 60 segundos.",
-      en: "Audio too long. Maximum 60 seconds.",
-      es: "Audio demasiado largo. Máximo 60 segundos.",
+      "pt-BR": "Áudio muito longo. Máximo 30 segundos.",
+      en: "Audio too long. Maximum 30 seconds.",
+      es: "Audio demasiado largo. Máximo 30 segundos.",
     },
     transcriptionFailed: {
       "pt-BR": "Falha na transcrição. Tente novamente.",
@@ -2064,9 +2064,9 @@ export const translations = {
       es: "Arrastra un archivo de audio o haz clic para seleccionar",
     },
     recordAudio: {
-      "pt-BR": "Clique para gravar um áudio de até 60 segundos",
-      en: "Click to record audio up to 60 seconds",
-      es: "Haz clic para grabar un audio de hasta 60 segundos",
+      "pt-BR": "Clique para gravar um áudio de até 30 segundos",
+      en: "Click to record audio up to 30 seconds",
+      es: "Haz clic para grabar un audio de hasta 30 segundos",
     },
     textModeCompact: {
       "pt-BR": "Mantém o tom original, apenas organiza e divide em slides",
@@ -2984,9 +2984,9 @@ export const translations = {
       es: "Graba o Sube Audio",
     },
     feature1Desc: {
-      "pt-BR": "Áudios de até 60 segundos em MP3, WAV ou M4A",
-      en: "Audio files up to 60 seconds in MP3, WAV or M4A",
-      es: "Audios de hasta 60 segundos en MP3, WAV o M4A",
+      "pt-BR": "Áudios de até 30 segundos em MP3, WAV ou M4A",
+      en: "Audio files up to 30 seconds in MP3, WAV or M4A",
+      es: "Audios de hasta 30 segundos en MP3, WAV o M4A",
     },
     feature2Title: {
       "pt-BR": "IA Roteiriza Automaticamente",

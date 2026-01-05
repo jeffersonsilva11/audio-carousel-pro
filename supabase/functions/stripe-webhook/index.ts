@@ -170,14 +170,24 @@ serve(async (req) => {
 
       case "customer.subscription.updated": {
         const subscription = event.data.object as Stripe.Subscription;
-        logStep("Processing customer.subscription.updated", { 
+        logStep("Processing customer.subscription.updated", {
           subscriptionId: subscription.id,
-          status: subscription.status 
+          status: subscription.status,
+          cancelAtPeriodEnd: subscription.cancel_at_period_end
         });
 
         const price = subscription.items.data[0]?.price;
         const unitAmount = price?.unit_amount || 0;
         const planConfig = PRICE_TO_PLAN[unitAmount] || { tier: "starter", dailyLimit: 1 };
+
+        // Get current subscription to find user
+        const { data: currentSub } = await supabase.from("subscriptions")
+          .select("user_id, cancel_at_period_end")
+          .eq("stripe_subscription_id", subscription.id)
+          .single();
+
+        // Check if cancellation was just requested
+        const justCancelled = subscription.cancel_at_period_end && !currentSub?.cancel_at_period_end;
 
         // Update subscription in database
         const { error: updateError } = await supabase.from("subscriptions")
@@ -187,6 +197,9 @@ serve(async (req) => {
             daily_limit: planConfig.dailyLimit,
             current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
             current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+            cancel_at_period_end: subscription.cancel_at_period_end,
+            cancelled_at: subscription.cancel_at_period_end ? new Date().toISOString() : null,
+            scheduled_downgrade_tier: subscription.cancel_at_period_end ? "free" : null,
           })
           .eq("stripe_subscription_id", subscription.id);
 
@@ -194,6 +207,25 @@ serve(async (req) => {
           logStep("Error updating subscription", { error: updateError.message });
         } else {
           logStep("Subscription updated successfully");
+
+          // Send notification if subscription was just cancelled
+          if (justCancelled && currentSub?.user_id) {
+            const daysRemaining = Math.ceil(
+              (new Date(subscription.current_period_end * 1000).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+            );
+
+            await supabase.rpc("create_notification", {
+              p_user_id: currentSub.user_id,
+              p_type: "subscription_cancelled",
+              p_title_pt: "Assinatura cancelada",
+              p_message_pt: `Sua assinatura foi cancelada. Você ainda pode usar os recursos do plano ${planConfig.tier} por mais ${daysRemaining} dias até ${new Date(subscription.current_period_end * 1000).toLocaleDateString("pt-BR")}.`,
+              p_title_en: "Subscription cancelled",
+              p_message_en: `Your subscription has been cancelled. You can still use ${planConfig.tier} plan features for ${daysRemaining} more days until ${new Date(subscription.current_period_end * 1000).toLocaleDateString("en-US")}.`,
+              p_action_url: "/dashboard",
+              p_action_label_pt: "Ver planos"
+            });
+            logStep("Cancellation notification sent", { userId: currentSub.user_id, daysRemaining });
+          }
         }
         break;
       }
@@ -233,15 +265,65 @@ serve(async (req) => {
 
       case "invoice.payment_failed": {
         const invoice = event.data.object as Stripe.Invoice;
-        logStep("Processing invoice.payment_failed", { invoiceId: invoice.id });
+        logStep("Processing invoice.payment_failed", {
+          invoiceId: invoice.id,
+          attemptCount: invoice.attempt_count
+        });
 
         const subscriptionId = invoice.subscription as string;
         if (subscriptionId) {
-          await supabase.from("subscriptions")
-            .update({ status: "past_due" })
+          // Get current subscription to update failure count
+          const { data: currentSub } = await supabase.from("subscriptions")
+            .select("user_id, failed_payment_count, plan_tier")
+            .eq("stripe_subscription_id", subscriptionId)
+            .single();
+
+          const newFailureCount = (currentSub?.failed_payment_count || 0) + 1;
+
+          const { error: updateError } = await supabase.from("subscriptions")
+            .update({
+              status: "past_due",
+              failed_payment_count: newFailureCount,
+              last_payment_failure: new Date().toISOString()
+            })
             .eq("stripe_subscription_id", subscriptionId);
-          
-          logStep("Subscription marked as past_due");
+
+          if (updateError) {
+            logStep("Error updating subscription", { error: updateError.message });
+          } else {
+            logStep("Subscription marked as past_due", { failureCount: newFailureCount });
+
+            // Send notification about payment failure
+            if (currentSub?.user_id) {
+              const attemptsLeft = 3 - newFailureCount;
+
+              if (newFailureCount >= 3) {
+                // Final warning - account will be downgraded
+                await supabase.rpc("create_notification", {
+                  p_user_id: currentSub.user_id,
+                  p_type: "payment_failed_final",
+                  p_title_pt: "Última tentativa de pagamento falhou",
+                  p_message_pt: "Sua conta será rebaixada para o plano gratuito em 24 horas se o pagamento não for regularizado.",
+                  p_title_en: "Final payment attempt failed",
+                  p_message_en: "Your account will be downgraded to free plan in 24 hours if payment is not resolved.",
+                  p_action_url: "/dashboard",
+                  p_action_label_pt: "Atualizar pagamento"
+                });
+              } else {
+                // Warning about payment failure
+                await supabase.rpc("create_notification", {
+                  p_user_id: currentSub.user_id,
+                  p_type: "payment_failed",
+                  p_title_pt: "Falha no pagamento",
+                  p_message_pt: `Não conseguimos processar seu pagamento. ${attemptsLeft > 0 ? `Restam ${attemptsLeft} tentativas antes da suspensão.` : ""}`,
+                  p_title_en: "Payment failed",
+                  p_message_en: `We couldn't process your payment. ${attemptsLeft > 0 ? `${attemptsLeft} attempts remaining before suspension.` : ""}`,
+                  p_action_url: "/dashboard",
+                  p_action_label_pt: "Atualizar pagamento"
+                });
+              }
+            }
+          }
         }
         break;
       }
@@ -252,11 +334,17 @@ serve(async (req) => {
 
         const subscriptionId = invoice.subscription as string;
         if (subscriptionId) {
+          // Reset failure count on successful payment
           await supabase.from("subscriptions")
-            .update({ status: "active" })
+            .update({
+              status: "active",
+              failed_payment_count: 0,
+              last_payment_failure: null,
+              scheduled_downgrade_tier: null
+            })
             .eq("stripe_subscription_id", subscriptionId);
-          
-          logStep("Subscription marked as active");
+
+          logStep("Subscription marked as active, failure count reset");
         }
         break;
       }

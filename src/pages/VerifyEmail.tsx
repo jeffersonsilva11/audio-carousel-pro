@@ -119,10 +119,14 @@ const VerifyEmail = () => {
           description: "Sua conta foi ativada com sucesso.",
         });
 
-        // Redirect to dashboard after short delay
+        // Wait for auth state to update before redirecting
+        // The verifyOtp should have created a session, let's refresh it
+        await supabase.auth.refreshSession();
+
+        // Redirect to dashboard after short delay to allow state to propagate
         setTimeout(() => {
           navigate("/dashboard");
-        }, 2000);
+        }, 1500);
       }
     } catch (err) {
       toast({

@@ -196,9 +196,16 @@ serve(async (req) => {
     let hasEditor = false;
     let hasHistory = false;
 
+    // Also check local subscription record for cancellation info
+    let cancelAtPeriodEnd = false;
+    let cancelledAt = null;
+    let failedPaymentCount = 0;
+    let status = "active";
+
     if (hasActiveSub) {
       const subscription = subscriptions.data[0];
       subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
+      cancelAtPeriodEnd = subscription.cancel_at_period_end || false;
 
       // Get the price from the subscription
       const price = subscription.items.data[0]?.price;
@@ -209,7 +216,8 @@ serve(async (req) => {
         subscriptionId: subscription.id,
         endDate: subscriptionEnd,
         priceId,
-        unitAmount
+        unitAmount,
+        cancelAtPeriodEnd
       });
 
       // Determine plan tier based on price amount
@@ -242,13 +250,55 @@ serve(async (req) => {
           break;
       }
 
-      logStep("Determined plan tier", { plan, dailyLimit });
+      // Get additional info from local subscription record
+      const { data: localSub } = await supabaseClient
+        .from("subscriptions")
+        .select("cancelled_at, failed_payment_count, status")
+        .eq("stripe_subscription_id", subscription.id)
+        .single();
+
+      if (localSub) {
+        cancelledAt = localSub.cancelled_at;
+        failedPaymentCount = localSub.failed_payment_count || 0;
+        status = localSub.status || "active";
+      }
+
+      logStep("Determined plan tier", { plan, dailyLimit, cancelAtPeriodEnd, cancelledAt });
     } else {
-      logStep("No active subscription found, using free plan");
+      // Check if there's a cancelled subscription that's still within period
+      const { data: cancelledSub } = await supabaseClient
+        .from("subscriptions")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("cancel_at_period_end", true)
+        .gt("current_period_end", new Date().toISOString())
+        .single();
+
+      if (cancelledSub) {
+        // User has cancelled but still within subscription period
+        plan = cancelledSub.plan_tier;
+        dailyLimit = cancelledSub.daily_limit;
+        hasWatermark = cancelledSub.has_watermark;
+        hasEditor = cancelledSub.has_editor;
+        hasHistory = cancelledSub.has_history;
+        subscriptionEnd = cancelledSub.current_period_end;
+        cancelAtPeriodEnd = true;
+        cancelledAt = cancelledSub.cancelled_at;
+        failedPaymentCount = cancelledSub.failed_payment_count || 0;
+        status = cancelledSub.status || "active";
+
+        logStep("Found cancelled subscription still within period", {
+          plan,
+          subscriptionEnd,
+          cancelledAt
+        });
+      } else {
+        logStep("No active subscription found, using free plan");
+      }
     }
 
     return new Response(JSON.stringify({
-      subscribed: hasActiveSub,
+      subscribed: hasActiveSub || (cancelAtPeriodEnd && subscriptionEnd && new Date(subscriptionEnd) > new Date()),
       plan,
       price_id: priceId,
       subscription_end: subscriptionEnd,
@@ -257,7 +307,11 @@ serve(async (req) => {
       has_watermark: hasWatermark,
       has_editor: hasEditor,
       has_history: hasHistory,
-      is_admin: false
+      is_admin: false,
+      cancel_at_period_end: cancelAtPeriodEnd,
+      cancelled_at: cancelledAt,
+      failed_payment_count: failedPaymentCount,
+      status: status
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,

@@ -14,6 +14,10 @@ interface SubscriptionState {
   hasZipDownload: boolean;
   subscriptionEnd: string | null;
   loading: boolean;
+  cancelAtPeriodEnd: boolean;
+  cancelledAt: string | null;
+  failedPaymentCount: number;
+  status: string;
 }
 
 export function useSubscription() {
@@ -29,6 +33,10 @@ export function useSubscription() {
     hasZipDownload: false,
     subscriptionEnd: null,
     loading: true,
+    cancelAtPeriodEnd: false,
+    cancelledAt: null,
+    failedPaymentCount: 0,
+    status: "active",
   });
 
   const checkSubscription = useCallback(async () => {
@@ -44,6 +52,10 @@ export function useSubscription() {
         hasZipDownload: false,
         subscriptionEnd: null,
         loading: false,
+        cancelAtPeriodEnd: false,
+        cancelledAt: null,
+        failedPaymentCount: 0,
+        status: "active",
       });
       return;
     }
@@ -74,6 +86,10 @@ export function useSubscription() {
           hasZipDownload: false,
           subscriptionEnd: null,
           loading: false,
+          cancelAtPeriodEnd: false,
+          cancelledAt: null,
+          failedPaymentCount: 0,
+          status: "active",
         });
         return;
       }
@@ -92,6 +108,10 @@ export function useSubscription() {
           hasZipDownload: false,
           subscriptionEnd: null,
           loading: false,
+          cancelAtPeriodEnd: false,
+          cancelledAt: null,
+          failedPaymentCount: 0,
+          status: "active",
         });
         return;
       }
@@ -110,6 +130,10 @@ export function useSubscription() {
         hasZipDownload: planConfig.hasZipDownload,
         subscriptionEnd: data.subscription_end,
         loading: false,
+        cancelAtPeriodEnd: data.cancel_at_period_end || false,
+        cancelledAt: data.cancelled_at || null,
+        failedPaymentCount: data.failed_payment_count || 0,
+        status: data.status || "active",
       });
     } catch (error) {
       console.error("Error checking subscription:", error);
@@ -125,6 +149,10 @@ export function useSubscription() {
         hasZipDownload: false,
         subscriptionEnd: null,
         loading: false,
+        cancelAtPeriodEnd: false,
+        cancelledAt: null,
+        failedPaymentCount: 0,
+        status: "active",
       });
     }
   }, [user, session]);
@@ -208,6 +236,22 @@ export function useSubscription() {
     return Math.max(0, state.dailyLimit - state.dailyUsed);
   };
 
+  const getDaysRemaining = () => {
+    if (!state.subscriptionEnd) return 0;
+    const endDate = new Date(state.subscriptionEnd);
+    const now = new Date();
+    const diff = endDate.getTime() - now.getTime();
+    return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+  };
+
+  const isCancelled = () => {
+    return state.cancelAtPeriodEnd;
+  };
+
+  const isLastDay = () => {
+    return getDaysRemaining() === 0 && state.cancelAtPeriodEnd;
+  };
+
   return {
     ...state,
     checkSubscription,
@@ -216,6 +260,9 @@ export function useSubscription() {
     openCustomerPortal,
     canCreateCarousel,
     getRemainingCarousels,
+    getDaysRemaining,
+    isCancelled,
+    isLastDay,
     isPro: state.plan !== "free",
     isCreator: state.plan === "creator",
   };
