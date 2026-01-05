@@ -8,7 +8,7 @@ const StructuredData = () => {
         "@type": "SoftwareApplication",
         "@id": `${BRAND.url}/#software`,
         "name": BRAND.name,
-        "description": "Plataforma SaaS que transforma áudio em carrosséis profissionais para Instagram usando IA. Grave um áudio de até 60 segundos e nossa inteligência artificial transcreve, roteiriza e gera imagens prontas para publicar.",
+        "description": "Plataforma SaaS que transforma áudio em carrosséis profissionais para Instagram usando IA. Grave um áudio de até 30 segundos e nossa inteligência artificial transcreve, roteiriza e gera imagens prontas para publicar.",
         "applicationCategory": "DesignApplication",
         "operatingSystem": "Web",
         "url": BRAND.url,
@@ -97,7 +97,7 @@ const StructuredData = () => {
             "name": "Como funciona o Audisell?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Você grava ou envia um áudio de até 60 segundos. Nossa IA transcreve o conteúdo, roteiriza em slides e gera imagens profissionais prontas para postar no Instagram."
+              "text": "Você grava ou envia um áudio de até 30 segundos. Nossa IA transcreve o conteúdo, roteiriza em slides e gera imagens profissionais prontas para postar no Instagram."
             }
           },
           {

@@ -75,12 +75,24 @@ const Dashboard = () => {
   }, [user, loading, navigate]);
 
   // Redirect to email verification if user exists but email not confirmed
+  // Add a small delay to allow auth state to propagate after OTP verification
   useEffect(() => {
     if (!loading && user && !isEmailConfirmed) {
-      // Sign out and redirect to verify page
-      signOut().then(() => {
-        navigate(`/auth/verify?email=${encodeURIComponent(user.email || "")}`);
-      });
+      // Wait a moment to allow session state to update (especially after OTP verification)
+      const timer = setTimeout(async () => {
+        // Refresh session to get latest email_confirmed_at status
+        const { data } = await supabase.auth.getSession();
+        const confirmedNow = Boolean(data.session?.user?.email_confirmed_at);
+
+        if (!confirmedNow) {
+          // Still not confirmed, sign out and redirect to verify page
+          signOut().then(() => {
+            navigate(`/auth/verify?email=${encodeURIComponent(user.email || "")}`);
+          });
+        }
+      }, 500);
+
+      return () => clearTimeout(timer);
     }
   }, [user, loading, isEmailConfirmed, navigate, signOut]);
 

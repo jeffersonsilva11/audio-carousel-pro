@@ -192,7 +192,7 @@ const OnboardingModal = ({ open, onComplete }: OnboardingModalProps) => {
     {
       icon: Mic2,
       title: language === "pt-BR" ? "1. Grave ou envie áudio" : language === "es" ? "1. Graba o sube audio" : "1. Record or upload audio",
-      desc: language === "pt-BR" ? "Até 60 segundos de áudio" : language === "es" ? "Hasta 60 segundos de audio" : "Up to 60 seconds of audio",
+      desc: language === "pt-BR" ? "Até 30 segundos de áudio" : language === "es" ? "Hasta 30 segundos de audio" : "Up to 30 seconds of audio",
     },
     {
       icon: Sparkles,
@@ -507,10 +507,10 @@ const OnboardingModal = ({ open, onComplete }: OnboardingModalProps) => {
                   </h3>
                   <p className="text-sm text-muted-foreground mb-4">
                     {language === "pt-BR"
-                      ? "Grave um áudio de até 60 segundos falando sobre qualquer tema que você queira transformar em carrossel."
+                      ? "Grave um áudio de até 30 segundos falando sobre qualquer tema que você queira transformar em carrossel."
                       : language === "es"
-                        ? "Graba un audio de hasta 60 segundos hablando sobre cualquier tema que quieras transformar en carrusel."
-                        : "Record an audio of up to 60 seconds talking about any topic you want to transform into a carousel."}
+                        ? "Graba un audio de hasta 30 segundos hablando sobre cualquier tema que quieras transformar en carrusel."
+                        : "Record an audio of up to 30 seconds talking about any topic you want to transform into a carousel."}
                   </p>
                   <div className="flex items-center gap-2 text-sm">
                     <ArrowRight className="w-4 h-4 text-accent" />

@@ -129,16 +129,6 @@ const Auth = () => {
         setCaptchaToken(null);
         return;
       }
-      
-      if (!recaptchaResult.success) {
-        toast({
-          title: t("errors", "recaptchaFailed", language),
-          description: t("errors", "recaptchaFailedDescription", language),
-          variant: "destructive",
-        });
-        setIsLoading(false);
-        return;
-      }
 
       if (isLogin) {
         const { error, needsEmailVerification, email: unverifiedEmail } = await signIn(email, password);
