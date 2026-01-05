@@ -429,19 +429,29 @@ function wrapText(
   return lines;
 }
 
-// Generate navigation dots SVG
+// Generate navigation dots SVG - SCALED by format
 function generateNavigationDots(
   width: number,
   height: number,
   currentSlide: number,
   totalSlides: number,
-  color: string = '#FFFFFF'
+  color: string = '#FFFFFF',
+  format: keyof typeof DIMENSIONS = 'POST_SQUARE'
 ): string {
-  const dotSize = 8;
-  const dotGap = 12;
+  // Scale factor based on format
+  const scaleFactors: Record<string, number> = {
+    POST_SQUARE: 1.0,
+    POST_PORTRAIT: 1.15,
+    STORY: 1.4
+  };
+  const scale = scaleFactors[format] || 1.0;
+
+  const dotSize = Math.round(8 * scale);
+  const dotGap = Math.round(12 * scale);
+  const bottomPadding = Math.round(45 * scale);
   const totalWidth = totalSlides * dotSize + (totalSlides - 1) * dotGap;
   const startX = (width - totalWidth) / 2;
-  const y = height - 45;
+  const y = height - bottomPadding;
 
   const dots = Array.from({ length: totalSlides }, (_, i) => {
     const x = startX + i * (dotSize + dotGap) + dotSize / 2;
@@ -453,20 +463,33 @@ function generateNavigationDots(
   return `<g class="navigation-dots">${dots}</g>`;
 }
 
-// Generate navigation arrow indicator SVG
+// Generate navigation arrow indicator SVG - SCALED by format
 function generateNavigationArrow(
   width: number,
   height: number,
-  color: string = '#FFFFFF'
+  color: string = '#FFFFFF',
+  format: keyof typeof DIMENSIONS = 'POST_SQUARE'
 ): string {
-  const arrowX = width - 55;
+  // Scale factor based on format
+  const scaleFactors: Record<string, number> = {
+    POST_SQUARE: 1.0,
+    POST_PORTRAIT: 1.15,
+    STORY: 1.4
+  };
+  const scale = scaleFactors[format] || 1.0;
+
+  const arrowSize = Math.round(40 * scale);
+  const rightPadding = Math.round(55 * scale);
+  const arrowX = width - rightPadding;
   const arrowY = height / 2;
-  const arrowSize = 40;
+  const arrowOffset = Math.round(6 * scale);
+  const arrowHeight = Math.round(8 * scale);
+  const strokeWidth = 2.5 * scale;
 
   return `
   <g class="navigation-arrow" opacity="0.7">
-    <circle cx="${arrowX}" cy="${arrowY}" r="${arrowSize / 2}" fill="rgba(255,255,255,0.15)" stroke="${color}" stroke-width="1.5" stroke-opacity="0.3"/>
-    <path d="M${arrowX - 6} ${arrowY - 8} L${arrowX + 6} ${arrowY} L${arrowX - 6} ${arrowY + 8}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="${arrowX}" cy="${arrowY}" r="${arrowSize / 2}" fill="rgba(255,255,255,0.15)" stroke="${color}" stroke-width="${1.5 * scale}" stroke-opacity="0.3"/>
+    <path d="M${arrowX - arrowOffset} ${arrowY - arrowHeight} L${arrowX + arrowOffset} ${arrowY} L${arrowX - arrowOffset} ${arrowY + arrowHeight}" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"/>
   </g>`;
 }
 
@@ -635,11 +658,11 @@ function generateCoverSlideSVG(
     }
   }
 
-  // Navigation dots
-  const dotsElement = showDots ? generateNavigationDots(width, height, 1, totalSlides, textColor) : '';
+  // Navigation dots - SCALED by format
+  const dotsElement = showDots ? generateNavigationDots(width, height, 1, totalSlides, textColor, format) : '';
 
-  // Navigation arrow
-  const arrowElement = showArrow ? generateNavigationArrow(width, height, textColor) : '';
+  // Navigation arrow - SCALED by format
+  const arrowElement = showArrow ? generateNavigationArrow(width, height, textColor, format) : '';
 
   // Profile identity for cover slide
   const profileIdentity = profile ? generateProfileIdentitySVG(profile, style, format, fontFamily, hasDarkBackground) : '';
@@ -729,11 +752,11 @@ function generateContentSlideSVG(
   // Background - SOLID ONLY for content slides (no gradient)
   const backgroundElement = `<rect width="${width}" height="${height}" fill="${background}"/>`;
 
-  // Navigation dots
-  const dotsElement = showDots ? generateNavigationDots(width, height, slideNumber, totalSlides, textColor) : '';
+  // Navigation dots - SCALED by format
+  const dotsElement = showDots ? generateNavigationDots(width, height, slideNumber, totalSlides, textColor, format) : '';
 
-  // Navigation arrow (not on last slide)
-  const arrowElement = showArrow && !isLastSlide ? generateNavigationArrow(width, height, textColor) : '';
+  // Navigation arrow (not on last slide) - SCALED by format
+  const arrowElement = showArrow && !isLastSlide ? generateNavigationArrow(width, height, textColor, format) : '';
 
   // Watermark
   const watermark = hasWatermark ? `
@@ -1103,10 +1126,12 @@ serve(async (req) => {
       }
     }
 
-    const slides = script.slides.map((slide: { type: string; text: string }, index: number) => ({
+    const slides = script.slides.map((slide: { type: string; text: string; subtitle?: string; highlightWord?: string }, index: number) => ({
       number: index + 1,
       type: slide.type,
       text: slide.text,
+      subtitle: slide.subtitle, // Include subtitle for HOOK slide
+      highlightWord: slide.highlightWord, // Include highlight word
       imageUrl: imageUrls[index]
     }));
 
