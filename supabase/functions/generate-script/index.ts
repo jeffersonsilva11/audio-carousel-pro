@@ -70,13 +70,15 @@ const TEXT_MODE_INSTRUCTIONS = {
 - Apenas organize, reduza e divida em slides
 - Não adicione dramatização ou mudanças de estilo
 - Preserve a essência e linguagem do autor
-- Foque em clareza e concisão`,
+- Foque em clareza e concisão
+- OBRIGATÓRIO: O primeiro slide (HOOK) SEMPRE precisa ter "subtitle" curto (4-8 palavras)`,
 
   creative: `MODO CRIATIVO:
 - Ajuste tom, ritmo e impacto conforme o estilo escolhido
 - Adicione elementos de storytelling
 - Use técnicas de copywriting
-- Crie conexão emocional com o leitor`,
+- Crie conexão emocional com o leitor
+- OBRIGATÓRIO: O primeiro slide (HOOK) SEMPRE precisa ter "subtitle" curto (4-8 palavras)`,
 
   single: `MODO TEXTO ÚNICO:
 - Gere apenas 1 slide com texto mais longo
@@ -419,10 +421,11 @@ REGRAS DE FORMATAÇÃO:
 - Use exemplos concretos, metáforas ou analogias quando apropriado
 - Cada slide deve ter valor standalone mas fluir para o próximo
 - Evite bullet points excessivos - prefira texto corrido e envolvente
-- O primeiro slide (HOOK) DEVE ter:
-  * "subtitle": frase de contexto curta (4-8 palavras) que introduz o tema
-  * "text": título principal impactante e chamativo
+- O primeiro slide (HOOK) é OBRIGATÓRIO ter TODOS estes campos:
+  * "subtitle": frase de contexto curta (4-8 palavras) que introduz o tema - NÃO PODE FALTAR
+  * "text": título principal impactante e chamativo - NÃO PODE FALTAR
   * "highlightWord": palavra-chave do título para destaque visual (opcional, 1 palavra)
+  IMPORTANTE: Se o subtitle estiver faltando, o carrossel ficará incompleto!
 - O último slide (CTA) deve provocar reflexão ou ação clara
 
 CONTEXTO DO TEMPLATE:
@@ -557,7 +560,8 @@ ${wrappedTranscription}`;
           : Array.from({ length: fallbackSlideCount }, (_, i) => ({
               number: i + 1,
               type: i === 0 ? 'HOOK' : i === fallbackSlideCount - 1 ? 'CTA' : 'CONTENT',
-              text: i === 0 ? 'Conteúdo gerado' : safeTranscription.substring(i * 80, (i + 1) * 80) || 'Continuação'
+              text: i === 0 ? 'Conteúdo gerado' : safeTranscription.substring(i * 80, (i + 1) * 80) || 'Continuação',
+              ...(i === 0 ? { subtitle: 'Descubra agora', highlightWord: 'Conteúdo' } : {})
             })),
         total_slides: textMode === 'single' ? 1 : fallbackSlideCount
       };
