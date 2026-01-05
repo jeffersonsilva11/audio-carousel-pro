@@ -1,14 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { useUserPreferences, DateFormatPreference, TimeFormatPreference } from "@/hooks/useUserPreferences";
-import { useLanguage, SupportedLanguage } from "@/hooks/useLanguage";
+import { useUserPreferences } from "@/hooks/useUserPreferences";
+import { useLanguage } from "@/hooks/useLanguage";
 import { t } from "@/lib/translations";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { 
   Select,
@@ -25,20 +24,16 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { 
-  ChevronLeft, 
-  User, 
-  Camera, 
+import {
+  ChevronLeft,
+  User,
+  Camera,
   Upload,
   X,
   Instagram,
   Save,
   Loader2,
-  Calendar,
-  Clock,
-  CheckCircle2,
-  Download,
-  Shield
+  CheckCircle2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -51,20 +46,7 @@ import {
   getPositionLabel,
   getDisplayModeLabel
 } from "@/lib/constants";
-import { formatLocalizedDate } from "@/lib/localization";
 import SlidePreview from "@/components/carousel-creator/SlidePreview";
-
-const getDateFormatOptions = (lang: SupportedLanguage) => [
-  { value: 'short' as DateFormatPreference, label: t("profileSettings", "dateShort", lang), example: formatLocalizedDate(new Date(), lang, 'short') },
-  { value: 'medium' as DateFormatPreference, label: t("profileSettings", "dateMedium", lang), example: formatLocalizedDate(new Date(), lang, 'medium') },
-  { value: 'long' as DateFormatPreference, label: t("profileSettings", "dateLong", lang), example: formatLocalizedDate(new Date(), lang, 'long') },
-  { value: 'withTime' as DateFormatPreference, label: t("profileSettings", "dateWithTime", lang), example: formatLocalizedDate(new Date(), lang, 'withTime') },
-];
-
-const getTimeFormatOptions = (lang: SupportedLanguage) => [
-  { value: '24h' as TimeFormatPreference, label: t("profileSettings", "time24h", lang), example: '14:30' },
-  { value: '12h' as TimeFormatPreference, label: t("profileSettings", "time12h", lang), example: '2:30 PM' },
-];
 
 const ProfileSettings = () => {
   const { user, loading: authLoading } = useAuth();
@@ -80,12 +62,8 @@ const ProfileSettings = () => {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [avatarPosition, setAvatarPosition] = useState<AvatarPosition>("top-left");
   const [displayMode, setDisplayMode] = useState<DisplayMode>("name_and_username");
-  const [dateFormat, setDateFormat] = useState<DateFormatPreference>("medium");
-  const [timeFormat, setTimeFormat] = useState<TimeFormatPreference>("24h");
-  const [showRelativeTime, setShowRelativeTime] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
-  const [exporting, setExporting] = useState(false);
 
   // Initialize from preferences
   useEffect(() => {
@@ -95,27 +73,21 @@ const ProfileSettings = () => {
       setPhotoUrl(preferences.photoUrl);
       setAvatarPosition(preferences.avatarPosition);
       setDisplayMode(preferences.displayMode);
-      setDateFormat(preferences.dateFormat);
-      setTimeFormat(preferences.timeFormat);
-      setShowRelativeTime(preferences.showRelativeTime);
     }
   }, [preferences, prefsLoading]);
 
   // Track changes
   useEffect(() => {
     if (!prefsLoading) {
-      const changed = 
+      const changed =
         name !== preferences.name ||
         username !== preferences.username ||
         photoUrl !== preferences.photoUrl ||
         avatarPosition !== preferences.avatarPosition ||
-        displayMode !== preferences.displayMode ||
-        dateFormat !== preferences.dateFormat ||
-        timeFormat !== preferences.timeFormat ||
-        showRelativeTime !== preferences.showRelativeTime;
+        displayMode !== preferences.displayMode;
       setHasChanges(changed);
     }
-  }, [name, username, photoUrl, avatarPosition, displayMode, dateFormat, timeFormat, showRelativeTime, preferences, prefsLoading]);
+  }, [name, username, photoUrl, avatarPosition, displayMode, preferences, prefsLoading]);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -198,60 +170,12 @@ const ProfileSettings = () => {
       photoUrl,
       avatarPosition,
       displayMode,
-      dateFormat,
-      timeFormat,
-      showRelativeTime,
     });
 
     toast({
       title: t("profileSettings", "saved", language),
       description: t("profileSettings", "savedDesc", language),
     });
-  };
-
-  const handleExportData = async () => {
-    if (!user) return;
-    
-    setExporting(true);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Not authenticated');
-
-      const response = await supabase.functions.invoke('export-user-data', {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
-
-      if (response.error) throw response.error;
-
-      // Create and download JSON file
-      const blob = new Blob([JSON.stringify(response.data.data, null, 2)], { 
-        type: 'application/json' 
-      });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `audisell-data-${new Date().toISOString().split('T')[0]}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
-      toast({
-        title: t("profileSettings", "exportSuccess", language),
-        description: t("profileSettings", "exportSuccessDesc", language),
-      });
-    } catch (error) {
-      console.error('Export error:', error);
-      toast({
-        title: t("profileSettings", "exportError", language),
-        description: t("profileSettings", "exportErrorDesc", language),
-        variant: "destructive",
-      });
-    } finally {
-      setExporting(false);
-    }
   };
 
   if (authLoading || prefsLoading) {
@@ -472,126 +396,6 @@ const ProfileSettings = () => {
               </CardContent>
             </Card>
 
-            {/* Date & Time Preferences Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Calendar className="w-5 h-5" />
-                  Preferências de Data e Hora
-                </CardTitle>
-                <CardDescription>
-                  Personalize como as datas são exibidas no aplicativo
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Date Format */}
-                <div className="space-y-3">
-                  <Label>Formato de data</Label>
-                  <Select value={dateFormat} onValueChange={(v) => setDateFormat(v as DateFormatPreference)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {getDateFormatOptions(language).map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          <div className="flex justify-between items-center gap-4">
-                            <span>{option.label}</span>
-                            <span className="text-muted-foreground text-xs">
-                              {option.example}
-                            </span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Time Format */}
-                <div className="space-y-3">
-                  <Label>Formato de hora</Label>
-                  <RadioGroup
-                    value={timeFormat}
-                    onValueChange={(v) => setTimeFormat(v as TimeFormatPreference)}
-                    className="flex gap-4"
-                  >
-                    {getTimeFormatOptions(language).map((option) => (
-                      <label
-                        key={option.value}
-                        className={cn(
-                          "flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all flex-1",
-                          timeFormat === option.value
-                            ? "border-accent bg-accent/10"
-                            : "border-border hover:border-accent/50"
-                        )}
-                      >
-                        <RadioGroupItem value={option.value} />
-                        <div>
-                          <span className="text-sm font-medium">{option.label}</span>
-                          <p className="text-xs text-muted-foreground">{option.example}</p>
-                        </div>
-                      </label>
-                    ))}
-                  </RadioGroup>
-                </div>
-
-                <Separator />
-
-                {/* Relative Time Toggle */}
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Tempo relativo</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Exibir datas como "há 2 horas", "ontem", etc.
-                    </p>
-                  </div>
-                  <Switch 
-                    checked={showRelativeTime} 
-                    onCheckedChange={setShowRelativeTime}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Privacy & Data Card (LGPD) */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Shield className="w-5 h-5" />
-                  {t("profileSettings", "dataPrivacy", language)}
-                </CardTitle>
-                <CardDescription>
-                  {t("profileSettings", "dataPrivacyDesc", language)}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>{t("profileSettings", "exportData", language)}</Label>
-                    <p className="text-sm text-muted-foreground">
-                      {t("profileSettings", "exportDataDesc", language)}
-                    </p>
-                  </div>
-                  <Button
-                    variant="outline"
-                    onClick={handleExportData}
-                    disabled={exporting}
-                    className="gap-2"
-                  >
-                    {exporting ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        {t("profileSettings", "exporting", language)}
-                      </>
-                    ) : (
-                      <>
-                        <Download className="w-4 h-4" />
-                        {t("profileSettings", "exportData", language)}
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
           </div>
 
           {/* Right column - Preview */}
