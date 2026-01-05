@@ -6,6 +6,10 @@
 -- Set explicit search_path for all functions
 -- ============================================
 
+-- Drop existing functions first (required when changing return type)
+DROP FUNCTION IF EXISTS public.get_active_manual_subscription(uuid);
+DROP FUNCTION IF EXISTS public.validate_coupon(text);
+
 -- Fix get_active_manual_subscription function
 CREATE OR REPLACE FUNCTION public.get_active_manual_subscription(p_user_id uuid)
 RETURNS TABLE (
