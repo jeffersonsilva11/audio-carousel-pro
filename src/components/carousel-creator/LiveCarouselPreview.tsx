@@ -102,12 +102,12 @@ const LiveCarouselPreview = ({
   const mutedColor = useWhiteText ? "text-white/70" : "text-[#0A0A0A]/70";
   const borderColor = useWhiteText ? "border-white/10" : "border-[#0A0A0A]/10";
 
-  // Text alignment
-  const alignmentClass = {
-    'left': 'text-left items-start',
-    'center': 'text-center items-center',
-    'right': 'text-right items-end',
-  }[textAlignment] || 'text-center items-center';
+  // Text alignment - only horizontal, keep vertical centered
+  const textAlignClass = {
+    'left': 'text-left',
+    'center': 'text-center',
+    'right': 'text-right',
+  }[textAlignment] || 'text-center';
 
   // Get aspect ratio based on format
   const getAspectRatio = () => {
@@ -243,12 +243,11 @@ const LiveCarouselPreview = ({
           {/* Content */}
           <div
             className={cn(
-              "absolute inset-0 flex justify-center px-4",
-              textColor,
-              alignmentClass
+              "absolute inset-0 flex items-center justify-center px-4",
+              textColor
             )}
           >
-            <div className={cn("space-y-1 w-full", alignmentClass.split(' ')[0])}>
+            <div className={cn("space-y-1 w-full", textAlignClass)}>
               {isSignatureSlide ? (
                 <>
                   {profile.name && (
