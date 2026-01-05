@@ -35,6 +35,8 @@ import TextModeSelector, { CreativeTone } from "@/components/carousel-creator/Te
 import SlideCountSelector from "@/components/carousel-creator/SlideCountSelector";
 import LanguageSelector from "@/components/carousel-creator/LanguageSelector";
 import AdvancedTemplateEditor, { TemplateCustomization } from "@/components/carousel-creator/AdvancedTemplateEditor";
+import CoverOptionsEditor from "@/components/carousel-creator/CoverOptionsEditor";
+import AdvancedOptionsEditor from "@/components/carousel-creator/AdvancedOptionsEditor";
 import LiveCarouselPreview from "@/components/carousel-creator/LiveCarouselPreview";
 import { FontId, GradientId } from "@/lib/constants";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -755,14 +757,44 @@ const CreateCarousel = () => {
                     />
                   </div>
 
-                  {/* 7. Cover + Advanced Options - Creator+ only */}
+                  {/* 7. Cover Options - Creator+ only */}
                   <div className="border-t border-border pt-8">
-                    <AdvancedTemplateEditor
-                      customization={templateCustomization}
-                      setCustomization={setTemplateCustomization}
+                    <CoverOptionsEditor
+                      gradientId={templateCustomization.gradientId}
+                      customGradientColors={templateCustomization.customGradientColors}
+                      slideImages={templateCustomization.slideImages}
+                      onGradientChange={(gradientId, customColors) =>
+                        setTemplateCustomization({
+                          ...templateCustomization,
+                          gradientId,
+                          customGradientColors: customColors
+                        })
+                      }
+                      onSlideImagesChange={(slideImages) =>
+                        setTemplateCustomization({ ...templateCustomization, slideImages })
+                      }
                       slideCount={manualSlideCount}
                       isCreator={isCreator}
                       userId={user?.id}
+                    />
+                  </div>
+
+                  {/* 8. Advanced Options - Creator+ only */}
+                  <div className="border-t border-border pt-8">
+                    <AdvancedOptionsEditor
+                      subtitlePosition={templateCustomization.subtitlePosition}
+                      showNavigationDots={templateCustomization.showNavigationDots}
+                      showNavigationArrow={templateCustomization.showNavigationArrow}
+                      onSubtitlePositionChange={(subtitlePosition) =>
+                        setTemplateCustomization({ ...templateCustomization, subtitlePosition })
+                      }
+                      onNavigationDotsChange={(showNavigationDots) =>
+                        setTemplateCustomization({ ...templateCustomization, showNavigationDots })
+                      }
+                      onNavigationArrowChange={(showNavigationArrow) =>
+                        setTemplateCustomization({ ...templateCustomization, showNavigationArrow })
+                      }
+                      isCreator={isCreator}
                     />
                   </div>
                 </div>
