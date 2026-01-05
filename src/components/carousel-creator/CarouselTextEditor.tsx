@@ -23,7 +23,8 @@ import {
   Loader2 as LoaderIcon,
   ChevronDown,
   Image,
-  FileImage
+  FileImage,
+  Info
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -486,6 +487,21 @@ const CarouselTextEditor = ({
 
   return (
     <div className="space-y-6">
+      {/* Watermark notice - only shown when not locked */}
+      {isPro && !isLocked && (
+        <div className="flex items-start gap-2 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg text-sm">
+          <Info className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-blue-600 dark:text-blue-400 font-medium">
+              {t("carouselEditor", "watermarkNotice") || "Marca d'água de proteção"}
+            </p>
+            <p className="text-muted-foreground text-xs mt-0.5">
+              {t("carouselEditor", "watermarkNoticeDesc") || "A marca d'água \"Feito com Audissel\" aparece apenas no modo de edição. Após finalizar, os slides exportados não terão marca d'água."}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Main preview */}
       <Card className="overflow-hidden bg-muted/30">
         <CardContent className="p-4 md:p-6">
@@ -501,52 +517,74 @@ const CarouselTextEditor = ({
                 {t("carouselPreview", "loading")}
               </div>
             )}
-            
+
+            {/* Watermark Overlay - Only in edit mode and not locked */}
+            {isPro && !isLocked && (
+              <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                {/* Multiple diagonal watermarks */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center -rotate-45 scale-150">
+                  {[-200, -100, 0, 100, 200].map((offset) => (
+                    <div
+                      key={offset}
+                      className="whitespace-nowrap text-foreground/[0.06] text-base font-bold tracking-wider select-none"
+                      style={{ transform: `translateY(${offset}px)` }}
+                    >
+                      Feito com Audissel • Feito com Audissel • Feito com Audissel • Feito com Audissel
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Click to edit overlay - Pro only, not locked, not editing */}
+            {isPro && !isLocked && editingSlide === null && (
+              <div
+                onClick={() => startEdit(currentSlide)}
+                className="absolute inset-0 flex items-center justify-center bg-black/0 hover:bg-black/20 transition-all cursor-pointer group"
+              >
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-background/90 backdrop-blur-sm rounded-lg px-4 py-3 shadow-lg flex items-center gap-2">
+                  <Edit2 className="w-4 h-4 text-accent" />
+                  <span className="text-sm font-medium">
+                    {t("carouselEditor", "clickToEdit") || "Clique para editar"}
+                  </span>
+                </div>
+              </div>
+            )}
+
             {/* Navigation arrows */}
             <button
-              onClick={() => goToSlide(currentSlide - 1)}
+              onClick={(e) => { e.stopPropagation(); goToSlide(currentSlide - 1); }}
               disabled={currentSlide === 0}
               className={cn(
-                "absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-background/80 backdrop-blur flex items-center justify-center transition-opacity",
+                "absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-background/80 backdrop-blur flex items-center justify-center transition-opacity z-10",
                 currentSlide === 0 ? "opacity-30 cursor-not-allowed" : "hover:bg-background"
               )}
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
-            
+
             <button
-              onClick={() => goToSlide(currentSlide + 1)}
+              onClick={(e) => { e.stopPropagation(); goToSlide(currentSlide + 1); }}
               disabled={currentSlide === slides.length - 1}
               className={cn(
-                "absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-background/80 backdrop-blur flex items-center justify-center transition-opacity",
+                "absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-background/80 backdrop-blur flex items-center justify-center transition-opacity z-10",
                 currentSlide === slides.length - 1 ? "opacity-30 cursor-not-allowed" : "hover:bg-background"
               )}
             >
               <ChevronRight className="w-5 h-5" />
             </button>
 
-            {/* Edit button overlay - hidden when locked */}
-            {isPro && editingSlide === null && !isLocked && (
-              <button
-                onClick={() => startEdit(currentSlide)}
-                className="absolute top-3 right-3 p-2 rounded-full bg-background/80 backdrop-blur hover:bg-background transition-colors"
-                title={t("carouselEditor", "editText")}
-              >
-                <Edit2 className="w-4 h-4" />
-              </button>
-            )}
-
             {/* Locked indicator */}
             {isLocked && (
-              <div className="absolute top-3 right-3 px-2 py-1 rounded-full bg-amber-500/90 backdrop-blur text-white text-xs font-medium flex items-center gap-1">
+              <div className="absolute top-3 right-3 px-2 py-1 rounded-full bg-green-500/90 backdrop-blur text-white text-xs font-medium flex items-center gap-1 z-10">
                 <CheckCircle className="w-3 h-3" />
-                Exportado
+                {t("carouselEditor", "finalized") || "Finalizado"}
               </div>
             )}
 
             {/* Regenerating overlay */}
             {isRegenerating && (
-              <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center">
+              <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-20">
                 <div className="text-center">
                   <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-accent" />
                   <p className="text-sm">{t("carouselEditor", "regenerating")}</p>

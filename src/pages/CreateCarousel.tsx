@@ -9,13 +9,17 @@ import { getPlanPrice } from "@/lib/localization";
 import { supabase } from "@/integrations/supabase/client";
 import { useCarouselGeneration } from "@/hooks/useCarouselGeneration";
 import { Button } from "@/components/ui/button";
-import { 
-  Mic2, 
-  ArrowLeft, 
-  ArrowRight, 
+import {
+  Mic2,
+  ArrowLeft,
+  ArrowRight,
   Loader2,
   ChevronLeft,
-  Crown
+  Crown,
+  AlertTriangle,
+  Lock,
+  Check,
+  Edit3
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -147,8 +151,15 @@ const CreateCarousel = () => {
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   
-  // Preview mode state
+  // Preview mode state - Pro users start in edit mode
   const [previewMode, setPreviewMode] = useState<'preview' | 'edit'>('preview');
+
+  // First time edit warning shown
+  const [showEditWarning, setShowEditWarning] = useState(false);
+  const [hasSeenEditWarning, setHasSeenEditWarning] = useState(false);
+
+  // Finalize edit confirmation dialog
+  const [showFinalizeDialog, setShowFinalizeDialog] = useState(false);
   
   // Carousel ID for editing
   const [currentCarouselId, setCurrentCarouselId] = useState<string | null>(null);
@@ -169,12 +180,44 @@ const CreateCarousel = () => {
       if (error) throw error;
 
       setIsCarouselLocked(true);
-      toast({
-        title: "Carrossel exportado",
-        description: "O carrossel foi bloqueado para edição.",
-      });
     } catch (err) {
       console.error('Error marking carousel as exported:', err);
+    }
+  };
+
+  // Function to finalize editing (locks carousel for editing)
+  const handleFinalizeEdit = async () => {
+    if (!currentCarouselId) return;
+
+    try {
+      // Use exported_at to mark as finalized/locked
+      const { error } = await supabase
+        .from('carousels')
+        .update({
+          exported_at: new Date().toISOString(),
+          script: { slides: generatedSlides }
+        })
+        .eq('id', currentCarouselId);
+
+      if (error) throw error;
+
+      setIsCarouselLocked(true);
+      setShowFinalizeDialog(false);
+      toast({
+        title: siteLanguage === "pt-BR" ? "Edição finalizada" : siteLanguage === "es" ? "Edición finalizada" : "Editing finalized",
+        description: siteLanguage === "pt-BR"
+          ? "Agora você pode exportar seu carrossel."
+          : siteLanguage === "es"
+          ? "Ahora puedes exportar tu carrusel."
+          : "Now you can export your carousel.",
+      });
+    } catch (err) {
+      console.error('Error finalizing carousel:', err);
+      toast({
+        title: siteLanguage === "pt-BR" ? "Erro ao finalizar" : "Error finalizing",
+        description: siteLanguage === "pt-BR" ? "Tente novamente." : "Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -333,10 +376,17 @@ const CreateCarousel = () => {
       setGeneratedSlides(result.slides);
       setCurrentStep("preview");
       setIsProcessing(false);
+
+      // Pro users go directly to edit mode with warning
+      if (isPro) {
+        setPreviewMode('edit');
+        setShowEditWarning(true);
+      }
+
       toast({
         title: t("create", "carouselCreated", siteLanguage),
-        description: isPro 
-          ? t("create", "readyToDownload", siteLanguage) 
+        description: isPro
+          ? t("create", "readyToDownload", siteLanguage)
           : t("create", "readyWithWatermark", siteLanguage),
       });
     } else if (status === "FAILED" && error) {
@@ -543,6 +593,98 @@ const CreateCarousel = () => {
             <Button variant="accent" onClick={handleUpgrade} disabled={checkoutLoading} className="w-full sm:w-auto">
               {checkoutLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Crown className="w-4 h-4 mr-2" />}
               {t("create", "subscribePro", siteLanguage)}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Warning Dialog - First time after generation */}
+      <Dialog open={showEditWarning} onOpenChange={(open) => {
+        setShowEditWarning(open);
+        if (!open) setHasSeenEditWarning(true);
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit3 className="w-5 h-5 text-accent" />
+              {siteLanguage === "pt-BR" ? "Modo de Edição" : siteLanguage === "es" ? "Modo de Edición" : "Edit Mode"}
+            </DialogTitle>
+            <DialogDescription asChild>
+              <div className="space-y-3">
+                <p>
+                  {siteLanguage === "pt-BR"
+                    ? "Seu carrossel foi gerado! Agora você pode revisar e editar os textos dos slides."
+                    : siteLanguage === "es"
+                    ? "¡Tu carrusel fue generado! Ahora puedes revisar y editar los textos de los slides."
+                    : "Your carousel was generated! Now you can review and edit the slide texts."}
+                </p>
+                <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3">
+                  <div className="flex gap-2">
+                    <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                    <div className="text-sm">
+                      <p className="font-medium text-amber-600 dark:text-amber-400">
+                        {siteLanguage === "pt-BR" ? "Atenção: Edição única" : siteLanguage === "es" ? "Atención: Edición única" : "Attention: One-time edit"}
+                      </p>
+                      <p className="text-muted-foreground">
+                        {siteLanguage === "pt-BR"
+                          ? "Após finalizar a edição, o carrossel será bloqueado. Revise tudo antes de continuar."
+                          : siteLanguage === "es"
+                          ? "Después de finalizar la edición, el carrusel será bloqueado. Revisa todo antes de continuar."
+                          : "After finalizing the edit, the carousel will be locked. Review everything before continuing."}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="accent" onClick={() => {
+              setShowEditWarning(false);
+              setHasSeenEditWarning(true);
+            }} className="w-full">
+              {siteLanguage === "pt-BR" ? "Entendi, vamos editar" : siteLanguage === "es" ? "Entendido, vamos a editar" : "Got it, let's edit"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Finalize Edit Confirmation Dialog */}
+      <Dialog open={showFinalizeDialog} onOpenChange={setShowFinalizeDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Lock className="w-5 h-5 text-amber-500" />
+              {siteLanguage === "pt-BR" ? "Finalizar Edição?" : siteLanguage === "es" ? "¿Finalizar Edición?" : "Finalize Editing?"}
+            </DialogTitle>
+            <DialogDescription asChild>
+              <div className="space-y-3">
+                <p>
+                  {siteLanguage === "pt-BR"
+                    ? "Ao finalizar, você não poderá mais editar os textos deste carrossel."
+                    : siteLanguage === "es"
+                    ? "Al finalizar, ya no podrás editar los textos de este carrusel."
+                    : "Once finalized, you won't be able to edit the texts of this carousel anymore."}
+                </p>
+                <div className="bg-muted rounded-lg p-3">
+                  <p className="text-sm text-muted-foreground">
+                    {siteLanguage === "pt-BR"
+                      ? "Você revisou todos os slides e está satisfeito com o conteúdo?"
+                      : siteLanguage === "es"
+                      ? "¿Has revisado todos los slides y estás satisfecho con el contenido?"
+                      : "Have you reviewed all slides and are satisfied with the content?"}
+                  </p>
+                </div>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => setShowFinalizeDialog(false)} className="w-full sm:w-auto">
+              {siteLanguage === "pt-BR" ? "Voltar e revisar" : siteLanguage === "es" ? "Volver y revisar" : "Back to review"}
+            </Button>
+            <Button variant="accent" onClick={handleFinalizeEdit} className="w-full sm:w-auto">
+              <Check className="w-4 h-4 mr-2" />
+              {siteLanguage === "pt-BR" ? "Finalizar e exportar" : siteLanguage === "es" ? "Finalizar y exportar" : "Finalize and export"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -844,9 +986,18 @@ const CreateCarousel = () => {
           {currentStep === "preview" && generatedSlides.length > 0 && (
             <>
               <div className="text-center mb-8">
-                <h1 className="text-2xl font-bold mb-2">{t("create", "carouselReady", siteLanguage)} 🎉</h1>
+                <h1 className="text-2xl font-bold mb-2">
+                  {isCarouselLocked
+                    ? (siteLanguage === "pt-BR" ? "Pronto para exportar! 🎉" : siteLanguage === "es" ? "¡Listo para exportar! 🎉" : "Ready to export! 🎉")
+                    : t("create", "carouselReady", siteLanguage) + " 🎉"}
+                </h1>
                 <p className="text-muted-foreground">
-                  {t("create", "generatedSuccess", siteLanguage)} • {generatedSlides.length} slides
+                  {isCarouselLocked
+                    ? (siteLanguage === "pt-BR" ? "Escolha o formato e baixe seus slides" : siteLanguage === "es" ? "Elige el formato y descarga tus slides" : "Choose the format and download your slides")
+                    : (isPro
+                      ? (siteLanguage === "pt-BR" ? "Revise e edite os textos antes de finalizar" : siteLanguage === "es" ? "Revisa y edita los textos antes de finalizar" : "Review and edit the texts before finalizing")
+                      : t("create", "generatedSuccess", siteLanguage))}
+                  {" "}• {generatedSlides.length} slides
                 </p>
                 {!isPro && (
                   <p className="text-sm text-amber-500 mt-2">
@@ -854,89 +1005,162 @@ const CreateCarousel = () => {
                   </p>
                 )}
               </div>
-              
-              {/* Tabs for Preview / Edit modes - Pro only */}
-              <Tabs value={previewMode} onValueChange={(v) => setPreviewMode(v as 'preview' | 'edit')} className="mb-6">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="preview">{t("carouselEditor", "previewTab", siteLanguage)}</TabsTrigger>
-                  {isPro ? (
-                    <TabsTrigger value="edit">
-                      {t("carouselEditor", "editTab", siteLanguage)}
-                    </TabsTrigger>
-                  ) : (
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span className="w-full">
-                            <TabsTrigger value="edit" disabled className="w-full">
-                              {t("carouselEditor", "editTab", siteLanguage)}
-                              <Crown className="w-3 h-3 ml-1 text-accent" />
-                            </TabsTrigger>
-                          </span>
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom">
-                          <p className="font-medium">{siteLanguage === "pt-BR" ? "Recurso Starter+" : siteLanguage === "es" ? "Función Starter+" : "Starter+ Feature"}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {siteLanguage === "pt-BR"
-                              ? "Edite textos dos slides após gerar"
-                              : siteLanguage === "es"
-                              ? "Edita textos de slides después de generar"
-                              : "Edit slide texts after generating"}
-                          </p>
-                          <p className="text-xs text-accent mt-1">
-                            {siteLanguage === "pt-BR"
-                              ? `Upgrade por ${getPlanPrice("starter", siteLanguage)}/mês`
-                              : siteLanguage === "es"
-                              ? `Upgrade por ${getPlanPrice("starter", siteLanguage)}/mes`
-                              : `Upgrade for ${getPlanPrice("starter", siteLanguage)}/mo`}
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  )}
-                </TabsList>
-                
-                <TabsContent value="preview" className="mt-6">
-                  <CarouselPreview 
-                    slides={generatedSlides} 
-                    onDownloadAll={handleDownloadAll}
-                    isPro={isPro}
-                  />
-                </TabsContent>
-                
-                <TabsContent value="edit" className="mt-6">
-                  <CarouselTextEditor
-                    slides={generatedSlides}
-                    onSlidesUpdate={setGeneratedSlides}
-                    isPro={isPro}
-                    carouselId={currentCarouselId || undefined}
-                    style={selectedStyle}
-                    format={selectedFormat}
-                    profile={profileIdentity.username ? profileIdentity : undefined}
-                    customization={isCreator ? templateCustomization : undefined}
-                    isLocked={isCarouselLocked}
-                    onFirstExport={handleFirstExport}
-                  />
-                </TabsContent>
-              </Tabs>
 
-              <div className="flex flex-col sm:flex-row justify-center gap-3 mt-6 border-t border-border pt-6">
-                {!isPro && (
-                  <Button 
-                    variant="accent"
-                    onClick={() => setShowUpgradeDialog(true)}
-                  >
-                    <Crown className="w-4 h-4 mr-2" />
-                    {t("create", "removeWatermark", siteLanguage)}
-                  </Button>
-                )}
-                <Button 
-                  variant="outline"
-                  onClick={() => navigate("/dashboard")}
-                >
-                  {t("create", "viewDashboard", siteLanguage)}
-                </Button>
-              </div>
+              {/* When locked - show export only */}
+              {isCarouselLocked ? (
+                <CarouselTextEditor
+                  slides={generatedSlides}
+                  onSlidesUpdate={setGeneratedSlides}
+                  isPro={isPro}
+                  carouselId={currentCarouselId || undefined}
+                  style={selectedStyle}
+                  format={selectedFormat}
+                  profile={profileIdentity.username ? profileIdentity : undefined}
+                  customization={isCreator ? templateCustomization : undefined}
+                  isLocked={true}
+                  onFirstExport={handleFirstExport}
+                />
+              ) : isPro ? (
+                /* Pro users in edit mode */
+                <>
+                  {/* Edit warning banner - shown until user dismisses it or clicks finalize */}
+                  {!hasSeenEditWarning && (
+                    <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4 mb-6">
+                      <div className="flex gap-3">
+                        <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                        <div className="flex-1">
+                          <p className="font-medium text-amber-600 dark:text-amber-400">
+                            {siteLanguage === "pt-BR" ? "Edição única" : siteLanguage === "es" ? "Edición única" : "One-time edit"}
+                          </p>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {siteLanguage === "pt-BR"
+                              ? "Revise todos os slides. Após finalizar, não será possível editar novamente."
+                              : siteLanguage === "es"
+                              ? "Revisa todos los slides. Después de finalizar, no será posible editar nuevamente."
+                              : "Review all slides. After finalizing, editing will no longer be possible."}
+                          </p>
+                        </div>
+                        <Button variant="ghost" size="sm" onClick={() => setHasSeenEditWarning(true)}>
+                          {siteLanguage === "pt-BR" ? "Entendi" : "OK"}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Tabs for Preview / Edit modes */}
+                  <Tabs value={previewMode} onValueChange={(v) => setPreviewMode(v as 'preview' | 'edit')} className="mb-6">
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="preview">{t("carouselEditor", "previewTab", siteLanguage)}</TabsTrigger>
+                      <TabsTrigger value="edit">
+                        {t("carouselEditor", "editTab", siteLanguage)}
+                      </TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="preview" className="mt-6">
+                      <CarouselPreview
+                        slides={generatedSlides}
+                        onDownloadAll={handleDownloadAll}
+                        isPro={isPro}
+                      />
+                    </TabsContent>
+
+                    <TabsContent value="edit" className="mt-6">
+                      <CarouselTextEditor
+                        slides={generatedSlides}
+                        onSlidesUpdate={setGeneratedSlides}
+                        isPro={isPro}
+                        carouselId={currentCarouselId || undefined}
+                        style={selectedStyle}
+                        format={selectedFormat}
+                        profile={profileIdentity.username ? profileIdentity : undefined}
+                        customization={isCreator ? templateCustomization : undefined}
+                        isLocked={false}
+                        onFirstExport={handleFirstExport}
+                      />
+                    </TabsContent>
+                  </Tabs>
+
+                  {/* Finalize button */}
+                  <div className="flex flex-col sm:flex-row justify-center gap-3 mt-6 border-t border-border pt-6">
+                    <Button
+                      variant="accent"
+                      size="lg"
+                      onClick={() => setShowFinalizeDialog(true)}
+                    >
+                      <Check className="w-4 h-4 mr-2" />
+                      {siteLanguage === "pt-BR" ? "Finalizar Edição" : siteLanguage === "es" ? "Finalizar Edición" : "Finalize Editing"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => navigate("/dashboard")}
+                    >
+                      {t("create", "viewDashboard", siteLanguage)}
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                /* Free users - preview only with upgrade CTA */
+                <>
+                  <Tabs value={previewMode} onValueChange={(v) => setPreviewMode(v as 'preview' | 'edit')} className="mb-6">
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="preview">{t("carouselEditor", "previewTab", siteLanguage)}</TabsTrigger>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="w-full">
+                              <TabsTrigger value="edit" disabled className="w-full">
+                                {t("carouselEditor", "editTab", siteLanguage)}
+                                <Crown className="w-3 h-3 ml-1 text-accent" />
+                              </TabsTrigger>
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom">
+                            <p className="font-medium">{siteLanguage === "pt-BR" ? "Recurso Starter+" : siteLanguage === "es" ? "Función Starter+" : "Starter+ Feature"}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {siteLanguage === "pt-BR"
+                                ? "Edite textos dos slides após gerar"
+                                : siteLanguage === "es"
+                                ? "Edita textos de slides después de generar"
+                                : "Edit slide texts after generating"}
+                            </p>
+                            <p className="text-xs text-accent mt-1">
+                              {siteLanguage === "pt-BR"
+                                ? `Upgrade por ${getPlanPrice("starter", siteLanguage)}/mês`
+                                : siteLanguage === "es"
+                                ? `Upgrade por ${getPlanPrice("starter", siteLanguage)}/mes`
+                                : `Upgrade for ${getPlanPrice("starter", siteLanguage)}/mo`}
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </TabsList>
+
+                    <TabsContent value="preview" className="mt-6">
+                      <CarouselPreview
+                        slides={generatedSlides}
+                        onDownloadAll={handleDownloadAll}
+                        isPro={isPro}
+                      />
+                    </TabsContent>
+                  </Tabs>
+
+                  <div className="flex flex-col sm:flex-row justify-center gap-3 mt-6 border-t border-border pt-6">
+                    <Button
+                      variant="accent"
+                      onClick={() => setShowUpgradeDialog(true)}
+                    >
+                      <Crown className="w-4 h-4 mr-2" />
+                      {t("create", "removeWatermark", siteLanguage)}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => navigate("/dashboard")}
+                    >
+                      {t("create", "viewDashboard", siteLanguage)}
+                    </Button>
+                  </div>
+                </>
+              )}
             </>
           )}
         </div>
