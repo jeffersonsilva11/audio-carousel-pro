@@ -25,9 +25,10 @@ import Maintenance from "./pages/Maintenance";
 import NotFound from "./pages/NotFound";
 import MaintenanceCheck from "./components/MaintenanceCheck";
 import VersionUpdateBanner from "./components/VersionUpdateBanner";
-import ZohoDeskWidget from "./components/ZohoDeskWidget";
 import TermsOfService from "./pages/TermsOfService";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
+import Support from "./pages/Support";
+import SupportSuccess from "./pages/SupportSuccess";
 import AnalyticsProvider from "./components/AnalyticsProvider";
 
 const queryClient = new QueryClient();
@@ -68,13 +69,14 @@ const App = () => {
                         <Route path="/maintenance" element={<Maintenance />} />
                         <Route path="/terms" element={<TermsOfService />} />
                         <Route path="/privacy" element={<PrivacyPolicy />} />
+                        <Route path="/support" element={<Support />} />
+                        <Route path="/support/success" element={<SupportSuccess />} />
                         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                         <Route path="*" element={<NotFound />} />
                       </Routes>
                     </AnalyticsProvider>
                   </MaintenanceCheck>
-                    <VersionUpdateBanner />
-                  <ZohoDeskWidget />
+                  <VersionUpdateBanner />
                 </BrowserRouter>
                 <CookieConsent />
               </TooltipProvider>
