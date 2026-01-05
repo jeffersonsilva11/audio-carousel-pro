@@ -973,6 +973,7 @@ const CreateCarousel = () => {
                   onFinalize={handleFinalizeEdit}
                   isRegenerating={isRegenerating}
                   regeneratingProgress={regeneratingProgress || undefined}
+                  format={selectedFormat}
                 />
               ) : (
                 <>

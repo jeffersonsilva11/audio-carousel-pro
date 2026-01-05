@@ -46,12 +46,22 @@ interface Slide {
   imageUrl?: string;
 }
 
+type FormatType = 'POST_SQUARE' | 'POST_PORTRAIT' | 'STORY';
+
+// Character limits per format and slide type
+const CHARACTER_LIMITS: Record<FormatType, { cover: number; content: number }> = {
+  'POST_SQUARE': { cover: 150, content: 280 },
+  'POST_PORTRAIT': { cover: 180, content: 320 },
+  'STORY': { cover: 250, content: 400 },
+};
+
 interface CarouselEditViewProps {
   slides: Slide[];
   onSlidesUpdate: (slides: Slide[]) => void;
   onFinalize: (editedSlides: Slide[], changedIndices: number[]) => void;
   isRegenerating?: boolean;
   regeneratingProgress?: { current: number; total: number };
+  format?: FormatType;
 }
 
 const CarouselEditView = ({
@@ -60,6 +70,7 @@ const CarouselEditView = ({
   onFinalize,
   isRegenerating = false,
   regeneratingProgress,
+  format = 'POST_SQUARE',
 }: CarouselEditViewProps) => {
   const { t } = useTranslation();
   const { toast } = useToast();
@@ -376,37 +387,44 @@ const CarouselEditView = ({
               </div>
 
               {/* Main text */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label className="text-sm">
-                    {isCoverSlide ? "Título Principal" : "Texto do Slide"}
-                  </Label>
-                  <span className="text-xs text-muted-foreground">
-                    máx. {isCoverSlide ? 150 : 300} caracteres
-                  </span>
-                </div>
-                <Textarea
-                  value={editedText}
-                  onChange={(e) => setEditedText(e.target.value.slice(0, isCoverSlide ? 150 : 300))}
-                  className={cn(
-                    "min-h-[150px] resize-none",
-                    editedText.length > (isCoverSlide ? 130 : 270) && "border-amber-500 focus-visible:ring-amber-500"
-                  )}
-                  placeholder="Digite o texto..."
-                  maxLength={isCoverSlide ? 150 : 300}
-                />
-                <p className={cn(
-                  "text-xs",
-                  editedText.length > (isCoverSlide ? 130 : 270)
-                    ? "text-amber-500"
-                    : "text-muted-foreground"
-                )}>
-                  {editedText.length}/{isCoverSlide ? 150 : 300} caracteres
-                  {editedText.length > (isCoverSlide ? 130 : 270) && (
-                    <span className="ml-2">(texto pode ficar pequeno)</span>
-                  )}
-                </p>
-              </div>
+              {(() => {
+                const limits = CHARACTER_LIMITS[format];
+                const maxChars = isCoverSlide ? limits.cover : limits.content;
+                const warningThreshold = Math.floor(maxChars * 0.85);
+                return (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm">
+                        {isCoverSlide ? "Título Principal" : "Texto do Slide"}
+                      </Label>
+                      <span className="text-xs text-muted-foreground">
+                        máx. {maxChars} caracteres
+                      </span>
+                    </div>
+                    <Textarea
+                      value={editedText}
+                      onChange={(e) => setEditedText(e.target.value.slice(0, maxChars))}
+                      className={cn(
+                        "min-h-[150px] resize-none",
+                        editedText.length > warningThreshold && "border-amber-500 focus-visible:ring-amber-500"
+                      )}
+                      placeholder="Digite o texto..."
+                      maxLength={maxChars}
+                    />
+                    <p className={cn(
+                      "text-xs",
+                      editedText.length > warningThreshold
+                        ? "text-amber-500"
+                        : "text-muted-foreground"
+                    )}>
+                      {editedText.length}/{maxChars} caracteres
+                      {editedText.length > warningThreshold && (
+                        <span className="ml-2">(texto pode ficar pequeno)</span>
+                      )}
+                    </p>
+                  </div>
+                );
+              })()}
             </CardContent>
           </Card>
 
