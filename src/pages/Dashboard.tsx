@@ -46,7 +46,7 @@ interface Carousel {
 const Dashboard = () => {
   const { user, loading, signOut, isEmailConfirmed } = useAuth();
   const { isAdmin } = useAdminAccess();
-  const { isPro, plan, dailyUsed, dailyLimit, subscriptionEnd, createCheckout, openCustomerPortal, loading: subLoading, getRemainingCarousels, getDaysRemaining, isCancelled, isLastDay, cancelAtPeriodEnd, status, failedPaymentCount } = useSubscription();
+  const { isPro, plan, dailyUsed, dailyLimit, limitPeriod, periodUsed, subscriptionEnd, createCheckout, openCustomerPortal, loading: subLoading, getRemainingCarousels, getPeriodLabel, getDaysRemaining, isCancelled, isLastDay, cancelAtPeriodEnd, status, failedPaymentCount } = useSubscription();
   const { notifications, unreadCount, markAsRead, clearNotification } = useNotifications();
   const { language, setLanguage } = useLanguage();
   const { showOnboarding, loading: onboardingLoading, completeOnboarding } = useOnboarding();
@@ -327,8 +327,8 @@ const Dashboard = () => {
                   </div>
                   <p className="text-sm text-muted-foreground">
                     {isPro
-                      ? `${getRemainingCarousels()} ${t("dashboard", "remainingToday", language)}`
-                      : `${dailyUsed}/1 ${t("dashboard", "carouselUsed", language)}`}
+                      ? `${getRemainingCarousels()} ${language === "pt-BR" ? "restantes" : language === "es" ? "restantes" : "remaining"} ${getPeriodLabel(language)}`
+                      : `${periodUsed}/1 ${t("dashboard", "carouselUsed", language)}`}
                   </p>
                 </div>
               </div>

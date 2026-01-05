@@ -16,6 +16,13 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -54,6 +61,7 @@ interface PlanConfig {
   checkout_link_usd: string | null;
   checkout_link_eur: string | null;
   daily_limit: number;
+  limit_period: "daily" | "weekly" | "monthly";
   monthly_limit: number | null;
   has_watermark: boolean;
   has_editor: boolean;
@@ -65,6 +73,24 @@ interface PlanConfig {
   is_active: boolean;
   display_order: number;
 }
+
+const PERIOD_LABELS: Record<string, Record<string, string>> = {
+  "pt-BR": {
+    daily: "Por dia",
+    weekly: "Por semana",
+    monthly: "Por mês",
+  },
+  en: {
+    daily: "Per day",
+    weekly: "Per week",
+    monthly: "Per month",
+  },
+  es: {
+    daily: "Por día",
+    weekly: "Por semana",
+    monthly: "Por mes",
+  },
+};
 
 const formatPrice = (cents: number, currency: string) => {
   const value = cents / 100;
@@ -139,6 +165,7 @@ export default function PlansConfigManager() {
           checkout_link_usd: editForm.checkout_link_usd,
           checkout_link_eur: editForm.checkout_link_eur,
           daily_limit: editForm.daily_limit,
+          limit_period: editForm.limit_period,
           monthly_limit: editForm.monthly_limit,
           has_watermark: editForm.has_watermark,
           has_editor: editForm.has_editor,
@@ -316,7 +343,7 @@ export default function PlansConfigManager() {
                 {/* Features Summary */}
                 <div className="mt-4 flex flex-wrap gap-2">
                   <Badge variant={plan.daily_limit > 1 ? "default" : "outline"} className="text-xs">
-                    {plan.daily_limit} {language === "pt-BR" ? "carrosséis/dia" : "carousels/day"}
+                    {plan.daily_limit} {language === "pt-BR" ? "carrosséis" : "carousels"}/{PERIOD_LABELS[language]?.[plan.limit_period || "daily"] || plan.limit_period}
                   </Badge>
                   <Badge variant={!plan.has_watermark ? "default" : "outline"} className="text-xs">
                     {!plan.has_watermark ? <Check className="w-3 h-3 mr-1" /> : <X className="w-3 h-3 mr-1" />}
@@ -416,15 +443,44 @@ export default function PlansConfigManager() {
                 </div>
               </div>
 
-              {/* Daily Limit */}
+              {/* Carousel Limit */}
               <div className="space-y-2">
-                <Label>{language === "pt-BR" ? "Limite Diário de Carrosséis" : "Daily Carousel Limit"}</Label>
+                <Label>{language === "pt-BR" ? "Limite de Carrosséis" : "Carousel Limit"}</Label>
                 <Input
                   type="number"
                   value={editForm.daily_limit || 1}
                   onChange={(e) => setEditForm({ ...editForm, daily_limit: parseInt(e.target.value) || 1 })}
                   min={1}
                 />
+              </div>
+
+              {/* Limit Period */}
+              <div className="space-y-2">
+                <Label>{language === "pt-BR" ? "Período do Limite" : "Limit Period"}</Label>
+                <Select
+                  value={editForm.limit_period || "daily"}
+                  onValueChange={(value) => setEditForm({ ...editForm, limit_period: value as "daily" | "weekly" | "monthly" })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="daily">
+                      {language === "pt-BR" ? "Por dia" : language === "es" ? "Por día" : "Per day"}
+                    </SelectItem>
+                    <SelectItem value="weekly">
+                      {language === "pt-BR" ? "Por semana" : language === "es" ? "Por semana" : "Per week"}
+                    </SelectItem>
+                    <SelectItem value="monthly">
+                      {language === "pt-BR" ? "Por mês" : language === "es" ? "Por mes" : "Per month"}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  {language === "pt-BR"
+                    ? "Ex: 3 por semana significa que o usuário pode criar 3 carrosséis a cada semana"
+                    : "Ex: 3 per week means the user can create 3 carousels each week"}
+                </p>
               </div>
             </TabsContent>
 

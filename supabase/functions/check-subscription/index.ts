@@ -19,6 +19,49 @@ const logStep = (step: string, details?: any) => {
   console.log(`[CHECK-SUBSCRIPTION] ${step}${detailsStr}`);
 };
 
+// Helper function to get usage based on period
+async function getUsageForPeriod(
+  supabaseClient: any,
+  userId: string,
+  period: string
+): Promise<number> {
+  const today = new Date();
+  let startDate: string;
+
+  switch (period) {
+    case 'weekly': {
+      // Start of current week (Monday)
+      const dayOfWeek = today.getDay();
+      const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+      const monday = new Date(today);
+      monday.setDate(today.getDate() + mondayOffset);
+      startDate = monday.toISOString().split('T')[0];
+      break;
+    }
+    case 'monthly': {
+      // Start of current month
+      const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+      startDate = firstDay.toISOString().split('T')[0];
+      break;
+    }
+    case 'daily':
+    default:
+      startDate = today.toISOString().split('T')[0];
+  }
+
+  const endDate = today.toISOString().split('T')[0];
+
+  const { data } = await supabaseClient
+    .from("daily_usage")
+    .select("carousels_created")
+    .eq("user_id", userId)
+    .gte("usage_date", startDate)
+    .lte("usage_date", endDate);
+
+  const totalUsed = data?.reduce((sum: number, row: any) => sum + (row.carousels_created || 0), 0) || 0;
+  return totalUsed;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -45,18 +88,6 @@ serve(async (req) => {
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
 
-    // Get daily usage from database
-    const today = new Date().toISOString().split('T')[0];
-    const { data: usageData } = await supabaseClient
-      .from("daily_usage")
-      .select("carousels_created")
-      .eq("user_id", user.id)
-      .eq("usage_date", today)
-      .maybeSingle();
-
-    const dailyUsed = usageData?.carousels_created || 0;
-    logStep("Daily usage fetched", { dailyUsed, date: today });
-
     // CHECK ADMIN FIRST - No Stripe dependency for admins
     const { data: roleData } = await supabaseClient
       .from("user_roles")
@@ -68,6 +99,7 @@ serve(async (req) => {
     const isAdmin = !!roleData;
 
     if (isAdmin) {
+      const dailyUsed = await getUsageForPeriod(supabaseClient, user.id, 'daily');
       logStep("User is admin, granting unlimited access (no Stripe check)");
       return new Response(JSON.stringify({
         subscribed: true,
@@ -75,6 +107,8 @@ serve(async (req) => {
         price_id: null,
         subscription_end: null,
         daily_limit: 9999,
+        limit_period: "daily",
+        period_used: dailyUsed,
         daily_used: dailyUsed,
         has_watermark: false,
         has_editor: true,
@@ -103,16 +137,20 @@ serve(async (req) => {
         // Get plan config from database
         const { data: planConfig } = await supabaseClient
           .from("plans_config")
-          .select("daily_limit, has_watermark, has_editor, has_history")
+          .select("daily_limit, limit_period, has_watermark, has_editor, has_history")
           .eq("tier", manualSub.plan_tier)
           .single();
 
-        const dailyLimit = manualSub.custom_daily_limit || planConfig?.daily_limit || 8;
+        const carouselLimit = manualSub.custom_daily_limit || planConfig?.daily_limit || 8;
+        const limitPeriod = planConfig?.limit_period || 'daily';
+        const periodUsed = await getUsageForPeriod(supabaseClient, user.id, limitPeriod);
 
         logStep("User has active manual subscription", {
           plan: manualSub.plan_tier,
           expiresAt: manualSub.expires_at,
-          dailyLimit
+          carouselLimit,
+          limitPeriod,
+          periodUsed
         });
 
         return new Response(JSON.stringify({
@@ -120,8 +158,10 @@ serve(async (req) => {
           plan: manualSub.plan_tier,
           price_id: null,
           subscription_end: manualSub.expires_at,
-          daily_limit: dailyLimit,
-          daily_used: dailyUsed,
+          daily_limit: carouselLimit,
+          limit_period: limitPeriod,
+          period_used: periodUsed,
+          daily_used: periodUsed, // For backward compatibility
           has_watermark: planConfig?.has_watermark ?? false,
           has_editor: planConfig?.has_editor ?? true,
           has_history: planConfig?.has_history ?? true,
@@ -142,11 +182,14 @@ serve(async (req) => {
 
     // If no Stripe key configured, return free plan for non-admins
     if (!stripeKey) {
+      const dailyUsed = await getUsageForPeriod(supabaseClient, user.id, 'daily');
       logStep("No STRIPE_SECRET_KEY configured, returning free plan");
       return new Response(JSON.stringify({
         subscribed: false,
         plan: "free",
         daily_limit: 1,
+        limit_period: "daily",
+        period_used: dailyUsed,
         daily_used: dailyUsed,
         has_watermark: true,
         has_editor: false,
@@ -162,11 +205,14 @@ serve(async (req) => {
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
 
     if (customers.data.length === 0) {
+      const dailyUsed = await getUsageForPeriod(supabaseClient, user.id, 'daily');
       logStep("No Stripe customer found, returning free plan");
       return new Response(JSON.stringify({
         subscribed: false,
         plan: "free",
         daily_limit: 1,
+        limit_period: "daily",
+        period_used: dailyUsed,
         daily_used: dailyUsed,
         has_watermark: true,
         has_editor: false,
@@ -191,7 +237,8 @@ serve(async (req) => {
     let plan = "free";
     let subscriptionEnd = null;
     let priceId = null;
-    let dailyLimit = 1;
+    let carouselLimit = 1;
+    let limitPeriod = "daily";
     let hasWatermark = true;
     let hasEditor = false;
     let hasHistory = false;
@@ -228,26 +275,44 @@ serve(async (req) => {
         plan = "starter";
       }
 
-      // Set features based on plan
-      switch (plan) {
-        case "starter":
-          dailyLimit = 1;
-          hasWatermark = false;
-          hasEditor = true;
-          hasHistory = true;
-          break;
-        case "creator":
-          dailyLimit = 8;
-          hasWatermark = false;
-          hasEditor = true;
-          hasHistory = true;
-          break;
-        case "agency":
-          dailyLimit = 20;
-          hasWatermark = false;
-          hasEditor = true;
-          hasHistory = true;
-          break;
+      // Get plan config from database for features and limits
+      const { data: planConfig } = await supabaseClient
+        .from("plans_config")
+        .select("daily_limit, limit_period, has_watermark, has_editor, has_history")
+        .eq("tier", plan)
+        .single();
+
+      if (planConfig) {
+        carouselLimit = planConfig.daily_limit;
+        limitPeriod = planConfig.limit_period || 'daily';
+        hasWatermark = planConfig.has_watermark ?? false;
+        hasEditor = planConfig.has_editor ?? true;
+        hasHistory = planConfig.has_history ?? true;
+      } else {
+        // Fallback defaults if plan config not found
+        switch (plan) {
+          case "starter":
+            carouselLimit = 3;
+            limitPeriod = "weekly";
+            hasWatermark = false;
+            hasEditor = true;
+            hasHistory = true;
+            break;
+          case "creator":
+            carouselLimit = 1;
+            limitPeriod = "daily";
+            hasWatermark = false;
+            hasEditor = true;
+            hasHistory = true;
+            break;
+          case "agency":
+            carouselLimit = 8;
+            limitPeriod = "daily";
+            hasWatermark = false;
+            hasEditor = true;
+            hasHistory = true;
+            break;
+        }
       }
 
       // Get additional info from local subscription record
@@ -263,7 +328,7 @@ serve(async (req) => {
         status = localSub.status || "active";
       }
 
-      logStep("Determined plan tier", { plan, dailyLimit, cancelAtPeriodEnd, cancelledAt });
+      logStep("Determined plan tier", { plan, carouselLimit, limitPeriod, cancelAtPeriodEnd, cancelledAt });
     } else {
       // Check if there's a cancelled subscription that's still within period
       const { data: cancelledSub } = await supabaseClient
@@ -277,7 +342,7 @@ serve(async (req) => {
       if (cancelledSub) {
         // User has cancelled but still within subscription period
         plan = cancelledSub.plan_tier;
-        dailyLimit = cancelledSub.daily_limit;
+        carouselLimit = cancelledSub.daily_limit;
         hasWatermark = cancelledSub.has_watermark;
         hasEditor = cancelledSub.has_editor;
         hasHistory = cancelledSub.has_history;
@@ -287,23 +352,38 @@ serve(async (req) => {
         failedPaymentCount = cancelledSub.failed_payment_count || 0;
         status = cancelledSub.status || "active";
 
+        // Get limit_period from plan config
+        const { data: planConfig } = await supabaseClient
+          .from("plans_config")
+          .select("limit_period")
+          .eq("tier", plan)
+          .single();
+
+        limitPeriod = planConfig?.limit_period || 'daily';
+
         logStep("Found cancelled subscription still within period", {
           plan,
           subscriptionEnd,
-          cancelledAt
+          cancelledAt,
+          limitPeriod
         });
       } else {
         logStep("No active subscription found, using free plan");
       }
     }
 
+    // Calculate usage based on the plan's period
+    const periodUsed = await getUsageForPeriod(supabaseClient, user.id, limitPeriod);
+
     return new Response(JSON.stringify({
       subscribed: hasActiveSub || (cancelAtPeriodEnd && subscriptionEnd && new Date(subscriptionEnd) > new Date()),
       plan,
       price_id: priceId,
       subscription_end: subscriptionEnd,
-      daily_limit: dailyLimit,
-      daily_used: dailyUsed,
+      daily_limit: carouselLimit,
+      limit_period: limitPeriod,
+      period_used: periodUsed,
+      daily_used: periodUsed, // For backward compatibility
       has_watermark: hasWatermark,
       has_editor: hasEditor,
       has_history: hasHistory,

@@ -63,15 +63,15 @@ export const PLANS: Record<PlanTier, PlanConfig> = {
     price: 2990, // R$ 29,90
     priceDisplay: 'R$ 29,90',
     priceId: STRIPE_PRICE_IDS.starter,
-    dailyLimit: 1,
-    monthlyLimit: 30,
+    dailyLimit: 3, // 3 per week
+    monthlyLimit: 12,
     hasWatermark: false,
     hasEditor: true,
     hasHistory: true,
     hasZipDownload: true,
     templates: ['solid'],
     features: [
-      '1 carrossel por dia',
+      '3 carrosséis por semana',
       'Sem marca d\'água',
       'Editor visual',
       'Histórico completo',
@@ -87,7 +87,7 @@ export const PLANS: Record<PlanTier, PlanConfig> = {
     price: 9990, // R$ 99,90
     priceDisplay: 'R$ 99,90',
     priceId: STRIPE_PRICE_IDS.creator,
-    dailyLimit: 8,
+    dailyLimit: 1, // 1 per day
     monthlyLimit: null, // fair usage
     hasWatermark: false,
     hasEditor: true,
@@ -98,8 +98,7 @@ export const PLANS: Record<PlanTier, PlanConfig> = {
     hasSlideImages: true,
     templates: ['solid', 'gradient', 'image_top'],
     features: [
-      'Até 8 carrosséis por dia',
-      'Uso ilimitado mensal (uso justo)',
+      '1 carrossel por dia',
       'Sem marca d\'água',
       'Editor visual completo',
       'Customização de fontes',
