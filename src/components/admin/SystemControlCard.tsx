@@ -17,6 +17,8 @@ import {
   AlertCircle,
   Clock,
   Bell,
+  Mail,
+  Shield,
 } from "lucide-react";
 import { useSystemSettings } from "@/hooks/useSystemSettings";
 import { useToast } from "@/hooks/use-toast";
@@ -30,6 +32,10 @@ const SystemControlCard = () => {
   // Local state for form
   const [registrationDisabled, setRegistrationDisabled] = useState(false);
   const [registrationMessage, setRegistrationMessage] = useState("");
+  const [emailVerificationEnabled, setEmailVerificationEnabled] = useState(true);
+  const [useCustomEmailSending, setUseCustomEmailSending] = useState(false);
+  const [customEmailFromName, setCustomEmailFromName] = useState("");
+  const [customEmailFromAddress, setCustomEmailFromAddress] = useState("");
   const [maintenanceMode, setMaintenanceMode] = useState(false);
   const [maintenanceMessage, setMaintenanceMessage] = useState("");
   const [maintenanceEndTime, setMaintenanceEndTime] = useState("");
@@ -42,6 +48,10 @@ const SystemControlCard = () => {
     if (!loading) {
       setRegistrationDisabled(settings.registrationDisabled);
       setRegistrationMessage(settings.registrationDisabledMessage);
+      setEmailVerificationEnabled(settings.emailVerificationEnabled);
+      setUseCustomEmailSending(settings.useCustomEmailSending);
+      setCustomEmailFromName(settings.customEmailFromName);
+      setCustomEmailFromAddress(settings.customEmailFromAddress);
       setMaintenanceMode(settings.maintenanceMode);
       setMaintenanceMessage(settings.maintenanceMessage);
       setMaintenanceEndTime(settings.maintenanceEndTime || "");
@@ -57,6 +67,10 @@ const SystemControlCard = () => {
       const success = await updateSettings({
         'registration_disabled': String(registrationDisabled),
         'registration_disabled_message': registrationMessage,
+        'email_verification_enabled': String(emailVerificationEnabled),
+        'use_custom_email_sending': String(useCustomEmailSending),
+        'custom_email_from_name': customEmailFromName,
+        'custom_email_from_address': customEmailFromAddress,
         'maintenance_mode': String(maintenanceMode),
         'maintenance_message': maintenanceMessage,
         'maintenance_end_time': maintenanceEndTime,
@@ -173,6 +187,84 @@ const SystemControlCard = () => {
                   placeholder="Mensagem exibida na página de cadastro..."
                   className="min-h-[80px]"
                 />
+              </div>
+            )}
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* Email Verification Control */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Mail className="w-4 h-4 text-muted-foreground" />
+            <h3 className="font-semibold">Verificação de E-mail</h3>
+            {!emailVerificationEnabled && (
+              <Badge variant="secondary" className="text-xs">DESABILITADA</Badge>
+            )}
+          </div>
+
+          <div className="pl-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>Exigir verificação de e-mail</Label>
+                <p className="text-sm text-muted-foreground">
+                  Usuários precisam confirmar e-mail antes de acessar
+                </p>
+              </div>
+              <Switch
+                checked={emailVerificationEnabled}
+                onCheckedChange={setEmailVerificationEnabled}
+              />
+            </div>
+
+            {emailVerificationEnabled && (
+              <div className="space-y-4 p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label className="flex items-center gap-2">
+                      <Shield className="w-4 h-4" />
+                      Usar envio customizado
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      Plataforma envia e-mails (mais barato que Supabase)
+                    </p>
+                  </div>
+                  <Switch
+                    checked={useCustomEmailSending}
+                    onCheckedChange={setUseCustomEmailSending}
+                  />
+                </div>
+
+                {useCustomEmailSending && (
+                  <div className="grid gap-4 sm:grid-cols-2 pt-2">
+                    <div className="space-y-2">
+                      <Label>Nome do remetente</Label>
+                      <Input
+                        value={customEmailFromName}
+                        onChange={(e) => setCustomEmailFromName(e.target.value)}
+                        placeholder="Ex: Audisell"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>E-mail do remetente</Label>
+                      <Input
+                        type="email"
+                        value={customEmailFromAddress}
+                        onChange={(e) => setCustomEmailFromAddress(e.target.value)}
+                        placeholder="Ex: noreply@audisell.com"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div className="p-3 bg-muted/50 rounded-lg mt-2">
+                  <p className="text-xs text-muted-foreground">
+                    💡 <strong>Sem verificação:</strong> Usuários acessam imediatamente após cadastro.<br/>
+                    <strong>Com Supabase:</strong> E-mails são enviados pelo Supabase (limite: 3/hora grátis).<br/>
+                    <strong>Customizado:</strong> Requer configuração de RESEND_API_KEY no Supabase.
+                  </p>
+                </div>
               </div>
             )}
           </div>
