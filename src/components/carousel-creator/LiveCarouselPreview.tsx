@@ -2,7 +2,8 @@ import { cn } from "@/lib/utils";
 import { ProfileIdentity } from "./ProfileIdentitySelector";
 import { StyleType } from "./StyleSelector";
 import { FormatType } from "./FormatSelector";
-import { TemplateId } from "@/lib/constants";
+import { TemplateId, GRADIENT_PRESETS, AVAILABLE_FONTS, FontId, GradientId } from "@/lib/constants";
+import { TextAlignment } from "./AdvancedTemplateEditor";
 import { motion } from "framer-motion";
 import { Eye, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
@@ -18,6 +19,11 @@ interface LiveCarouselPreviewProps {
   tone: string;
   slideCount: number;
   className?: string;
+  // Customization props
+  fontId?: FontId;
+  gradientId?: GradientId;
+  customGradientColors?: string[];
+  textAlignment?: TextAlignment;
 }
 
 // Sample content for different tones (simulated preview)
@@ -56,15 +62,52 @@ const LiveCarouselPreview = ({
   tone,
   slideCount,
   className,
+  fontId = 'inter',
+  gradientId = 'none',
+  customGradientColors,
+  textAlignment = 'center',
 }: LiveCarouselPreviewProps) => {
   const { language } = useLanguage();
   const [currentSlide, setCurrentSlide] = useState(0);
-  
+
   const isDark = style === "BLACK_WHITE";
-  const bgColor = isDark ? "bg-[#0A0A0A]" : "bg-white";
-  const textColor = isDark ? "text-white" : "text-[#0A0A0A]";
-  const mutedColor = isDark ? "text-white/70" : "text-[#0A0A0A]/70";
-  const borderColor = isDark ? "border-white/10" : "border-[#0A0A0A]/10";
+  const hasGradient = gradientId && gradientId !== 'none';
+
+  // Get gradient colors
+  const getGradientColors = (): string[] | null => {
+    if (gradientId === 'custom' && customGradientColors && customGradientColors.length >= 2) {
+      return customGradientColors;
+    }
+    if (gradientId && gradientId !== 'none') {
+      const preset = GRADIENT_PRESETS.find(g => g.id === gradientId);
+      return preset?.colors ? [...preset.colors] : null;
+    }
+    return null;
+  };
+
+  const gradientColors = getGradientColors();
+
+  // Get font family from fontId
+  const fontFamily = AVAILABLE_FONTS.find(f => f.id === fontId)?.family || 'Inter, system-ui, sans-serif';
+
+  // Background style - solid color or gradient
+  const bgColor = hasGradient ? '' : (isDark ? "bg-[#0A0A0A]" : "bg-white");
+  const bgStyle = gradientColors
+    ? { background: `linear-gradient(135deg, ${gradientColors.join(', ')})` }
+    : {};
+
+  // Text color - white on gradients/dark, dark on light
+  const useWhiteText = hasGradient || isDark;
+  const textColor = useWhiteText ? "text-white" : "text-[#0A0A0A]";
+  const mutedColor = useWhiteText ? "text-white/70" : "text-[#0A0A0A]/70";
+  const borderColor = useWhiteText ? "border-white/10" : "border-[#0A0A0A]/10";
+
+  // Text alignment
+  const alignmentClass = {
+    'left': 'text-left items-start',
+    'center': 'text-center items-center',
+    'right': 'text-right items-end',
+  }[textAlignment] || 'text-center items-center';
 
   // Get aspect ratio based on format
   const getAspectRatio = () => {
@@ -130,7 +173,7 @@ const LiveCarouselPreview = ({
       {/* Preview Card */}
       <div className="relative">
         <motion.div
-          key={`${style}-${format}-${currentSlide}`}
+          key={`${style}-${format}-${currentSlide}-${gradientId}-${fontId}-${textAlignment}`}
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.2 }}
@@ -140,6 +183,7 @@ const LiveCarouselPreview = ({
             getAspectRatio(),
             format === "STORY" ? "max-w-[200px]" : "max-w-[280px]"
           )}
+          style={{ ...bgStyle, fontFamily }}
         >
           {/* Slide counter */}
           <div
@@ -199,11 +243,12 @@ const LiveCarouselPreview = ({
           {/* Content */}
           <div
             className={cn(
-              "absolute inset-0 flex items-center justify-center px-4",
-              textColor
+              "absolute inset-0 flex justify-center px-4",
+              textColor,
+              alignmentClass
             )}
           >
-            <div className="text-center space-y-1">
+            <div className={cn("space-y-1 w-full", alignmentClass.split(' ')[0])}>
               {isSignatureSlide ? (
                 <>
                   {profile.name && (

@@ -29,8 +29,6 @@ interface Slide {
   type: string;
   text: string;
   imageUrl?: string;
-  subtitle?: string;
-  highlightWord?: string;
 }
 
 interface CarouselDownloadViewProps {

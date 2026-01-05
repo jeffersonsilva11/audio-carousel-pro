@@ -58,7 +58,7 @@ export function SortableSlide({
       <button
         onClick={onClick}
         className={cn(
-          "relative w-16 h-16 rounded-lg overflow-hidden border-2 transition-all",
+          "relative w-14 h-[70px] rounded-lg overflow-hidden border-2 transition-all bg-muted/30",
           isActive
             ? "border-accent ring-2 ring-accent/20"
             : "border-transparent hover:border-muted-foreground/30",
@@ -69,7 +69,7 @@ export function SortableSlide({
           <img
             src={slide.imageUrl}
             alt={`Thumbnail ${index + 1}`}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain"
             draggable={false}
           />
         ) : (

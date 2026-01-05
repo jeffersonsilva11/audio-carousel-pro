@@ -64,8 +64,6 @@ interface SlideScript {
 interface CarouselScript {
   slides: SlideScript[];
   title?: string;
-  subtitle?: string;
-  highlightWord?: string;
 }
 
 interface CarouselData {

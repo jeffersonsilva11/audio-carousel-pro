@@ -2,7 +2,6 @@ import { useState, useCallback, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   ChevronLeft,
@@ -12,7 +11,6 @@ import {
   Undo2,
   Redo2,
   AlertTriangle,
-  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -46,9 +44,16 @@ interface Slide {
   type: string;
   text: string;
   imageUrl?: string;
-  subtitle?: string;
-  highlightWord?: string;
 }
+
+type FormatType = 'POST_SQUARE' | 'POST_PORTRAIT' | 'STORY';
+
+// Character limits per format and slide type
+const CHARACTER_LIMITS: Record<FormatType, { cover: number; content: number }> = {
+  'POST_SQUARE': { cover: 150, content: 280 },
+  'POST_PORTRAIT': { cover: 180, content: 320 },
+  'STORY': { cover: 250, content: 400 },
+};
 
 interface CarouselEditViewProps {
   slides: Slide[];
@@ -56,6 +61,7 @@ interface CarouselEditViewProps {
   onFinalize: (editedSlides: Slide[], changedIndices: number[]) => void;
   isRegenerating?: boolean;
   regeneratingProgress?: { current: number; total: number };
+  format?: FormatType;
 }
 
 const CarouselEditView = ({
@@ -64,6 +70,7 @@ const CarouselEditView = ({
   onFinalize,
   isRegenerating = false,
   regeneratingProgress,
+  format = 'POST_SQUARE',
 }: CarouselEditViewProps) => {
   const { t } = useTranslation();
   const { toast } = useToast();
@@ -83,8 +90,6 @@ const CarouselEditView = ({
 
   // Local editing state (always in edit mode)
   const [editedText, setEditedText] = useState(initialSlides[0]?.text || "");
-  const [editedSubtitle, setEditedSubtitle] = useState(initialSlides[0]?.subtitle || "");
-  const [editedHighlightWord, setEditedHighlightWord] = useState(initialSlides[0]?.highlightWord || "");
 
   // Track which slides have been modified
   const getChangedIndices = useCallback(() => {
@@ -92,11 +97,7 @@ const CarouselEditView = ({
       .map((slide, index) => {
         const original = originalSlides[index];
         if (!original) return -1;
-        if (
-          slide.text !== original.text ||
-          slide.subtitle !== original.subtitle ||
-          slide.highlightWord !== original.highlightWord
-        ) {
+        if (slide.text !== original.text) {
           return index;
         }
         return -1;
@@ -111,8 +112,6 @@ const CarouselEditView = ({
     const current = slides[currentSlide];
     if (current) {
       setEditedText(current.text);
-      setEditedSubtitle(current.subtitle || "");
-      setEditedHighlightWord(current.highlightWord || "");
     }
   }, [currentSlide, slides]);
 
@@ -120,15 +119,6 @@ const CarouselEditView = ({
   const saveCurrentSlideEdits = useCallback(() => {
     const updatedSlides = slides.map((slide, index) => {
       if (index !== currentSlide) return slide;
-
-      if (index === 0) {
-        return {
-          ...slide,
-          text: editedText,
-          subtitle: editedSubtitle || undefined,
-          highlightWord: editedHighlightWord || undefined,
-        };
-      }
       return { ...slide, text: editedText };
     });
 
@@ -136,7 +126,7 @@ const CarouselEditView = ({
       setSlides(updatedSlides);
       onSlidesUpdate(updatedSlides);
     }
-  }, [currentSlide, editedText, editedSubtitle, editedHighlightWord, slides, setSlides, onSlidesUpdate]);
+  }, [currentSlide, editedText, slides, setSlides, onSlidesUpdate]);
 
   // Auto-save when text changes (debounced effect)
   useEffect(() => {
@@ -144,7 +134,7 @@ const CarouselEditView = ({
       saveCurrentSlideEdits();
     }, 500);
     return () => clearTimeout(timer);
-  }, [editedText, editedSubtitle, editedHighlightWord, saveCurrentSlideEdits]);
+  }, [editedText, saveCurrentSlideEdits]);
 
   // DnD sensors
   const sensors = useSensors(
@@ -219,11 +209,7 @@ const CarouselEditView = ({
   const currentSlideHasChanges = (() => {
     const original = originalSlides[currentSlide];
     if (!original) return false;
-    return (
-      currentSlideData?.text !== original.text ||
-      currentSlideData?.subtitle !== original.subtitle ||
-      currentSlideData?.highlightWord !== original.highlightWord
-    );
+    return currentSlideData?.text !== original.text;
   })();
 
   return (
@@ -328,11 +314,7 @@ const CarouselEditView = ({
               <div className="flex gap-2 overflow-x-auto pb-2 justify-center">
                 {slides.map((slide, index) => {
                   const original = originalSlides[index];
-                  const isModified =
-                    original &&
-                    (slide.text !== original.text ||
-                      slide.subtitle !== original.subtitle ||
-                      slide.highlightWord !== original.highlightWord);
+                  const isModified = original && slide.text !== original.text;
                   return (
                     <SortableSlide
                       key={`slide-${index}`}
@@ -404,82 +386,45 @@ const CarouselEditView = ({
                 )}
               </div>
 
-              {/* Cover slide specific fields */}
-              {isCoverSlide && (
-                <div className="space-y-3 p-3 bg-muted/50 rounded-lg">
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Sparkles className="w-3 h-3" />
-                    Opções da Capa
-                  </div>
-
+              {/* Main text */}
+              {(() => {
+                const limits = CHARACTER_LIMITS[format];
+                const maxChars = isCoverSlide ? limits.cover : limits.content;
+                const warningThreshold = Math.floor(maxChars * 0.85);
+                return (
                   <div className="space-y-2">
-                    <Label htmlFor="subtitle" className="text-sm">
-                      Subtítulo
-                    </Label>
-                    <Input
-                      id="subtitle"
-                      value={editedSubtitle}
-                      onChange={(e) => setEditedSubtitle(e.target.value.slice(0, 80))}
-                      placeholder="Ex: O segredo que ninguém te contou..."
-                      className="text-sm"
-                      maxLength={80}
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm">
+                        {isCoverSlide ? "Título Principal" : "Texto do Slide"}
+                      </Label>
+                      <span className="text-xs text-muted-foreground">
+                        máx. {maxChars} caracteres
+                      </span>
+                    </div>
+                    <Textarea
+                      value={editedText}
+                      onChange={(e) => setEditedText(e.target.value.slice(0, maxChars))}
+                      className={cn(
+                        "min-h-[150px] resize-none",
+                        editedText.length > warningThreshold && "border-amber-500 focus-visible:ring-amber-500"
+                      )}
+                      placeholder="Digite o texto..."
+                      maxLength={maxChars}
                     />
                     <p className={cn(
                       "text-xs",
-                      editedSubtitle.length > 60 ? "text-amber-500" : "text-muted-foreground"
+                      editedText.length > warningThreshold
+                        ? "text-amber-500"
+                        : "text-muted-foreground"
                     )}>
-                      {editedSubtitle.length}/80
+                      {editedText.length}/{maxChars} caracteres
+                      {editedText.length > warningThreshold && (
+                        <span className="ml-2">(texto pode ficar pequeno)</span>
+                      )}
                     </p>
                   </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="highlightWord" className="text-sm">
-                      Palavra em Destaque
-                    </Label>
-                    <Input
-                      id="highlightWord"
-                      value={editedHighlightWord}
-                      onChange={(e) => setEditedHighlightWord(e.target.value.slice(0, 30))}
-                      placeholder="Ex: segredo"
-                      className="text-sm"
-                      maxLength={30}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Main text */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label className="text-sm">
-                    {isCoverSlide ? "Título Principal" : "Texto do Slide"}
-                  </Label>
-                  <span className="text-xs text-muted-foreground">
-                    máx. {isCoverSlide ? 150 : 300} caracteres
-                  </span>
-                </div>
-                <Textarea
-                  value={editedText}
-                  onChange={(e) => setEditedText(e.target.value.slice(0, isCoverSlide ? 150 : 300))}
-                  className={cn(
-                    "min-h-[150px] resize-none",
-                    editedText.length > (isCoverSlide ? 130 : 270) && "border-amber-500 focus-visible:ring-amber-500"
-                  )}
-                  placeholder="Digite o texto..."
-                  maxLength={isCoverSlide ? 150 : 300}
-                />
-                <p className={cn(
-                  "text-xs",
-                  editedText.length > (isCoverSlide ? 130 : 270)
-                    ? "text-amber-500"
-                    : "text-muted-foreground"
-                )}>
-                  {editedText.length}/{isCoverSlide ? 150 : 300} caracteres
-                  {editedText.length > (isCoverSlide ? 130 : 270) && (
-                    <span className="ml-2">(texto pode ficar pequeno)</span>
-                  )}
-                </p>
-              </div>
+                );
+              })()}
             </CardContent>
           </Card>
 

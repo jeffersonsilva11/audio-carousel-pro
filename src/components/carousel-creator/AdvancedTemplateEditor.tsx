@@ -6,8 +6,6 @@ import {
   Upload,
   Sparkles,
   Loader2,
-  ArrowUp,
-  ArrowDown,
   Settings2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -72,19 +70,16 @@ const AdvancedTemplateEditor = ({
       "pt-BR": [
         "40+ gradientes premium",
         "Upload de imagem de capa personalizada",
-        "Posição do subtítulo customizável",
         "Opções de navegação visual"
       ],
       "es": [
         "40+ gradientes premium",
         "Carga de imagen de portada personalizada",
-        "Posición de subtítulo personalizable",
         "Opciones de navegación visual"
       ],
       "en": [
         "40+ premium gradients",
         "Custom cover image upload",
-        "Customizable subtitle position",
         "Visual navigation options"
       ]
     };
@@ -109,14 +104,6 @@ const AdvancedTemplateEditor = ({
       />
     );
   }
-
-  const handleSubtitlePositionChange = (position: SubtitlePosition) => {
-    setCustomization({ ...customization, subtitlePosition: position });
-  };
-
-  const handleHighlightColorChange = (color: string) => {
-    setCustomization({ ...customization, highlightColor: color });
-  };
 
   const handleNavigationDotsChange = (show: boolean) => {
     setCustomization({ ...customization, showNavigationDots: show });
@@ -496,50 +483,8 @@ const AdvancedTemplateEditor = ({
 
         {/* Options Tab */}
         <TabsContent value="options" className="space-y-6">
-          {/* Subtitle Position */}
-          <div className="space-y-3">
-            <h4 className="text-sm font-medium">
-              {language === "pt-BR" ? "Posição do Subtítulo" : language === "es" ? "Posición del Subtítulo" : "Subtitle Position"}
-            </h4>
-            <div className="flex gap-2">
-              {([
-                {
-                  value: 'above' as SubtitlePosition,
-                  icon: ArrowUp,
-                  label: language === "pt-BR" ? 'Acima do Título' : language === "es" ? 'Arriba del Título' : 'Above Title'
-                },
-                {
-                  value: 'below' as SubtitlePosition,
-                  icon: ArrowDown,
-                  label: language === "pt-BR" ? 'Abaixo do Título' : language === "es" ? 'Debajo del Título' : 'Below Title'
-                }
-              ]).map(({ value, icon: Icon, label }) => (
-                <button
-                  key={value}
-                  onClick={() => handleSubtitlePositionChange(value)}
-                  className={cn(
-                    "flex-1 flex items-center justify-center gap-2 p-3 rounded-lg border-2 transition-all",
-                    customization.subtitlePosition === value
-                      ? "border-accent bg-accent/10"
-                      : "border-border hover:border-accent/50"
-                  )}
-                >
-                  <Icon className="w-4 h-4" />
-                  <span className="text-sm">{label}</span>
-                </button>
-              ))}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {language === "pt-BR"
-                ? "Define onde o subtítulo aparece em relação ao título principal na capa"
-                : language === "es"
-                ? "Define dónde aparece el subtítulo en relación al título principal"
-                : "Defines where the subtitle appears in relation to the main title"}
-            </p>
-          </div>
-
           {/* Navigation Options */}
-          <div className="space-y-4 border-t border-border pt-4">
+          <div className="space-y-4">
             <h4 className="text-sm font-medium">
               {language === "pt-BR" ? "Navegação Visual" : language === "es" ? "Navegación Visual" : "Visual Navigation"}
             </h4>
