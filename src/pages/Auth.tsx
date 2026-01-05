@@ -4,11 +4,12 @@ import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useRecaptcha } from "@/hooks/useRecaptcha";
 import { useAuthProtection } from "@/hooks/useAuthProtection";
+import { useSystemSettings } from "@/hooks/useSystemSettings";
 import { t } from "@/lib/translations";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Mic2, Mail, Lock, User, ArrowLeft, Loader2, AlertTriangle, Clock } from "lucide-react";
+import { Mic2, Mail, Lock, User, ArrowLeft, Loader2, AlertTriangle, Clock, UserX } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { BRAND } from "@/lib/constants";
@@ -29,15 +30,19 @@ const Auth = () => {
   
   const { user, signIn, signUp, signInWithGoogle, isEmailConfirmed } = useAuth();
   const { verifyRecaptcha } = useRecaptcha();
-  const { 
-    isLocked, 
-    requiresInteractiveCaptcha, 
-    recordFailedAttempt, 
+  const {
+    isLocked,
+    requiresInteractiveCaptcha,
+    recordFailedAttempt,
     recordSuccessfulAttempt,
-    getRemainingLockoutTime 
+    getRemainingLockoutTime
   } = useAuthProtection();
+  const { settings: systemSettings, loading: systemLoading } = useSystemSettings();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Check if registration is disabled
+  const registrationDisabled = systemSettings.registrationDisabled && !isLogin;
   
   const [lockoutSeconds, setLockoutSeconds] = useState(0);
 
@@ -294,6 +299,16 @@ const Auth = () => {
           </CardHeader>
 
           <CardContent className="pt-6">
+            {/* Registration Disabled Warning */}
+            {registrationDisabled && (
+              <Alert className="mb-4 bg-amber-500/10 border-amber-500/30">
+                <UserX className="h-4 w-4 text-amber-600" />
+                <AlertDescription className="text-amber-700">
+                  {systemSettings.registrationDisabledMessage}
+                </AlertDescription>
+              </Alert>
+            )}
+
             {/* Lockout Warning */}
             {isLocked && (
               <Alert variant="destructive" className="mb-4">
@@ -329,7 +344,7 @@ const Auth = () => {
               variant="outline"
               className="w-full mb-4"
               onClick={handleGoogleSignIn}
-              disabled={isGoogleLoading || isLocked || (requiresInteractiveCaptcha && !captchaToken)}
+              disabled={isGoogleLoading || isLocked || registrationDisabled || (requiresInteractiveCaptcha && !captchaToken)}
             >
               {isGoogleLoading ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -410,11 +425,11 @@ const Auth = () => {
                 )}
               </div>
 
-              <Button 
-                type="submit" 
-                variant="accent" 
-                className="w-full" 
-                disabled={isLoading || isLocked || (requiresInteractiveCaptcha && !captchaToken)}
+              <Button
+                type="submit"
+                variant="accent"
+                className="w-full"
+                disabled={isLoading || isLocked || registrationDisabled || (requiresInteractiveCaptcha && !captchaToken)}
               >
                 {isLoading ? (
                   <>

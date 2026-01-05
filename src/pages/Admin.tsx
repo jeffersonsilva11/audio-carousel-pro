@@ -45,6 +45,7 @@ import PlansConfigManager from "@/components/admin/PlansConfigManager";
 import ManualSubscriptionManager from "@/components/admin/ManualSubscriptionManager";
 import CouponsManager from "@/components/admin/CouponsManager";
 import RevenueReports from "@/components/admin/RevenueReports";
+import SystemControlCard from "@/components/admin/SystemControlCard";
 
 const Admin = () => {
   const { user, loading: authLoading } = useAuth();
@@ -143,6 +144,10 @@ const Admin = () => {
         {/* Tabs */}
         <Tabs defaultValue="landing" className="space-y-6">
           <TabsList className="flex-wrap h-auto gap-1">
+            <TabsTrigger value="system" className="gap-2">
+              <AlertTriangle className="w-4 h-4" />
+              {language === "pt-BR" ? "Sistema" : "System"}
+            </TabsTrigger>
             <TabsTrigger value="analytics" className="gap-2">
               <BarChart3 className="w-4 h-4" />
               Analytics
@@ -208,6 +213,10 @@ const Admin = () => {
               Stripe
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="system">
+            <SystemControlCard />
+          </TabsContent>
 
           <TabsContent value="analytics">
             <AdvancedAnalytics />
