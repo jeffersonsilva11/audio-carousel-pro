@@ -16,11 +16,13 @@ import {
 import {
   ArrowLeft,
   Calendar,
+  ChevronDown,
   Clock,
   Copy,
   Crown,
   Download,
   FileArchive,
+  FileImage,
   FileText,
   Image as ImageIcon,
   Loader2,
@@ -34,6 +36,13 @@ import {
 import { toast } from "sonner";
 import JSZip from "jszip";
 import { formatLocalizedDate, formatDuration, formatInteger, formatFileSize, formatRelativeTime, formatDaysRemaining, getDaysRemainingUrgency } from "@/lib/localization";
+import { ExportFormat, convertSvgToFormat, getFileExtension } from "@/lib/imageConverter";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import CarouselDetailSkeleton from "@/components/skeletons/CarouselDetailSkeleton";
 import {
   AlertDialog,
@@ -99,6 +108,7 @@ const CarouselDetail = () => {
   const [downloading, setDownloading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [exportFormat, setExportFormat] = useState<ExportFormat>("png");
 
 
   useEffect(() => {
@@ -162,22 +172,16 @@ const CarouselDetail = () => {
 
   const handleDownloadSingle = async (url: string, index: number) => {
     try {
-      const response = await fetch(url);
-      const blob = await response.blob();
-
-      // Detect file type from URL or content-type
-      const contentType = response.headers.get("content-type") || "";
-      const isSvg = url.endsWith(".svg") || contentType.includes("svg");
-      const extension = isSvg ? "svg" : "png";
-
+      const blob = await convertSvgToFormat(url, { format: exportFormat });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
-      link.download = `slide-${index + 1}.${extension}`;
+      link.download = `slide-${index + 1}.${getFileExtension(exportFormat)}`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(link.href);
     } catch (error) {
+      console.error("Download error:", error);
       toast.error(t("carouselDetail", "downloadError"));
     }
   };
@@ -191,15 +195,12 @@ const CarouselDetail = () => {
 
       await Promise.all(
         carousel.image_urls.map(async (url, index) => {
-          const response = await fetch(url);
-          const blob = await response.blob();
-
-          // Detect file type from URL or content-type
-          const contentType = response.headers.get("content-type") || "";
-          const isSvg = url.endsWith(".svg") || contentType.includes("svg");
-          const extension = isSvg ? "svg" : "png";
-
-          zip.file(`slide-${index + 1}.${extension}`, blob);
+          try {
+            const blob = await convertSvgToFormat(url, { format: exportFormat });
+            zip.file(`slide-${index + 1}.${getFileExtension(exportFormat)}`, blob);
+          } catch (err) {
+            console.error(`Error converting slide ${index + 1}:`, err);
+          }
         })
       );
 
@@ -214,6 +215,7 @@ const CarouselDetail = () => {
 
       toast.success(t("carouselDetail", "downloadStarted"));
     } catch (error) {
+      console.error("ZIP download error:", error);
       toast.error(t("carouselDetail", "zipError"));
     } finally {
       setDownloading(false);
@@ -544,6 +546,43 @@ const CarouselDetail = () => {
                 <CardTitle className="text-base">{t("carouselDetail", "actions")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
+                {/* Export Format Selector */}
+                {carousel.status === "COMPLETED" && carousel.image_urls && (
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                    <span className="text-sm text-muted-foreground">{t("carouselDetail", "exportFormat") || "Formato:"}</span>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm" className="min-w-[120px] justify-between">
+                          <span className="flex items-center gap-2">
+                            {exportFormat === "svg" && <FileImage className="w-4 h-4" />}
+                            {exportFormat === "png" && <ImageIcon className="w-4 h-4" />}
+                            {exportFormat === "jpg" && <ImageIcon className="w-4 h-4" />}
+                            {exportFormat.toUpperCase()}
+                          </span>
+                          <ChevronDown className="w-4 h-4 ml-2 opacity-50" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => setExportFormat("png")} className="cursor-pointer">
+                          <ImageIcon className="w-4 h-4 mr-2" />
+                          PNG
+                          <span className="ml-2 text-xs text-muted-foreground">(Recomendado)</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setExportFormat("jpg")} className="cursor-pointer">
+                          <ImageIcon className="w-4 h-4 mr-2" />
+                          JPG
+                          <span className="ml-2 text-xs text-muted-foreground">(Menor tamanho)</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setExportFormat("svg")} className="cursor-pointer">
+                          <FileImage className="w-4 h-4 mr-2" />
+                          SVG
+                          <span className="ml-2 text-xs text-muted-foreground">(Vetorial)</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                )}
+
                 {/* Download All */}
                 {carousel.status === "COMPLETED" && carousel.image_urls && (
                   <>

@@ -1,11 +1,18 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ChevronLeft, ChevronRight, Download, FolderArchive, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronDown, Download, FolderArchive, Loader2, Image, FileImage } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import JSZip from "jszip";
 import { useTranslation } from "@/hooks/useLanguage";
+import { ExportFormat, convertSvgToFormat, getFileExtension } from "@/lib/imageConverter";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface Slide {
   number: number;
@@ -24,6 +31,7 @@ const CarouselPreview = ({ slides, onDownloadAll, isPro = false }: CarouselPrevi
   const { t } = useTranslation();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isDownloadingZip, setIsDownloadingZip] = useState(false);
+  const [exportFormat, setExportFormat] = useState<ExportFormat>("png");
   const { toast } = useToast();
 
   const goToSlide = (index: number) => {
@@ -35,23 +43,23 @@ const CarouselPreview = ({ slides, onDownloadAll, isPro = false }: CarouselPrevi
   const downloadSlide = async (slide: Slide) => {
     try {
       if (slide.imageUrl) {
-        const response = await fetch(slide.imageUrl);
-        const blob = await response.blob();
+        const blob = await convertSvgToFormat(slide.imageUrl, { format: exportFormat });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `slide-${slide.number}.svg`;
+        a.download = `slide-${slide.number}.${getFileExtension(exportFormat)}`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
       }
-      
+
       toast({
         title: t("carouselPreview", "downloadStarted"),
         description: t("carouselPreview", "slideDownloaded").replace("{number}", String(slide.number)),
       });
     } catch (error) {
+      console.error("Download error:", error);
       toast({
         title: t("carouselPreview", "downloadError"),
         description: t("carouselPreview", "couldNotDownload"),
@@ -77,15 +85,14 @@ const CarouselPreview = ({ slides, onDownloadAll, isPro = false }: CarouselPrevi
 
       if (!folder) throw new Error("Could not create folder");
 
-      // Fetch all slides and add to zip
+      // Convert and add all slides to zip
       for (const slide of slides) {
         if (slide.imageUrl) {
           try {
-            const response = await fetch(slide.imageUrl);
-            const blob = await response.blob();
-            folder.file(`slide-${slide.number}.svg`, blob);
+            const blob = await convertSvgToFormat(slide.imageUrl, { format: exportFormat });
+            folder.file(`slide-${slide.number}.${getFileExtension(exportFormat)}`, blob);
           } catch (err) {
-            console.error(`Error fetching slide ${slide.number}:`, err);
+            console.error(`Error converting slide ${slide.number}:`, err);
           }
         }
       }
@@ -203,6 +210,41 @@ const CarouselPreview = ({ slides, onDownloadAll, isPro = false }: CarouselPrevi
             )}
           </button>
         ))}
+      </div>
+
+      {/* Export Format Selector */}
+      <div className="flex items-center justify-center gap-3">
+        <span className="text-sm text-muted-foreground">Formato:</span>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="min-w-[120px] justify-between">
+              <span className="flex items-center gap-2">
+                {exportFormat === "svg" && <FileImage className="w-4 h-4" />}
+                {exportFormat === "png" && <Image className="w-4 h-4" />}
+                {exportFormat === "jpg" && <Image className="w-4 h-4" />}
+                {exportFormat.toUpperCase()}
+              </span>
+              <ChevronDown className="w-4 h-4 ml-2 opacity-50" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="center">
+            <DropdownMenuItem onClick={() => setExportFormat("png")} className="cursor-pointer">
+              <Image className="w-4 h-4 mr-2" />
+              PNG
+              <span className="ml-2 text-xs text-muted-foreground">(Recomendado)</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setExportFormat("jpg")} className="cursor-pointer">
+              <Image className="w-4 h-4 mr-2" />
+              JPG
+              <span className="ml-2 text-xs text-muted-foreground">(Menor tamanho)</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setExportFormat("svg")} className="cursor-pointer">
+              <FileImage className="w-4 h-4 mr-2" />
+              SVG
+              <span className="ml-2 text-xs text-muted-foreground">(Vetorial)</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Actions */}
