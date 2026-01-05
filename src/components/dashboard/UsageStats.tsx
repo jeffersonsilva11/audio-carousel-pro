@@ -3,15 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/hooks/useLanguage";
-import { t } from "@/lib/translations";
-import { BarChart3, CheckCircle2, Clock, TrendingUp } from "lucide-react";
+import { BarChart3, Calendar, CalendarDays, TrendingUp } from "lucide-react";
 import { formatInteger } from "@/lib/localization";
 
 interface UsageStatsData {
   totalCarousels: number;
-  completedCarousels: number;
-  failedCarousels: number;
-  avgProcessingTime: number;
   todayCarousels: number;
   weekCarousels: number;
   monthCarousels: number;
@@ -36,23 +32,12 @@ export default function UsageStats() {
         // Fetch all carousels
         const { data: allCarousels, error } = await supabase
           .from("carousels")
-          .select("id, status, processing_time, created_at")
+          .select("id, created_at")
           .eq("user_id", user.id);
 
         if (error) throw error;
 
         const carousels = allCarousels || [];
-        
-        const completed = carousels.filter(c => c.status === "COMPLETED");
-        const failed = carousels.filter(c => c.status === "FAILED");
-        
-        const processingTimes = completed
-          .filter(c => c.processing_time)
-          .map(c => c.processing_time as number);
-        
-        const avgTime = processingTimes.length > 0
-          ? processingTimes.reduce((a, b) => a + b, 0) / processingTimes.length
-          : 0;
 
         const todayCount = carousels.filter(c => c.created_at >= todayStart).length;
         const weekCount = carousels.filter(c => c.created_at >= weekAgo).length;
@@ -60,9 +45,6 @@ export default function UsageStats() {
 
         setStats({
           totalCarousels: carousels.length,
-          completedCarousels: completed.length,
-          failedCarousels: failed.length,
-          avgProcessingTime: avgTime,
           todayCarousels: todayCount,
           weekCarousels: weekCount,
           monthCarousels: monthCount,
@@ -77,10 +59,6 @@ export default function UsageStats() {
     fetchStats();
   }, [user]);
 
-  const successRate = stats && stats.totalCarousels > 0
-    ? Math.round((stats.completedCarousels / stats.totalCarousels) * 100)
-    : 100;
-
   const statCards = [
     {
       icon: BarChart3,
@@ -90,16 +68,16 @@ export default function UsageStats() {
       bgColor: "bg-blue-500/10",
     },
     {
-      icon: CheckCircle2,
-      label: language === "pt-BR" ? "Taxa de sucesso" : language === "es" ? "Tasa de éxito" : "Success rate",
-      value: `${successRate}%`,
+      icon: Calendar,
+      label: language === "pt-BR" ? "Hoje" : language === "es" ? "Hoy" : "Today",
+      value: stats?.todayCarousels ?? 0,
       color: "text-green-500",
       bgColor: "bg-green-500/10",
     },
     {
-      icon: Clock,
-      label: language === "pt-BR" ? "Tempo médio" : language === "es" ? "Tiempo promedio" : "Avg. time",
-      value: stats?.avgProcessingTime ? `${stats.avgProcessingTime.toFixed(1)}s` : "—",
+      icon: CalendarDays,
+      label: language === "pt-BR" ? "Esta semana" : language === "es" ? "Esta semana" : "This week",
+      value: stats?.weekCarousels ?? 0,
       color: "text-amber-500",
       bgColor: "bg-amber-500/10",
     },
@@ -152,19 +130,6 @@ export default function UsageStats() {
               </div>
             </div>
           ))}
-        </div>
-        
-        {/* Mini breakdown */}
-        <div className="mt-4 pt-4 border-t border-border/50 flex flex-wrap gap-4 text-sm text-muted-foreground">
-          <span>
-            {language === "pt-BR" ? "Hoje" : language === "es" ? "Hoy" : "Today"}: <strong className="text-foreground">{formatInteger(stats?.todayCarousels ?? 0, language)}</strong>
-          </span>
-          <span>
-            {language === "pt-BR" ? "Esta semana" : language === "es" ? "Esta semana" : "This week"}: <strong className="text-foreground">{formatInteger(stats?.weekCarousels ?? 0, language)}</strong>
-          </span>
-          <span>
-            {language === "pt-BR" ? "Falhas" : language === "es" ? "Fallos" : "Failed"}: <strong className="text-foreground">{formatInteger(stats?.failedCarousels ?? 0, language)}</strong>
-          </span>
         </div>
       </CardContent>
     </Card>

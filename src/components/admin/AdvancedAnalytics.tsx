@@ -30,7 +30,6 @@ const PLAN_COLORS: Record<string, string> = {
   free: "hsl(var(--muted))",
   starter: "hsl(var(--accent))",
   creator: "hsl(var(--primary))",
-  agency: "hsl(145, 63%, 49%)",
 };
 
 const AdvancedAnalytics = () => {
@@ -72,10 +71,18 @@ const AdvancedAnalytics = () => {
         .from("profiles")
         .select("*", { count: "exact", head: true });
 
+      // Fetch admin user IDs to exclude from revenue calculations
+      const { data: adminRoles } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "admin");
+
+      const adminUserIds = new Set((adminRoles || []).map(r => r.user_id));
+
       // Fetch subscriptions for plan distribution
       const { data: subscriptionsData } = await supabase
         .from("subscriptions")
-        .select("plan_tier, status")
+        .select("plan_tier, status, user_id")
         .eq("status", "active");
 
       // Fetch API costs
@@ -108,14 +115,22 @@ const AdvancedAnalytics = () => {
 
       setDailyStats(processedDailyStats);
 
-      // Process plan distribution
-      const planCounts: Record<string, number> = { free: 0, starter: 0, creator: 0, agency: 0 };
-      
-      // Count free users (total users - paid users)
-      const paidUsersCount = subscriptionsData?.length || 0;
-      planCounts.free = (totalUsers || 0) - paidUsersCount;
+      // Process plan distribution (excluding admins)
+      const planCounts: Record<string, number> = { free: 0, starter: 0, creator: 0 };
 
-      subscriptionsData?.forEach((s) => {
+      // Filter out admin subscriptions for revenue/conversion calculations
+      const nonAdminSubscriptions = (subscriptionsData || []).filter(
+        s => !adminUserIds.has(s.user_id)
+      );
+
+      // Count paying users excluding admins
+      const paidUsersCount = nonAdminSubscriptions.length;
+      const adminCount = adminUserIds.size;
+
+      // Free users = total - paid - admins
+      planCounts.free = Math.max(0, (totalUsers || 0) - paidUsersCount - adminCount);
+
+      nonAdminSubscriptions.forEach((s) => {
         if (s.plan_tier && planCounts[s.plan_tier] !== undefined) {
           planCounts[s.plan_tier]++;
         }
@@ -144,14 +159,15 @@ const AdvancedAnalytics = () => {
 
       setApiCosts(processedApiCosts);
 
-      // Calculate totals
+      // Calculate totals (excluding admins from revenue)
       const proUsers = paidUsersCount;
-      const estimatedRevenue = 
-        (planCounts.starter * 29.90) + 
-        (planCounts.creator * 99.90) + 
-        (planCounts.agency * 199.90);
-      
-      const conversionRate = totalUsers ? (proUsers / totalUsers) * 100 : 0;
+      const estimatedRevenue =
+        (planCounts.starter * 29.90) +
+        (planCounts.creator * 99.90);
+
+      // Conversion rate excludes admins
+      const nonAdminUsers = Math.max(0, (totalUsers || 0) - adminCount);
+      const conversionRate = nonAdminUsers > 0 ? (proUsers / nonAdminUsers) * 100 : 0;
 
       setTotals({
         totalUsers: totalUsers || 0,

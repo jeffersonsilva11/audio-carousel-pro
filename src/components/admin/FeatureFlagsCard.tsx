@@ -63,7 +63,9 @@ export default function FeatureFlagsCard() {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {allFlags.map((flag) => (
+          {allFlags
+            .filter((flag) => flag.key !== "image_generation") // Hide deprecated flag
+            .map((flag) => (
             <div
               key={flag.id}
               className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors"
@@ -84,7 +86,7 @@ export default function FeatureFlagsCard() {
             </div>
           ))}
 
-          {allFlags.length === 0 && (
+          {allFlags.filter((flag) => flag.key !== "image_generation").length === 0 && (
             <p className="text-center text-muted-foreground py-8">
               {language === "pt-BR" 
                 ? "Nenhuma feature flag configurada" 

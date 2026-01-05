@@ -1,15 +1,8 @@
-import { useState } from "react";
-import { Minimize2, Sparkles, FileText, CheckCircle2, ChevronDown } from "lucide-react";
+import { Minimize2, Sparkles, FileText, CheckCircle2, Heart, Briefcase, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TEXT_MODES, TextModeId, getTextModeLabel } from "@/lib/constants";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { useLanguage } from "@/hooks/useLanguage";
+import { useLanguage, useTranslation } from "@/hooks/useLanguage";
+import { Card, CardContent } from "@/components/ui/card";
 
 export type CreativeTone = "emotional" | "professional" | "provocative";
 
@@ -20,52 +13,77 @@ interface TextModeSelectorProps {
   setCreativeTone: (tone: CreativeTone) => void;
 }
 
-const CREATIVE_TONES: { id: CreativeTone; label: string; description: string }[] = [
-  { id: "emotional", label: "Emocional", description: "Conecta pelo sentimento" },
-  { id: "professional", label: "Profissional", description: "Tom sério e confiável" },
-  { id: "provocative", label: "Provocador", description: "Desperta curiosidade" },
-];
-
 const iconMap = {
   Minimize2,
   Sparkles,
   FileText,
 };
 
-const TextModeSelector = ({ 
-  selectedMode, 
-  setSelectedMode, 
-  creativeTone, 
-  setCreativeTone 
+const TextModeSelector = ({
+  selectedMode,
+  setSelectedMode,
+  creativeTone,
+  setCreativeTone
 }: TextModeSelectorProps) => {
   const { language } = useLanguage();
-  const [isCreativeOpen, setIsCreativeOpen] = useState(selectedMode === "creative");
+  const { t } = useTranslation();
 
   const handleModeChange = (mode: TextModeId) => {
     setSelectedMode(mode);
-    if (mode === "creative") {
-      setIsCreativeOpen(true);
-    }
   };
 
+  // Show tone options for all modes except "compact"
+  const showToneOptions = selectedMode !== "compact";
+
+  const tones = [
+    {
+      id: "emotional" as CreativeTone,
+      name: t("toneSelector", "emotional"),
+      description: t("toneSelector", "emotionalDesc"),
+      icon: Heart,
+      gradient: "from-pink-500/20 to-rose-500/20",
+      iconColor: "text-pink-500",
+      borderColor: "border-pink-500/50",
+    },
+    {
+      id: "professional" as CreativeTone,
+      name: t("toneSelector", "professional"),
+      description: t("toneSelector", "professionalDesc"),
+      icon: Briefcase,
+      gradient: "from-blue-500/20 to-cyan-500/20",
+      iconColor: "text-blue-500",
+      borderColor: "border-blue-500/50",
+    },
+    {
+      id: "provocative" as CreativeTone,
+      name: t("toneSelector", "provocative"),
+      description: t("toneSelector", "provocativeDesc"),
+      icon: Zap,
+      gradient: "from-orange-500/20 to-amber-500/20",
+      iconColor: "text-orange-500",
+      borderColor: "border-orange-500/50",
+    },
+  ];
+
   return (
-    <div className="space-y-4">
-      <div>
-        <h3 className="text-lg font-semibold mb-1">Modo de Texto</h3>
-        <p className="text-sm text-muted-foreground">
-          Como a IA deve processar seu conteúdo
-        </p>
-      </div>
+    <div className="space-y-6">
+      {/* Text Mode Selection */}
+      <div className="space-y-4">
+        <div>
+          <h3 className="text-lg font-semibold mb-1">Modo de Texto</h3>
+          <p className="text-sm text-muted-foreground">
+            Como a IA deve processar seu conteúdo
+          </p>
+        </div>
 
-      <div className="space-y-3">
-        {TEXT_MODES.map((mode) => {
-          const isSelected = selectedMode === mode.id;
-          const IconComponent = iconMap[mode.icon as keyof typeof iconMap];
-          const isCreative = mode.id === "creative";
+        <div className="space-y-3">
+          {TEXT_MODES.map((mode) => {
+            const isSelected = selectedMode === mode.id;
+            const IconComponent = iconMap[mode.icon as keyof typeof iconMap];
 
-          return (
-            <div key={mode.id}>
+            return (
               <button
+                key={mode.id}
                 type="button"
                 onClick={() => handleModeChange(mode.id)}
                 className={cn(
@@ -93,60 +111,73 @@ const TextModeSelector = ({
                     {getTextModeLabel(mode.descriptionKey, language)}
                   </p>
                 </div>
-
-                {isCreative && isSelected && (
-                  <ChevronDown className={cn(
-                    "w-5 h-5 text-muted-foreground transition-transform shrink-0",
-                    isCreativeOpen && "rotate-180"
-                  )} />
-                )}
               </button>
+            );
+          })}
+        </div>
 
-              {/* Creative mode sub-options */}
-              {isCreative && isSelected && (
-                <Collapsible open={isCreativeOpen} onOpenChange={setIsCreativeOpen}>
-                  <CollapsibleContent>
-                    <div className="ml-14 mt-3 p-4 bg-muted/50 rounded-lg border border-border">
-                      <Label className="text-sm font-medium mb-3 block">
-                        Escolha o tom criativo:
-                      </Label>
-                      <RadioGroup
-                        value={creativeTone}
-                        onValueChange={(value) => setCreativeTone(value as CreativeTone)}
-                        className="space-y-2"
-                      >
-                        {CREATIVE_TONES.map((tone) => (
-                          <label
-                            key={tone.id}
-                            className={cn(
-                              "flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all",
-                              creativeTone === tone.id
-                                ? "bg-accent/10 border border-accent/30"
-                                : "hover:bg-muted border border-transparent"
-                            )}
-                          >
-                            <RadioGroupItem value={tone.id} id={tone.id} />
-                            <div className="flex-1">
-                              <span className="text-sm font-medium">{tone.label}</span>
-                              <p className="text-xs text-muted-foreground">{tone.description}</p>
-                            </div>
-                          </label>
-                        ))}
-                      </RadioGroup>
-                    </div>
-                  </CollapsibleContent>
-                </Collapsible>
-              )}
-            </div>
-          );
-        })}
+        {/* Helper text for single mode */}
+        {selectedMode === "single" && (
+          <p className="text-xs text-muted-foreground bg-muted/50 p-3 rounded-lg">
+            💡 O modo Texto Único gera uma imagem com texto mais longo, ideal para threads ou conteúdo educativo denso.
+          </p>
+        )}
       </div>
 
-      {/* Helper text for single mode */}
-      {selectedMode === "single" && (
-        <p className="text-xs text-muted-foreground bg-muted/50 p-3 rounded-lg">
-          💡 O modo Texto Único gera uma imagem com texto mais longo, ideal para threads ou conteúdo educativo denso.
-        </p>
+      {/* Tone Selection - shown for all modes except compact */}
+      {showToneOptions && (
+        <div className="space-y-4 pt-4 border-t border-border">
+          <div>
+            <h3 className="text-lg font-semibold mb-1">{t("toneSelector", "title")}</h3>
+            <p className="text-sm text-muted-foreground">
+              {t("toneSelector", "subtitle")}
+            </p>
+          </div>
+
+          <div className="grid gap-3">
+            {tones.map((tone) => {
+              const Icon = tone.icon;
+              const isSelected = creativeTone === tone.id;
+
+              return (
+                <Card
+                  key={tone.id}
+                  className={cn(
+                    "cursor-pointer transition-all hover:shadow-md",
+                    isSelected
+                      ? `${tone.borderColor} bg-gradient-to-br ${tone.gradient}`
+                      : "hover:border-muted-foreground/30"
+                  )}
+                  onClick={() => setCreativeTone(tone.id)}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-4">
+                      <div className={cn(
+                        "w-10 h-10 rounded-lg flex items-center justify-center shrink-0",
+                        isSelected ? "bg-background/80" : "bg-muted"
+                      )}>
+                        <Icon className={cn("w-5 h-5", tone.iconColor)} />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-semibold">{tone.name}</h4>
+                          {isSelected && (
+                            <span className="text-xs bg-background/80 px-2 py-0.5 rounded-full">
+                              {t("toneSelector", "selected")}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {tone.description}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
       )}
     </div>
   );

@@ -6,8 +6,6 @@ import {
   X,
   Upload,
   Sparkles,
-  Crown,
-  Eye,
   Loader2,
   AlignLeft,
   AlignCenter,
@@ -26,6 +24,7 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { t } from "@/lib/translations";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { LockedFeature } from "@/components/ui/locked-feature";
 import { 
   AVAILABLE_FONTS, 
   GRADIENT_PRESETS, 
@@ -75,19 +74,47 @@ const AdvancedTemplateEditor = ({
   const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
   const [activeGradientCategory, setActiveGradientCategory] = useState<GradientCategory | 'basic'>('warm');
 
+  // Get localized feature list for locked state
+  const getLockedFeatures = () => {
+    const features = {
+      "pt-BR": [
+        "12 fontes personalizadas exclusivas",
+        "40+ gradientes premium",
+        "Upload de imagem de capa",
+        "Opções de navegação e subtítulos"
+      ],
+      "es": [
+        "12 fuentes personalizadas exclusivas",
+        "40+ gradientes premium",
+        "Carga de imagen de portada",
+        "Opciones de navegación y subtítulos"
+      ],
+      "en": [
+        "12 exclusive custom fonts",
+        "40+ premium gradients",
+        "Custom cover image upload",
+        "Navigation and subtitle options"
+      ]
+    };
+    return features[language] || features["en"];
+  };
+
   if (!isCreator) {
     return (
-      <div className="border border-border/50 rounded-xl p-6 bg-muted/30 text-center">
-        <Crown className="w-8 h-8 text-accent mx-auto mb-3" />
-        <h3 className="font-semibold text-lg mb-1">{t("advancedEditor", "customization", language)}</h3>
-        <p className="text-sm text-muted-foreground mb-4">
-          {t("advancedEditor", "creatorFeature", language)}
-        </p>
-        <Badge variant="secondary">
-          <Sparkles className="w-3 h-3 mr-1" />
-          Creator+
-        </Badge>
-      </div>
+      <LockedFeature
+        requiredPlan="creator"
+        title={t("advancedEditor", "customization", language)}
+        description={
+          language === "pt-BR"
+            ? "Personalize fontes, cores e muito mais"
+            : language === "es"
+            ? "Personaliza fuentes, colores y más"
+            : "Customize fonts, colors and more"
+        }
+        icon={Sparkles}
+        features={getLockedFeatures()}
+        hasAccess={false}
+      />
     );
   }
 
@@ -265,50 +292,6 @@ const AdvancedTemplateEditor = ({
           <Sparkles className="w-4 h-4 text-accent" />
           <h3 className="font-semibold">{t("advancedEditor", "customization", language)}</h3>
           <Badge variant="secondary" className="text-[10px] ml-auto">Creator+</Badge>
-        </div>
-      </div>
-
-      {/* Live Preview Section */}
-      <div className="p-4 border-b border-border/50 bg-muted/20">
-        <div className="flex items-center gap-2 mb-3">
-          <Eye className="w-4 h-4 text-muted-foreground" />
-          <span className="text-sm font-medium">{t("advancedEditor", "previewMode", language)}</span>
-        </div>
-        <div 
-          className="relative aspect-square max-w-[200px] mx-auto rounded-lg overflow-hidden shadow-lg"
-          style={{
-            background: currentGradientColors 
-              ? getGradientStyle(currentGradientColors)
-              : 'hsl(var(--background))'
-          }}
-        >
-          <div className="absolute inset-0 flex items-center justify-center p-4">
-            <p
-              className="text-foreground leading-relaxed w-full"
-              style={{
-                fontFamily: selectedFont?.family || 'Inter, sans-serif',
-                fontSize: '16px',
-                color: currentGradientColors ? '#ffffff' : 'hsl(var(--foreground))',
-                textShadow: currentGradientColors ? '0 1px 3px rgba(0,0,0,0.3)' : 'none',
-                textAlign: customization.textAlignment || 'center'
-              }}
-            >
-              Exemplo de texto com a fonte {selectedFont?.name || 'Inter'}
-            </p>
-          </div>
-          {/* Profile indicator */}
-          <div className="absolute top-2 left-2 flex items-center gap-1.5">
-            <div className="w-6 h-6 rounded-full bg-white/20 backdrop-blur-sm" />
-            <span 
-              className="text-[10px] font-medium"
-              style={{ 
-                fontFamily: selectedFont?.family,
-                color: currentGradientColors ? '#ffffff' : 'hsl(var(--foreground))'
-              }}
-            >
-              @usuario
-            </span>
-          </div>
         </div>
       </div>
 

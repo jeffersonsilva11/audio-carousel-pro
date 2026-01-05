@@ -32,15 +32,15 @@ serve(async (req) => {
       });
     }
 
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY is not configured');
+    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+    if (!OPENAI_API_KEY) {
+      throw new Error('OPENAI_API_KEY is not configured');
     }
 
     logStep('Starting translation', { targetLanguage, textLength: text.length, context });
 
     const languageName = targetLanguage === 'en' ? 'English' : 'Spanish';
-    const contextInstructions = context === 'faq' 
+    const contextInstructions = context === 'faq'
       ? 'This is FAQ content for a SaaS product (Audisell - audio to carousel converter).'
       : context === 'testimonial'
       ? 'This is a customer testimonial for a SaaS product.'
@@ -58,38 +58,33 @@ RULES:
 - Make the translation sound natural, not literal
 - Do NOT add any explanations, just return the translated text`;
 
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: 'gpt-4o-mini',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: `Translate the following text to ${languageName}:\n\n${text}` }
         ],
+        temperature: 0.3,
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      logStep('AI API error', { status: response.status, error: errorText });
-      
+      logStep('OpenAI API error', { status: response.status, error: errorText });
+
       if (response.status === 429) {
         return new Response(JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }), {
           status: 429,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: 'Credits depleted. Please add credits to your workspace.' }), {
-          status: 402,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-      
+
       throw new Error(`Translation failed: ${errorText}`);
     }
 
