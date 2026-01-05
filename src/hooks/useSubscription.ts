@@ -141,14 +141,14 @@ export function useSubscription() {
     return () => clearInterval(interval);
   }, [user, checkSubscription]);
 
-  const createCheckout = async (planTier: PlanTier = "starter") => {
+  const createCheckout = async (planTier: PlanTier = "starter", currency: string = "brl") => {
     try {
       const { data, error } = await supabase.functions.invoke("create-checkout", {
-        body: { planTier }
+        body: { planTier, currency }
       });
-      
+
       if (error) throw error;
-      
+
       if (data?.url) {
         window.open(data.url, "_blank");
       }

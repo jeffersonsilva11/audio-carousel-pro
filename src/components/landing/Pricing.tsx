@@ -2,28 +2,37 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Check, Sparkles, Zap, Loader2, Crown, Image as ImageIcon } from "lucide-react";
+import { Check, Sparkles, Zap, Loader2, Crown } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useLanguage } from "@/hooks/useLanguage";
+import { usePlansConfig } from "@/hooks/usePlansConfig";
 import { t } from "@/lib/translations";
-import { PLANS, PLAN_ORDER, PlanTier } from "@/lib/plans";
-import { getPlanPrice } from "@/lib/localization";
-import { translateFeature, getPlanName, getPlanDescription } from "@/lib/planTranslations";
+import { PLAN_ORDER, PlanTier } from "@/lib/plans";
 
 const Pricing = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { plan: currentPlan, createCheckout } = useSubscription();
   const { language } = useLanguage();
+  const { getPlanPrice, getPlanName, getPlanDescription, getPlanFeatures, getPlanLimitations } = usePlansConfig();
   const [loading, setLoading] = useState<PlanTier | null>(null);
+
+  // Map language to currency
+  const getCurrency = () => {
+    switch (language) {
+      case "en": return "usd";
+      case "es": return "eur";
+      default: return "brl";
+    }
+  };
 
   const handlePlanAction = async (planTier: PlanTier) => {
     if (!user) {
       navigate("/auth");
       return;
     }
-    
+
     if (planTier === "free") {
       navigate("/create");
       return;
@@ -36,7 +45,7 @@ const Pricing = () => {
 
     setLoading(planTier);
     try {
-      await createCheckout(planTier);
+      await createCheckout(planTier, getCurrency());
     } catch (error) {
       console.error("Checkout error:", error);
     } finally {
@@ -73,10 +82,11 @@ const Pricing = () => {
         {/* Pricing Cards */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
           {PLAN_ORDER.map((tier) => {
-            const plan = PLANS[tier];
             const isFeatured = tier === getFeaturedPlan();
             const isCurrentPlan = currentPlan === tier;
             const Icon = getPlanIcon(tier);
+            const features = getPlanFeatures(tier, language);
+            const limitations = getPlanLimitations(tier, language);
 
             return (
               <Card
@@ -122,22 +132,22 @@ const Pricing = () => {
                   </div>
 
                   <div className="text-left space-y-3">
-                    {plan.features.map((feature) => (
-                      <div key={feature} className="flex items-start gap-2">
+                    {features.map((feature, index) => (
+                      <div key={index} className="flex items-start gap-2">
                         <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
                           isFeatured ? "bg-primary-foreground/20" : "bg-success/20"
                         }`}>
                           <Check className={`w-3 h-3 ${isFeatured ? "text-primary-foreground" : "text-success"}`} />
                         </div>
-                        <span className={`text-sm ${isFeatured ? "text-primary-foreground/90" : ""}`}>{translateFeature(feature, language)}</span>
+                        <span className={`text-sm ${isFeatured ? "text-primary-foreground/90" : ""}`}>{feature}</span>
                       </div>
                     ))}
-                    {plan.limitations.map((limitation) => (
-                      <div key={limitation} className="flex items-start gap-2 opacity-50">
+                    {limitations.map((limitation, index) => (
+                      <div key={`lim-${index}`} className="flex items-start gap-2 opacity-50">
                         <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center flex-shrink-0 mt-0.5">
                           <span className="text-xs">—</span>
                         </div>
-                        <span className="text-sm">{translateFeature(limitation, language)}</span>
+                        <span className="text-sm">{limitation}</span>
                       </div>
                     ))}
                   </div>
@@ -155,10 +165,10 @@ const Pricing = () => {
                       <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
                       <>
-                        {isCurrentPlan 
-                          ? t("pricing", "currentPlan", language) 
-                          : tier === "free" 
-                            ? t("pricing", "testFree", language) 
+                        {isCurrentPlan
+                          ? t("pricing", "currentPlan", language)
+                          : tier === "free"
+                            ? t("pricing", "testFree", language)
                             : t("pricing", "subscribe", language)}
                       </>
                     )}

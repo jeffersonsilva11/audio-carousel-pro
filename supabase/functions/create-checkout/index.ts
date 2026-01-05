@@ -7,8 +7,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Plan configurations (prices in cents BRL)
-const PLAN_CONFIGS: Record<string, { name: string; description: string; price: number }> = {
+// Fallback plan configurations (used when database is not available)
+const FALLBACK_PLAN_CONFIGS: Record<string, { name: string; description: string; price: number }> = {
   starter: {
     name: "Audisell Starter",
     description: "1 carrossel/dia, sem marca d'água, editor visual, histórico",
@@ -38,23 +38,73 @@ serve(async (req) => {
 
   const supabaseClient = createClient(
     Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+    { auth: { persistSession: false } }
   );
 
   try {
     logStep("Function started");
 
-    // Parse request body to get the plan tier
-    const { planTier = "starter" } = await req.json().catch(() => ({ planTier: "starter" }));
-    logStep("Requested plan", { planTier });
+    // Parse request body to get the plan tier and currency
+    const { planTier = "starter", currency = "brl" } = await req.json().catch(() => ({ planTier: "starter", currency: "brl" }));
+    logStep("Requested plan", { planTier, currency });
 
     // Validate plan tier
-    if (!PLAN_CONFIGS[planTier]) {
-      throw new Error(`Invalid plan tier: ${planTier}. Valid options: starter, creator, agency`);
+    const validTiers = ["starter", "creator", "agency"];
+    if (!validTiers.includes(planTier)) {
+      throw new Error(`Invalid plan tier: ${planTier}. Valid options: ${validTiers.join(", ")}`);
     }
 
-    const planConfig = PLAN_CONFIGS[planTier];
+    // Get plan config from database
+    const { data: dbPlanConfig, error: planError } = await supabaseClient
+      .from("plans_config")
+      .select("*")
+      .eq("tier", planTier)
+      .eq("is_active", true)
+      .single();
 
+    if (planError) {
+      logStep("Could not fetch plan from database, using fallback", { error: planError.message });
+    }
+
+    // Determine price and Stripe Price ID based on currency
+    let priceInCents: number;
+    let stripePriceId: string | null = null;
+    let checkoutLink: string | null = null;
+    let planName: string;
+    let planDescription: string;
+
+    if (dbPlanConfig) {
+      planName = dbPlanConfig.name_pt || `Audisell ${planTier.charAt(0).toUpperCase() + planTier.slice(1)}`;
+      planDescription = dbPlanConfig.description_pt || "";
+
+      switch (currency.toLowerCase()) {
+        case "usd":
+          priceInCents = dbPlanConfig.price_usd || Math.round(dbPlanConfig.price_brl * 0.17);
+          stripePriceId = dbPlanConfig.stripe_price_id_usd;
+          checkoutLink = dbPlanConfig.checkout_link_usd;
+          break;
+        case "eur":
+          priceInCents = dbPlanConfig.price_eur || Math.round(dbPlanConfig.price_brl * 0.16);
+          stripePriceId = dbPlanConfig.stripe_price_id_eur;
+          checkoutLink = dbPlanConfig.checkout_link_eur;
+          break;
+        default: // brl
+          priceInCents = dbPlanConfig.price_brl;
+          stripePriceId = dbPlanConfig.stripe_price_id_brl;
+          checkoutLink = dbPlanConfig.checkout_link_brl;
+      }
+    } else {
+      // Fallback to hardcoded config
+      const fallbackConfig = FALLBACK_PLAN_CONFIGS[planTier];
+      planName = fallbackConfig.name;
+      planDescription = fallbackConfig.description;
+      priceInCents = fallbackConfig.price;
+    }
+
+    logStep("Plan config resolved", { planName, priceInCents, stripePriceId, checkoutLink, currency });
+
+    // Authenticate user
     const authHeader = req.headers.get("Authorization")!;
     const token = authHeader.replace("Bearer ", "");
     const { data } = await supabaseClient.auth.getUser(token);
@@ -62,11 +112,26 @@ serve(async (req) => {
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
 
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", { 
-      apiVersion: "2025-08-27.basil" 
+    // If there's a custom checkout link configured, redirect to it
+    if (checkoutLink) {
+      logStep("Using custom checkout link", { checkoutLink });
+      // Append customer email as query param for pre-fill
+      const checkoutUrl = new URL(checkoutLink);
+      checkoutUrl.searchParams.set("prefilled_email", user.email);
+      checkoutUrl.searchParams.set("client_reference_id", user.id);
+
+      return new Response(JSON.stringify({ url: checkoutUrl.toString() }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
+    // Initialize Stripe
+    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
+      apiVersion: "2025-08-27.basil"
     });
 
-    // Check if customer exists
+    // Check if customer exists in Stripe
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     let customerId;
     if (customers.data.length > 0) {
@@ -74,36 +139,54 @@ serve(async (req) => {
       logStep("Found existing customer", { customerId });
     }
 
-    // Find or create the price for this plan
-    const prices = await stripe.prices.list({
-      active: true,
-      type: "recurring",
-      limit: 100,
-    });
-    
-    let priceId = prices.data.find((p: { unit_amount: number | null; currency: string; recurring?: { interval: string } | null }) => 
-      p.unit_amount === planConfig.price && 
-      p.currency === "brl" && 
-      p.recurring?.interval === "month"
-    )?.id;
+    // Use configured Stripe Price ID or find/create one
+    let priceId = stripePriceId;
 
     if (!priceId) {
-      logStep("Creating new price for plan", { planTier, price: planConfig.price });
-      const price = await stripe.prices.create({
-        unit_amount: planConfig.price,
-        currency: "brl",
-        recurring: { interval: "month" },
-        product_data: {
-          name: planConfig.name,
-          description: planConfig.description,
-        },
+      // Search for existing price with matching amount and currency
+      const prices = await stripe.prices.list({
+        active: true,
+        type: "recurring",
+        limit: 100,
       });
-      priceId = price.id;
-      logStep("Created price", { priceId });
+
+      priceId = prices.data.find((p: { unit_amount: number | null; currency: string; recurring?: { interval: string } | null }) =>
+        p.unit_amount === priceInCents &&
+        p.currency === currency.toLowerCase() &&
+        p.recurring?.interval === "month"
+      )?.id;
+
+      if (!priceId) {
+        logStep("Creating new price for plan", { planTier, price: priceInCents, currency });
+        const price = await stripe.prices.create({
+          unit_amount: priceInCents,
+          currency: currency.toLowerCase(),
+          recurring: { interval: "month" },
+          product_data: {
+            name: planName,
+            description: planDescription,
+          },
+        });
+        priceId = price.id;
+        logStep("Created price", { priceId });
+
+        // Optionally update the database with the new price ID
+        if (dbPlanConfig) {
+          const priceIdField = `stripe_price_id_${currency.toLowerCase()}`;
+          await supabaseClient
+            .from("plans_config")
+            .update({ [priceIdField]: priceId })
+            .eq("id", dbPlanConfig.id);
+          logStep("Updated database with new price ID", { priceIdField, priceId });
+        }
+      } else {
+        logStep("Using existing price", { priceId });
+      }
     } else {
-      logStep("Using existing price", { priceId });
+      logStep("Using configured Stripe Price ID", { priceId });
     }
 
+    // Create checkout session
     const origin = req.headers.get("origin") || "http://localhost:5173";
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
