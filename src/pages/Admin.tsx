@@ -26,6 +26,7 @@ import {
   Gift,
   Ticket,
   TrendingUp,
+  Headphones,
 } from "lucide-react";
 import { BRAND } from "@/lib/constants";
 import AdminStats from "@/components/admin/AdminStats";
@@ -46,6 +47,7 @@ import ManualSubscriptionManager from "@/components/admin/ManualSubscriptionMana
 import CouponsManager from "@/components/admin/CouponsManager";
 import RevenueReports from "@/components/admin/RevenueReports";
 import SystemControlCard from "@/components/admin/SystemControlCard";
+import SupportSettingsCard from "@/components/admin/SupportSettingsCard";
 
 const Admin = () => {
   const { user, loading: authLoading } = useAuth();
@@ -176,6 +178,10 @@ const Admin = () => {
               <HelpCircle className="w-4 h-4" />
               FAQs
             </TabsTrigger>
+            <TabsTrigger value="support" className="gap-2">
+              <Headphones className="w-4 h-4" />
+              Suporte
+            </TabsTrigger>
             <TabsTrigger value="testimonials" className="gap-2">
               <Quote className="w-4 h-4" />
               Depoimentos
@@ -244,6 +250,10 @@ const Admin = () => {
 
           <TabsContent value="faqs">
             <FAQManager />
+          </TabsContent>
+
+          <TabsContent value="support">
+            <SupportSettingsCard />
           </TabsContent>
 
           <TabsContent value="testimonials">
