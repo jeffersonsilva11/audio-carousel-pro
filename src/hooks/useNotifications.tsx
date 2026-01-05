@@ -6,10 +6,11 @@ export interface Notification {
   id: string;
   title: string;
   message: string;
-  type: "info" | "success" | "warning" | "carousel_ready";
+  type: "info" | "success" | "warning" | "carousel_ready" | "subscription_cancelled" | "payment_failed" | "plan_downgraded";
   read: boolean;
   createdAt: Date;
   link?: string;
+  isFromServer?: boolean; // Distinguishes server notifications from client-side ones
 }
 
 interface NotificationsContextType {
@@ -21,6 +22,7 @@ interface NotificationsContextType {
   addNotification: (notification: Omit<Notification, "id" | "read" | "createdAt">) => void;
   requestPermission: () => Promise<boolean>;
   hasPermission: boolean;
+  refreshNotifications: () => Promise<void>;
 }
 
 const NotificationsContext = createContext<NotificationsContextType | undefined>(undefined);
@@ -65,6 +67,72 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
       setHasPermission(Notification.permission === "granted");
     }
   }, []);
+
+  // Function to fetch server notifications
+  const fetchServerNotifications = async () => {
+    if (!user) return;
+
+    // Get user's preferred language
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("preferred_lang")
+      .eq("user_id", user.id)
+      .single();
+
+    const lang = profile?.preferred_lang || "pt-BR";
+
+    const { data, error } = await supabase
+      .from("notifications")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(50);
+
+    if (error) {
+      console.error("Error fetching notifications:", error);
+      return;
+    }
+
+    if (data) {
+      const serverNotifications: Notification[] = data.map((n: any) => {
+        // Get localized title and message
+        let title = n.title_pt;
+        let message = n.message_pt;
+
+        if (lang === "en" && n.title_en) {
+          title = n.title_en;
+          message = n.message_en || n.message_pt;
+        } else if (lang === "es" && n.title_es) {
+          title = n.title_es;
+          message = n.message_es || n.message_pt;
+        }
+
+        return {
+          id: n.id,
+          title,
+          message,
+          type: n.type as Notification["type"],
+          read: n.is_read,
+          createdAt: new Date(n.created_at),
+          link: n.action_url,
+          isFromServer: true,
+        };
+      });
+
+      // Merge with client-side notifications, keeping server notifications separate
+      setNotifications(prev => {
+        const clientNotifications = prev.filter(n => !n.isFromServer);
+        return [...serverNotifications, ...clientNotifications].slice(0, 100);
+      });
+    }
+  };
+
+  // Fetch server notifications on mount and when user changes
+  useEffect(() => {
+    if (user) {
+      fetchServerNotifications();
+    }
+  }, [user]);
 
   // Listen for carousel completion
   useEffect(() => {
@@ -160,18 +228,51 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const markAsRead = (id: string) => {
+  const markAsRead = async (id: string) => {
+    const notification = notifications.find(n => n.id === id);
+
+    // Update server notification
+    if (notification?.isFromServer) {
+      await supabase
+        .from("notifications")
+        .update({ is_read: true, read_at: new Date().toISOString() })
+        .eq("id", id);
+    }
+
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read: true } : n))
     );
   };
 
-  const markAllAsRead = () => {
+  const markAllAsRead = async () => {
+    // Update all server notifications
+    if (user) {
+      await supabase
+        .from("notifications")
+        .update({ is_read: true, read_at: new Date().toISOString() })
+        .eq("user_id", user.id)
+        .eq("is_read", false);
+    }
+
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
   };
 
-  const clearNotification = (id: string) => {
+  const clearNotification = async (id: string) => {
+    const notification = notifications.find(n => n.id === id);
+
+    // Delete server notification
+    if (notification?.isFromServer) {
+      await supabase
+        .from("notifications")
+        .delete()
+        .eq("id", id);
+    }
+
     setNotifications((prev) => prev.filter((n) => n.id !== id));
+  };
+
+  const refreshNotifications = async () => {
+    await fetchServerNotifications();
   };
 
   const requestPermission = async () => {
@@ -191,6 +292,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
         addNotification,
         requestPermission,
         hasPermission,
+        refreshNotifications,
       }}
     >
       {children}
