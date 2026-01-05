@@ -10,8 +10,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Mic2, Plus, LogOut, Loader2, Image as ImageIcon, Calendar,
-  Sparkles, FolderOpen, Crown, CreditCard, RefreshCw, AlertTriangle, Globe, Settings, History, Shield, Clock
+  Sparkles, FolderOpen, Crown, CreditCard, RefreshCw, AlertTriangle, Globe, Settings, History, Shield, Clock, Bell, X
 } from "lucide-react";
+import { useNotifications } from "@/hooks/useNotifications";
 import UsageStats from "@/components/dashboard/UsageStats";
 import DashboardSkeleton from "@/components/skeletons/DashboardSkeleton";
 import OnboardingModal from "@/components/onboarding/OnboardingModal";
@@ -44,7 +45,8 @@ interface Carousel {
 const Dashboard = () => {
   const { user, loading, signOut, isEmailConfirmed } = useAuth();
   const { isAdmin } = useAdminAccess();
-  const { isPro, plan, dailyUsed, dailyLimit, subscriptionEnd, createCheckout, openCustomerPortal, loading: subLoading, getRemainingCarousels } = useSubscription();
+  const { isPro, plan, dailyUsed, dailyLimit, subscriptionEnd, createCheckout, openCustomerPortal, loading: subLoading, getRemainingCarousels, getDaysRemaining, isCancelled, isLastDay, cancelAtPeriodEnd, status, failedPaymentCount } = useSubscription();
+  const { notifications, unreadCount, markAsRead, clearNotification } = useNotifications();
   const { language, setLanguage } = useLanguage();
   const { showOnboarding, loading: onboardingLoading, completeOnboarding } = useOnboarding();
   const navigate = useNavigate();
@@ -310,15 +312,15 @@ const Dashboard = () => {
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="font-semibold">{PLANS[plan].name}</span>
-                    {isPro && subscriptionEnd && (
+                    {isPro && subscriptionEnd && !cancelAtPeriodEnd && (
                       <span className="text-xs text-muted-foreground">
                         {t("dashboard", "until", language)} {formatSubscriptionDate(subscriptionEnd, language)}
                       </span>
                     )}
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    {isPro 
-                      ? `${getRemainingCarousels()} ${t("dashboard", "remainingToday", language)}` 
+                    {isPro
+                      ? `${getRemainingCarousels()} ${t("dashboard", "remainingToday", language)}`
                       : `${dailyUsed}/1 ${t("dashboard", "carouselUsed", language)}`}
                   </p>
                 </div>
@@ -336,6 +338,110 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         )}
+
+        {/* Cancellation Banner */}
+        {cancelAtPeriodEnd && subscriptionEnd && (
+          <Card className="mb-6 border-yellow-500/30 bg-gradient-to-br from-yellow-500/10 to-transparent">
+            <CardContent className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-lg bg-yellow-500/10 flex items-center justify-center">
+                  <AlertTriangle className="w-5 h-5 text-yellow-500" />
+                </div>
+                <div>
+                  <span className="font-semibold text-yellow-600 dark:text-yellow-400">
+                    {language === "pt-BR" ? "Assinatura cancelada" : language === "es" ? "Suscripción cancelada" : "Subscription cancelled"}
+                  </span>
+                  <p className="text-sm text-muted-foreground">
+                    {getDaysRemaining() > 0 ? (
+                      language === "pt-BR"
+                        ? `Você ainda pode usar o plano ${PLANS[plan].name} por mais ${getDaysRemaining()} dia(s) até ${formatSubscriptionDate(subscriptionEnd, language)}.`
+                        : language === "es"
+                          ? `Aún puedes usar el plan ${PLANS[plan].name} por ${getDaysRemaining()} día(s) más hasta ${formatSubscriptionDate(subscriptionEnd, language)}.`
+                          : `You can still use the ${PLANS[plan].name} plan for ${getDaysRemaining()} more day(s) until ${formatSubscriptionDate(subscriptionEnd, language)}.`
+                    ) : (
+                      language === "pt-BR"
+                        ? "Sua assinatura expira hoje. Renove para continuar usando."
+                        : language === "es"
+                          ? "Tu suscripción expira hoy. Renueva para continuar usando."
+                          : "Your subscription expires today. Renew to continue using."
+                    )}
+                  </p>
+                </div>
+              </div>
+              <Button variant="accent" size="sm" onClick={() => setShowPlansModal(true)}>
+                <Crown className="w-4 h-4 mr-2" />
+                {language === "pt-BR" ? "Renovar assinatura" : language === "es" ? "Renovar suscripción" : "Renew subscription"}
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Payment Failure Banner */}
+        {failedPaymentCount > 0 && status === "past_due" && (
+          <Card className="mb-6 border-red-500/30 bg-gradient-to-br from-red-500/10 to-transparent">
+            <CardContent className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-lg bg-red-500/10 flex items-center justify-center">
+                  <AlertTriangle className="w-5 h-5 text-red-500" />
+                </div>
+                <div>
+                  <span className="font-semibold text-red-600 dark:text-red-400">
+                    {language === "pt-BR" ? "Falha no pagamento" : language === "es" ? "Fallo en el pago" : "Payment failed"}
+                  </span>
+                  <p className="text-sm text-muted-foreground">
+                    {failedPaymentCount >= 3 ? (
+                      language === "pt-BR"
+                        ? "Sua conta será rebaixada para o plano gratuito em breve. Atualize seu método de pagamento."
+                        : language === "es"
+                          ? "Tu cuenta será degradada al plan gratuito pronto. Actualiza tu método de pago."
+                          : "Your account will be downgraded to free plan soon. Update your payment method."
+                    ) : (
+                      language === "pt-BR"
+                        ? `${3 - failedPaymentCount} tentativa(s) restante(s) antes da suspensão.`
+                        : language === "es"
+                          ? `${3 - failedPaymentCount} intento(s) restante(s) antes de la suspensión.`
+                          : `${3 - failedPaymentCount} attempt(s) remaining before suspension.`
+                    )}
+                  </p>
+                </div>
+              </div>
+              <Button variant="destructive" size="sm" onClick={() => openCustomerPortal()}>
+                <CreditCard className="w-4 h-4 mr-2" />
+                {language === "pt-BR" ? "Atualizar pagamento" : language === "es" ? "Actualizar pago" : "Update payment"}
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Notifications Banner */}
+        {notifications.filter(n => !n.read && n.isFromServer).slice(0, 1).map((notification) => (
+          <Card key={notification.id} className="mb-6 border-blue-500/30 bg-gradient-to-br from-blue-500/10 to-transparent">
+            <CardContent className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                  <Bell className="w-5 h-5 text-blue-500" />
+                </div>
+                <div>
+                  <span className="font-semibold">{notification.title}</span>
+                  <p className="text-sm text-muted-foreground">{notification.message}</p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                {notification.link && (
+                  <Button variant="outline" size="sm" onClick={() => {
+                    markAsRead(notification.id);
+                    navigate(notification.link!);
+                  }}>
+                    {language === "pt-BR" ? "Ver mais" : language === "es" ? "Ver más" : "View more"}
+                  </Button>
+                )}
+                <Button variant="ghost" size="icon" onClick={() => clearNotification(notification.id)}>
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
 
         {/* Usage Stats - Metrics */}
         <div className="mb-6">
