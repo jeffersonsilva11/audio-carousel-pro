@@ -45,9 +45,9 @@ serve(async (req) => {
   try {
     logStep("Function started");
 
-    // Parse request body to get the plan tier and currency
-    const { planTier = "starter", currency = "brl" } = await req.json().catch(() => ({ planTier: "starter", currency: "brl" }));
-    logStep("Requested plan", { planTier, currency });
+    // Parse request body to get the plan tier, currency, and optional coupon code
+    const { planTier = "starter", currency = "brl", couponCode = null } = await req.json().catch(() => ({ planTier: "starter", currency: "brl", couponCode: null }));
+    logStep("Requested plan", { planTier, currency, couponCode });
 
     // Validate plan tier
     const validTiers = ["starter", "creator", "agency"];
@@ -111,6 +111,43 @@ serve(async (req) => {
     const user = data.user;
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
+
+    // Validate coupon if provided
+    let validatedCoupon: any = null;
+    let stripeCouponId: string | null = null;
+
+    if (couponCode) {
+      logStep("Validating coupon", { couponCode, planTier, priceInCents });
+
+      // Call the validate_coupon function
+      const { data: couponData, error: couponError } = await supabaseClient
+        .rpc("validate_coupon", {
+          p_code: couponCode,
+          p_user_id: user.id,
+          p_plan_tier: planTier,
+          p_price_cents: priceInCents
+        });
+
+      if (couponError) {
+        logStep("Coupon validation error", { error: couponError.message });
+        throw new Error(`Coupon validation failed: ${couponError.message}`);
+      }
+
+      if (couponData && couponData.length > 0) {
+        validatedCoupon = couponData[0];
+
+        if (!validatedCoupon.is_valid) {
+          logStep("Coupon is not valid", { reason: validatedCoupon.error_message });
+          throw new Error(validatedCoupon.error_message || "Invalid coupon");
+        }
+
+        logStep("Coupon validated successfully", {
+          coupon: validatedCoupon.code,
+          discountType: validatedCoupon.discount_type,
+          discountValue: validatedCoupon.discount_value
+        });
+      }
+    }
 
     // If there's a custom checkout link configured, redirect to it
     if (checkoutLink) {
@@ -186,9 +223,49 @@ serve(async (req) => {
       logStep("Using configured Stripe Price ID", { priceId });
     }
 
+    // Create or get Stripe coupon if we have a validated coupon
+    if (validatedCoupon) {
+      try {
+        // Try to find existing Stripe coupon with matching ID
+        const stripeCouponCode = `PROMO_${validatedCoupon.code}`;
+
+        try {
+          const existingCoupon = await stripe.coupons.retrieve(stripeCouponCode);
+          if (existingCoupon && !existingCoupon.deleted) {
+            stripeCouponId = existingCoupon.id;
+            logStep("Using existing Stripe coupon", { stripeCouponId });
+          }
+        } catch {
+          // Coupon doesn't exist in Stripe, create it
+          logStep("Creating new Stripe coupon", { code: stripeCouponCode });
+
+          const couponParams: any = {
+            id: stripeCouponCode,
+            name: validatedCoupon.description || validatedCoupon.code,
+            duration: "once", // Apply discount once (first month)
+          };
+
+          if (validatedCoupon.discount_type === "percentage") {
+            couponParams.percent_off = validatedCoupon.discount_value;
+          } else {
+            // Fixed amount - need to match currency
+            couponParams.amount_off = validatedCoupon.discount_value;
+            couponParams.currency = currency.toLowerCase();
+          }
+
+          const newCoupon = await stripe.coupons.create(couponParams);
+          stripeCouponId = newCoupon.id;
+          logStep("Created Stripe coupon", { stripeCouponId });
+        }
+      } catch (couponError) {
+        logStep("Error creating/retrieving Stripe coupon", { error: String(couponError) });
+        // Continue without coupon if there's an error
+      }
+    }
+
     // Create checkout session
     const origin = req.headers.get("origin") || "http://localhost:5173";
-    const session = await stripe.checkout.sessions.create({
+    const sessionParams: any = {
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
       line_items: [
@@ -203,8 +280,18 @@ serve(async (req) => {
       metadata: {
         plan_tier: planTier,
         user_id: user.id,
+        coupon_code: couponCode || undefined,
+        coupon_id: validatedCoupon?.coupon_id || undefined,
       },
-    });
+    };
+
+    // Apply discount if we have a valid Stripe coupon
+    if (stripeCouponId) {
+      sessionParams.discounts = [{ coupon: stripeCouponId }];
+      logStep("Applying discount to checkout", { stripeCouponId });
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionParams);
 
     logStep("Checkout session created", { sessionId: session.id, planTier });
 

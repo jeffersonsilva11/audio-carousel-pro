@@ -797,6 +797,107 @@ export type Database = {
         }
         Relationships: []
       }
+      coupons: {
+        Row: {
+          id: string
+          code: string
+          description: string | null
+          discount_type: string
+          discount_value: number
+          currency: string | null
+          valid_from: string
+          valid_until: string | null
+          max_uses: number | null
+          times_used: number
+          min_plan_tier: string | null
+          applicable_plans: string[] | null
+          is_active: boolean
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          code: string
+          description?: string | null
+          discount_type?: string
+          discount_value: number
+          currency?: string | null
+          valid_from?: string
+          valid_until?: string | null
+          max_uses?: number | null
+          times_used?: number
+          min_plan_tier?: string | null
+          applicable_plans?: string[] | null
+          is_active?: boolean
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          code?: string
+          description?: string | null
+          discount_type?: string
+          discount_value?: number
+          currency?: string | null
+          valid_from?: string
+          valid_until?: string | null
+          max_uses?: number | null
+          times_used?: number
+          min_plan_tier?: string | null
+          applicable_plans?: string[] | null
+          is_active?: boolean
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      coupon_uses: {
+        Row: {
+          id: string
+          coupon_id: string
+          user_id: string
+          subscription_id: string | null
+          discount_amount: number
+          original_price: number
+          final_price: number
+          currency: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          coupon_id: string
+          user_id: string
+          subscription_id?: string | null
+          discount_amount: number
+          original_price: number
+          final_price: number
+          currency?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          coupon_id?: string
+          user_id?: string
+          subscription_id?: string | null
+          discount_amount?: number
+          original_price?: number
+          final_price?: number
+          currency?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coupon_uses_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string

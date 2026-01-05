@@ -141,10 +141,10 @@ export function useSubscription() {
     return () => clearInterval(interval);
   }, [user, checkSubscription]);
 
-  const createCheckout = async (planTier: PlanTier = "starter", currency: string = "brl") => {
+  const createCheckout = async (planTier: PlanTier = "starter", currency: string = "brl", couponCode?: string) => {
     try {
       const { data, error } = await supabase.functions.invoke("create-checkout", {
-        body: { planTier, currency }
+        body: { planTier, currency, couponCode }
       });
 
       if (error) throw error;
@@ -155,6 +155,28 @@ export function useSubscription() {
     } catch (error) {
       console.error("Error creating checkout:", error);
       throw error;
+    }
+  };
+
+  const validateCoupon = async (code: string, planTier: PlanTier, priceInCents: number = 0) => {
+    try {
+      const { data, error } = await supabase.rpc("validate_coupon", {
+        p_code: code,
+        p_user_id: user?.id || "",
+        p_plan_tier: planTier,
+        p_price_cents: priceInCents
+      });
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        return data[0];
+      }
+
+      return { is_valid: false, error_message: "Coupon not found" };
+    } catch (error) {
+      console.error("Error validating coupon:", error);
+      return { is_valid: false, error_message: "Error validating coupon" };
     }
   };
 
@@ -190,6 +212,7 @@ export function useSubscription() {
     ...state,
     checkSubscription,
     createCheckout,
+    validateCoupon,
     openCustomerPortal,
     canCreateCarousel,
     getRemainingCarousels,
