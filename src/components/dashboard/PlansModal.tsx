@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useSubscription } from "@/hooks/useSubscription";
-import { PLANS, PlanTier, PLAN_ORDER } from "@/lib/plans";
+import { usePlansConfig } from "@/hooks/usePlansConfig";
+import { PlanTier, PLAN_ORDER } from "@/lib/plans";
 import { t } from "@/lib/translations";
 import {
   Dialog,
@@ -33,17 +34,27 @@ const cancellationReasons = [
 
 export default function PlansModal({ open, onOpenChange }: PlansModalProps) {
   const { language } = useLanguage();
-  const { plan: currentPlan, createCheckout, openCustomerPortal, isPro, subscriptionEnd } = useSubscription();
+  const { plan: currentPlan, createCheckout, openCustomerPortal, isPro } = useSubscription();
+  const { getPlanPrice, getPlanName, getPlanDescription, getPlanFeatures, getPlanLimitations } = usePlansConfig();
   const [loading, setLoading] = useState<PlanTier | null>(null);
   const [step, setStep] = useState<CancellationStep>("plans");
   const [selectedReason, setSelectedReason] = useState<string | null>(null);
 
+  // Map language to currency
+  const getCurrency = () => {
+    switch (language) {
+      case "en": return "usd";
+      case "es": return "eur";
+      default: return "brl";
+    }
+  };
+
   const handleUpgrade = async (planTier: PlanTier) => {
     if (planTier === "free" || planTier === currentPlan) return;
-    
+
     setLoading(planTier);
     try {
-      await createCheckout(planTier);
+      await createCheckout(planTier, getCurrency());
       onOpenChange(false);
     } catch (error) {
       toast.error(t("common", "error", language));
@@ -81,9 +92,9 @@ export default function PlansModal({ open, onOpenChange }: PlansModalProps) {
 
   const handleAcceptOffer = () => {
     toast.success(
-      language === "pt-BR" 
-        ? "Ótimo! Seu desconto será aplicado na próxima fatura." 
-        : language === "es" 
+      language === "pt-BR"
+        ? "Ótimo! Seu desconto será aplicado na próxima fatura."
+        : language === "es"
           ? "¡Genial! Tu descuento se aplicará en la próxima factura."
           : "Great! Your discount will be applied to the next invoice."
     );
@@ -119,14 +130,14 @@ export default function PlansModal({ open, onOpenChange }: PlansModalProps) {
               {language === "pt-BR" ? "Tem certeza que deseja cancelar?" : language === "es" ? "¿Estás seguro de que quieres cancelar?" : "Are you sure you want to cancel?"}
             </h3>
             <p className="text-muted-foreground">
-              {language === "pt-BR" 
+              {language === "pt-BR"
                 ? "Você perderá acesso a todos os recursos premium e seu histórico de carrosséis."
                 : language === "es"
                   ? "Perderás acceso a todas las funciones premium y tu historial de carruseles."
                   : "You'll lose access to all premium features and your carousel history."}
             </p>
           </div>
-          
+
           <div className="bg-muted/50 rounded-lg p-4 space-y-2">
             <p className="font-medium text-sm">
               {language === "pt-BR" ? "O que você vai perder:" : language === "es" ? "Lo que perderás:" : "What you'll lose:"}
@@ -159,7 +170,7 @@ export default function PlansModal({ open, onOpenChange }: PlansModalProps) {
               {language === "pt-BR" ? "Por que você está cancelando?" : language === "es" ? "¿Por qué estás cancelando?" : "Why are you canceling?"}
             </h3>
             <p className="text-muted-foreground text-sm">
-              {language === "pt-BR" 
+              {language === "pt-BR"
                 ? "Seu feedback nos ajuda a melhorar o Audisell"
                 : language === "es"
                   ? "Tu feedback nos ayuda a mejorar Audisell"
@@ -200,7 +211,7 @@ export default function PlansModal({ open, onOpenChange }: PlansModalProps) {
               {language === "pt-BR" ? "Espera! Temos uma oferta especial" : language === "es" ? "¡Espera! Tenemos una oferta especial" : "Wait! We have a special offer"}
             </h3>
             <p className="text-muted-foreground">
-              {language === "pt-BR" 
+              {language === "pt-BR"
                 ? "Que tal 50% de desconto no próximo mês?"
                 : language === "es"
                   ? "¿Qué tal un 50% de descuento en el próximo mes?"
@@ -241,7 +252,7 @@ export default function PlansModal({ open, onOpenChange }: PlansModalProps) {
               {language === "pt-BR" ? "Sentiremos sua falta" : language === "es" ? "Te extrañaremos" : "We'll miss you"}
             </h3>
             <p className="text-muted-foreground">
-              {language === "pt-BR" 
+              {language === "pt-BR"
                 ? "Você pode voltar a qualquer momento. Seu histórico será mantido por 30 dias."
                 : language === "es"
                   ? "Puedes volver en cualquier momento. Tu historial se mantendrá por 30 días."
@@ -272,7 +283,7 @@ export default function PlansModal({ open, onOpenChange }: PlansModalProps) {
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-center text-2xl">
-            {step === "plans" 
+            {step === "plans"
               ? (language === "pt-BR" ? "Escolha seu plano" : language === "es" ? "Elige tu plan" : "Choose your plan")
               : (language === "pt-BR" ? "Cancelar assinatura" : language === "es" ? "Cancelar suscripción" : "Cancel subscription")}
           </DialogTitle>
@@ -284,11 +295,12 @@ export default function PlansModal({ open, onOpenChange }: PlansModalProps) {
           <>
             <div className="grid gap-4 md:grid-cols-3 py-4">
               {availablePlans.map((planTier) => {
-                const planConfig = PLANS[planTier];
                 const isCurrentPlan = currentPlan === planTier;
                 const isPopular = planTier === "creator";
                 const canUpgrade = PLAN_ORDER.indexOf(planTier) > PLAN_ORDER.indexOf(currentPlan);
                 const canDowngrade = PLAN_ORDER.indexOf(planTier) < PLAN_ORDER.indexOf(currentPlan) && isPro;
+                const features = getPlanFeatures(planTier, language);
+                const limitations = getPlanLimitations(planTier, language);
 
                 return (
                   <Card
@@ -318,27 +330,27 @@ export default function PlansModal({ open, onOpenChange }: PlansModalProps) {
                     <CardHeader className="pb-2 pt-6">
                       <CardTitle className="flex items-center gap-2">
                         {planTier !== "free" && <Crown className="w-4 h-4 text-accent" />}
-                        {planConfig.name}
+                        {getPlanName(planTier, language)}
                       </CardTitle>
-                      <CardDescription>{planConfig.description}</CardDescription>
+                      <CardDescription>{getPlanDescription(planTier, language)}</CardDescription>
                     </CardHeader>
 
                     <CardContent className="space-y-4">
                       <div>
-                        <span className="text-3xl font-bold">{planConfig.priceDisplay}</span>
+                        <span className="text-3xl font-bold">{getPlanPrice(planTier, language)}</span>
                         {planTier !== "free" && (
                           <span className="text-muted-foreground text-sm">{t("common", "perMonth", language)}</span>
                         )}
                       </div>
 
                       <ul className="space-y-2 text-sm">
-                        {planConfig.features.slice(0, 5).map((feature, index) => (
+                        {features.slice(0, 5).map((feature, index) => (
                           <li key={index} className="flex items-start gap-2">
                             <Check className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
                             <span>{feature}</span>
                           </li>
                         ))}
-                        {planConfig.limitations.length > 0 && planConfig.limitations.slice(0, 2).map((limitation, index) => (
+                        {limitations.length > 0 && limitations.slice(0, 2).map((limitation, index) => (
                           <li key={`lim-${index}`} className="flex items-start gap-2 text-muted-foreground">
                             <X className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
                             <span>{limitation}</span>
@@ -351,9 +363,9 @@ export default function PlansModal({ open, onOpenChange }: PlansModalProps) {
                           {language === "pt-BR" ? "Plano atual" : language === "es" ? "Plan actual" : "Current plan"}
                         </Button>
                       ) : canUpgrade ? (
-                        <Button 
-                          variant={isPopular ? "accent" : "default"} 
-                          className="w-full" 
+                        <Button
+                          variant={isPopular ? "accent" : "default"}
+                          className="w-full"
                           onClick={() => handleUpgrade(planTier)}
                           disabled={loading !== null}
                         >
@@ -367,9 +379,9 @@ export default function PlansModal({ open, onOpenChange }: PlansModalProps) {
                           )}
                         </Button>
                       ) : canDowngrade ? (
-                        <Button 
-                          variant="outline" 
-                          className="w-full" 
+                        <Button
+                          variant="outline"
+                          className="w-full"
                           onClick={handleManageSubscription}
                         >
                           {language === "pt-BR" ? "Gerenciar plano" : language === "es" ? "Gestionar plan" : "Manage plan"}
@@ -389,7 +401,7 @@ export default function PlansModal({ open, onOpenChange }: PlansModalProps) {
               <div className="pt-4 border-t">
                 <div className="flex items-center justify-between">
                   <div className="text-sm text-muted-foreground">
-                    {language === "pt-BR" 
+                    {language === "pt-BR"
                       ? "Deseja cancelar sua assinatura?"
                       : language === "es"
                         ? "¿Deseas cancelar tu suscripción?"

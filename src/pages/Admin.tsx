@@ -24,6 +24,8 @@ import {
   BarChart3,
   Crown,
   Gift,
+  Ticket,
+  TrendingUp,
 } from "lucide-react";
 import { BRAND } from "@/lib/constants";
 import AdminStats from "@/components/admin/AdminStats";
@@ -41,6 +43,8 @@ import TrustedCompaniesManager from "@/components/admin/TrustedCompaniesManager"
 import AdvancedAnalytics from "@/components/admin/AdvancedAnalytics";
 import PlansConfigManager from "@/components/admin/PlansConfigManager";
 import ManualSubscriptionManager from "@/components/admin/ManualSubscriptionManager";
+import CouponsManager from "@/components/admin/CouponsManager";
+import RevenueReports from "@/components/admin/RevenueReports";
 
 const Admin = () => {
   const { user, loading: authLoading } = useAuth();
@@ -151,6 +155,14 @@ const Admin = () => {
               <Gift className="w-4 h-4" />
               {language === "pt-BR" ? "Assinaturas" : "Subscriptions"}
             </TabsTrigger>
+            <TabsTrigger value="coupons" className="gap-2">
+              <Ticket className="w-4 h-4" />
+              {language === "pt-BR" ? "Cupons" : "Coupons"}
+            </TabsTrigger>
+            <TabsTrigger value="revenue" className="gap-2">
+              <TrendingUp className="w-4 h-4" />
+              {language === "pt-BR" ? "Receita" : "Revenue"}
+            </TabsTrigger>
             <TabsTrigger value="landing" className="gap-2">
               <FileText className="w-4 h-4" />
               Landing
@@ -207,6 +219,14 @@ const Admin = () => {
 
           <TabsContent value="manual-subs">
             <ManualSubscriptionManager />
+          </TabsContent>
+
+          <TabsContent value="coupons">
+            <CouponsManager />
+          </TabsContent>
+
+          <TabsContent value="revenue">
+            <RevenueReports />
           </TabsContent>
 
           <TabsContent value="landing">
