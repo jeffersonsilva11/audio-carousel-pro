@@ -2880,6 +2880,26 @@ export const translations = {
       en: "Unsaved changes",
       es: "Cambios sin guardar",
     },
+    watermarkNotice: {
+      "pt-BR": "Marca d'água de proteção",
+      en: "Protection watermark",
+      es: "Marca de agua de protección",
+    },
+    watermarkNoticeDesc: {
+      "pt-BR": "A marca d'água \"Feito com Audissel\" aparece apenas no modo de edição. Após finalizar, os slides exportados não terão marca d'água.",
+      en: "The \"Made with Audissel\" watermark only appears in edit mode. After finalizing, exported slides won't have a watermark.",
+      es: "La marca de agua \"Hecho con Audissel\" solo aparece en el modo de edición. Después de finalizar, los slides exportados no tendrán marca de agua.",
+    },
+    clickToEdit: {
+      "pt-BR": "Clique para editar",
+      en: "Click to edit",
+      es: "Clic para editar",
+    },
+    finalized: {
+      "pt-BR": "Finalizado",
+      en: "Finalized",
+      es: "Finalizado",
+    },
   },
 
   // Cookie Consent
