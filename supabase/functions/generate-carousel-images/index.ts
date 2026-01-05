@@ -237,15 +237,15 @@ function generateProfileIdentitySVG(
   };
   const scale = scaleFactors[format] || 1.0;
 
-  // Avatar size and positioning - SCALED for each format
-  const avatarSize = Math.round(80 * scale);
-  const padding = Math.round(50 * scale);
-  const textGap = Math.round(14 * scale);
+  // Avatar size and positioning - SCALED for each format (increased 25% for better visibility)
+  const avatarSize = Math.round(100 * scale);
+  const padding = Math.round(55 * scale);
+  const textGap = Math.round(16 * scale);
 
-  // Text sizes - SCALED for each format
-  const nameFontSize = Math.round(24 * scale);
-  const usernameFontSize = Math.round(20 * scale);
-  const initialsFontSize = Math.round(32 * scale);
+  // Text sizes - SCALED for each format (increased 25% for better readability)
+  const nameFontSize = Math.round(30 * scale);
+  const usernameFontSize = Math.round(24 * scale);
+  const initialsFontSize = Math.round(40 * scale);
 
   // Calculate position based on avatarPosition
   let x = padding;
@@ -729,7 +729,7 @@ function generateContentSlideSVG(
   const { x: textX, anchor: textAnchor } = alignmentConfig[textAlignment];
 
   // Calculate vertical positioning - center in available space (below profile, above footer)
-  const profileHeight = profile ? 120 : 0; // Increased for larger profile
+  const profileHeight = profile ? 150 : 0; // Increased for larger profile (100px avatar + 50px padding)
   const footerHeight = showDots ? 80 : 60;
   const availableHeight = height - profileHeight - footerHeight;
   const lineHeight = fontSize * 1.45;
