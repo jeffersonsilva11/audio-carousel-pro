@@ -6,30 +6,25 @@ import {
   X,
   Upload,
   Sparkles,
-  Crown,
   Loader2,
   AlignLeft,
   AlignCenter,
   AlignRight,
   ArrowUp,
   ArrowDown,
-  Settings2,
-  Lock,
-  Check
+  Settings2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLanguage } from "@/hooks/useLanguage";
 import { t } from "@/lib/translations";
-import { getPlanPrice } from "@/lib/localization";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useSubscription } from "@/hooks/useSubscription";
+import { LockedFeature } from "@/components/ui/locked-feature";
 import { 
   AVAILABLE_FONTS, 
   GRADIENT_PRESETS, 
@@ -79,113 +74,47 @@ const AdvancedTemplateEditor = ({
   const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
   const [activeGradientCategory, setActiveGradientCategory] = useState<GradientCategory | 'basic'>('warm');
 
-  const { createCheckout } = useSubscription();
-  const [checkoutLoading, setCheckoutLoading] = useState(false);
-
-  const handleUpgrade = async () => {
-    setCheckoutLoading(true);
-    try {
-      await createCheckout("creator");
-    } catch (error) {
-      toast({
-        title: language === "pt-BR" ? "Erro" : "Error",
-        description: language === "pt-BR"
-          ? "Não foi possível iniciar o checkout."
-          : "Could not start checkout.",
-        variant: "destructive",
-      });
-    } finally {
-      setCheckoutLoading(false);
-    }
+  // Get localized feature list for locked state
+  const getLockedFeatures = () => {
+    const features = {
+      "pt-BR": [
+        "12 fontes personalizadas exclusivas",
+        "40+ gradientes premium",
+        "Upload de imagem de capa",
+        "Opções de navegação e subtítulos"
+      ],
+      "es": [
+        "12 fuentes personalizadas exclusivas",
+        "40+ gradientes premium",
+        "Carga de imagen de portada",
+        "Opciones de navegación y subtítulos"
+      ],
+      "en": [
+        "12 exclusive custom fonts",
+        "40+ premium gradients",
+        "Custom cover image upload",
+        "Navigation and subtitle options"
+      ]
+    };
+    return features[language] || features["en"];
   };
 
   if (!isCreator) {
-    const lockedFeatures = [
-      {
-        icon: Type,
-        label: language === "pt-BR" ? "Fontes personalizadas" : language === "es" ? "Fuentes personalizadas" : "Custom fonts",
-        desc: language === "pt-BR" ? "12 fontes exclusivas" : language === "es" ? "12 fuentes exclusivas" : "12 exclusive fonts"
-      },
-      {
-        icon: Palette,
-        label: language === "pt-BR" ? "Gradientes premium" : language === "es" ? "Gradientes premium" : "Premium gradients",
-        desc: language === "pt-BR" ? "40+ opções de cores" : language === "es" ? "40+ opciones de colores" : "40+ color options"
-      },
-      {
-        icon: ImagePlus,
-        label: language === "pt-BR" ? "Imagem de capa" : language === "es" ? "Imagen de portada" : "Cover image",
-        desc: language === "pt-BR" ? "Upload personalizado" : language === "es" ? "Carga personalizada" : "Custom upload"
-      },
-      {
-        icon: Settings2,
-        label: language === "pt-BR" ? "Opções avançadas" : language === "es" ? "Opciones avanzadas" : "Advanced options",
-        desc: language === "pt-BR" ? "Navegação, subtítulos..." : language === "es" ? "Navegación, subtítulos..." : "Navigation, subtitles..."
-      },
-    ];
-
     return (
-      <div className="border border-accent/30 rounded-xl overflow-hidden bg-gradient-to-br from-accent/5 to-transparent">
-        {/* Header */}
-        <div className="p-4 bg-accent/10 border-b border-accent/20">
-          <div className="flex items-center gap-2">
-            <Crown className="w-5 h-5 text-accent" />
-            <h3 className="font-semibold">{t("advancedEditor", "customization", language)}</h3>
-            <Badge variant="secondary" className="text-[10px] ml-auto bg-accent/20 text-accent border-accent/30">
-              Creator+
-            </Badge>
-          </div>
-        </div>
-
-        {/* Features preview */}
-        <div className="p-4 space-y-3">
-          <p className="text-sm text-muted-foreground">
-            {language === "pt-BR"
-              ? "Desbloqueie recursos avançados de personalização:"
-              : language === "es"
-              ? "Desbloquea funciones avanzadas de personalización:"
-              : "Unlock advanced customization features:"}
-          </p>
-
-          <div className="grid grid-cols-2 gap-2">
-            {lockedFeatures.map((feature, idx) => (
-              <div
-                key={idx}
-                className="flex items-start gap-2 p-2.5 rounded-lg bg-background/50 border border-border/50"
-              >
-                <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                  <feature.icon className="w-4 h-4 text-muted-foreground" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs font-medium truncate">{feature.label}</p>
-                  <p className="text-[10px] text-muted-foreground truncate">{feature.desc}</p>
-                </div>
-                <Lock className="w-3 h-3 text-muted-foreground shrink-0 mt-0.5" />
-              </div>
-            ))}
-          </div>
-
-          {/* Upgrade CTA */}
-          <div className="pt-2">
-            <Button
-              variant="accent"
-              className="w-full"
-              onClick={handleUpgrade}
-              disabled={checkoutLoading}
-            >
-              {checkoutLoading ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <Sparkles className="w-4 h-4 mr-2" />
-              )}
-              {language === "pt-BR"
-                ? `Upgrade para Creator ${getPlanPrice("creator", language)}/mês`
-                : language === "es"
-                ? `Upgrade a Creator ${getPlanPrice("creator", language)}/mes`
-                : `Upgrade to Creator ${getPlanPrice("creator", language)}/mo`}
-            </Button>
-          </div>
-        </div>
-      </div>
+      <LockedFeature
+        requiredPlan="creator"
+        title={t("advancedEditor", "customization", language)}
+        description={
+          language === "pt-BR"
+            ? "Personalize fontes, cores e muito mais"
+            : language === "es"
+            ? "Personaliza fuentes, colores y más"
+            : "Customize fonts, colors and more"
+        }
+        icon={Sparkles}
+        features={getLockedFeatures()}
+        hasAccess={false}
+      />
     );
   }
 

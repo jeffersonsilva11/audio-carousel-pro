@@ -46,6 +46,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 type Step = "upload" | "customize" | "processing" | "preview";
 
@@ -816,10 +822,41 @@ const CreateCarousel = () => {
               <Tabs value={previewMode} onValueChange={(v) => setPreviewMode(v as 'preview' | 'edit')} className="mb-6">
                 <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="preview">{t("carouselEditor", "previewTab", siteLanguage)}</TabsTrigger>
-                  <TabsTrigger value="edit" disabled={!isPro}>
-                    {t("carouselEditor", "editTab", siteLanguage)}
-                    {!isPro && <Crown className="w-3 h-3 ml-1 text-accent" />}
-                  </TabsTrigger>
+                  {isPro ? (
+                    <TabsTrigger value="edit">
+                      {t("carouselEditor", "editTab", siteLanguage)}
+                    </TabsTrigger>
+                  ) : (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="w-full">
+                            <TabsTrigger value="edit" disabled className="w-full">
+                              {t("carouselEditor", "editTab", siteLanguage)}
+                              <Crown className="w-3 h-3 ml-1 text-accent" />
+                            </TabsTrigger>
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom">
+                          <p className="font-medium">{siteLanguage === "pt-BR" ? "Recurso Starter+" : siteLanguage === "es" ? "Función Starter+" : "Starter+ Feature"}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {siteLanguage === "pt-BR"
+                              ? "Edite textos dos slides após gerar"
+                              : siteLanguage === "es"
+                              ? "Edita textos de slides después de generar"
+                              : "Edit slide texts after generating"}
+                          </p>
+                          <p className="text-xs text-accent mt-1">
+                            {siteLanguage === "pt-BR"
+                              ? `Upgrade por ${getPlanPrice("starter", siteLanguage)}/mês`
+                              : siteLanguage === "es"
+                              ? `Upgrade por ${getPlanPrice("starter", siteLanguage)}/mes`
+                              : `Upgrade for ${getPlanPrice("starter", siteLanguage)}/mo`}
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
                 </TabsList>
                 
                 <TabsContent value="preview" className="mt-6">
