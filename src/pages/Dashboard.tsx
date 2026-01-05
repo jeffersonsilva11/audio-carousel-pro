@@ -13,6 +13,7 @@ import {
   Sparkles, FolderOpen, Crown, CreditCard, RefreshCw, AlertTriangle, Globe, Settings, History, Shield, Clock, Bell, X, Headphones
 } from "lucide-react";
 import { useNotifications } from "@/hooks/useNotifications";
+import NotificationBell from "@/components/NotificationBell";
 import UsageStats from "@/components/dashboard/UsageStats";
 import DashboardSkeleton from "@/components/skeletons/DashboardSkeleton";
 import OnboardingModal from "@/components/onboarding/OnboardingModal";
@@ -254,6 +255,7 @@ const Dashboard = () => {
                 <Headphones className="w-4 h-4 mr-1" />
                 Suporte
               </Button>
+              <NotificationBell />
               <Button variant="ghost" size="icon" onClick={() => navigate("/settings/profile")} title={t("settings", "profile", language)}>
                 <Settings className="w-4 h-4" />
               </Button>

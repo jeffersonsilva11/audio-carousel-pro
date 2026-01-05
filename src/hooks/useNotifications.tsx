@@ -20,110 +20,80 @@ interface NotificationsContextType {
   markAllAsRead: () => void;
   clearNotification: (id: string) => void;
   addNotification: (notification: Omit<Notification, "id" | "read" | "createdAt">) => void;
-  requestPermission: () => Promise<boolean>;
-  hasPermission: boolean;
   refreshNotifications: () => Promise<void>;
 }
 
 const NotificationsContext = createContext<NotificationsContextType | undefined>(undefined);
 
-// Request browser notification permission
-async function requestBrowserPermission(): Promise<boolean> {
-  if (!("Notification" in window)) {
-    return false;
-  }
-  
-  if (Notification.permission === "granted") {
-    return true;
-  }
-  
-  if (Notification.permission !== "denied") {
-    const permission = await Notification.requestPermission();
-    return permission === "granted";
-  }
-  
-  return false;
-}
-
-// Show browser notification
-function showBrowserNotification(title: string, body: string, icon?: string) {
-  if (Notification.permission === "granted") {
-    new Notification(title, {
-      body,
-      icon: icon || "/favicon.ico",
-      badge: "/favicon.ico",
-    });
-  }
-}
-
 export function NotificationsProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [hasPermission, setHasPermission] = useState(false);
-
-  // Check permission on mount
-  useEffect(() => {
-    if ("Notification" in window) {
-      setHasPermission(Notification.permission === "granted");
-    }
-  }, []);
 
   // Function to fetch server notifications
   const fetchServerNotifications = async () => {
     if (!user) return;
 
-    // Get user's preferred language
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("preferred_lang")
-      .eq("user_id", user.id)
-      .single();
+    try {
+      // Get user's preferred language
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("preferred_lang")
+        .eq("user_id", user.id)
+        .single();
 
-    const lang = profile?.preferred_lang || "pt-BR";
+      const lang = profile?.preferred_lang || "pt-BR";
 
-    const { data, error } = await supabase
-      .from("notifications")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(50);
+      const { data, error } = await supabase
+        .from("notifications")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(50);
 
-    if (error) {
-      console.error("Error fetching notifications:", error);
-      return;
-    }
-
-    if (data) {
-      const serverNotifications: Notification[] = data.map((n: any) => {
-        // Get localized title and message
-        let title = n.title_pt;
-        let message = n.message_pt;
-
-        if (lang === "en" && n.title_en) {
-          title = n.title_en;
-          message = n.message_en || n.message_pt;
-        } else if (lang === "es" && n.title_es) {
-          title = n.title_es;
-          message = n.message_es || n.message_pt;
+      if (error) {
+        // Silently handle if table doesn't exist yet
+        if (error.code === "42P01" || error.message?.includes("does not exist")) {
+          return;
         }
+        console.error("Error fetching notifications:", error);
+        return;
+      }
 
-        return {
-          id: n.id,
-          title,
-          message,
-          type: n.type as Notification["type"],
-          read: n.is_read,
-          createdAt: new Date(n.created_at),
-          link: n.action_url,
-          isFromServer: true,
-        };
-      });
+      if (data) {
+        const serverNotifications: Notification[] = data.map((n: any) => {
+          // Get localized title and message
+          let title = n.title_pt;
+          let message = n.message_pt;
 
-      // Merge with client-side notifications, keeping server notifications separate
-      setNotifications(prev => {
-        const clientNotifications = prev.filter(n => !n.isFromServer);
-        return [...serverNotifications, ...clientNotifications].slice(0, 100);
-      });
+          if (lang === "en" && n.title_en) {
+            title = n.title_en;
+            message = n.message_en || n.message_pt;
+          } else if (lang === "es" && n.title_es) {
+            title = n.title_es;
+            message = n.message_es || n.message_pt;
+          }
+
+          return {
+            id: n.id,
+            title,
+            message,
+            type: n.type as Notification["type"],
+            read: n.is_read,
+            createdAt: new Date(n.created_at),
+            link: n.action_url,
+            isFromServer: true,
+          };
+        });
+
+        // Merge with client-side notifications, keeping server notifications separate
+        setNotifications(prev => {
+          const clientNotifications = prev.filter(n => !n.isFromServer);
+          return [...serverNotifications, ...clientNotifications].slice(0, 100);
+        });
+      }
+    } catch (error) {
+      // Silently handle errors (table might not exist yet)
+      console.error("Error in fetchServerNotifications:", error);
     }
   };
 
@@ -221,11 +191,6 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     };
 
     setNotifications((prev) => [newNotification, ...prev].slice(0, 50)); // Keep max 50
-
-    // Show browser notification if permitted
-    if (hasPermission) {
-      showBrowserNotification(notification.title, notification.message);
-    }
   };
 
   const markAsRead = async (id: string) => {
@@ -275,12 +240,6 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     await fetchServerNotifications();
   };
 
-  const requestPermission = async () => {
-    const granted = await requestBrowserPermission();
-    setHasPermission(granted);
-    return granted;
-  };
-
   return (
     <NotificationsContext.Provider
       value={{
@@ -290,8 +249,6 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
         markAllAsRead,
         clearNotification,
         addNotification,
-        requestPermission,
-        hasPermission,
         refreshNotifications,
       }}
     >
