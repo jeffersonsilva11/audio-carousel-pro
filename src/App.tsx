@@ -25,6 +25,7 @@ import Maintenance from "./pages/Maintenance";
 import NotFound from "./pages/NotFound";
 import MaintenanceCheck from "./components/MaintenanceCheck";
 import VersionUpdateBanner from "./components/VersionUpdateBanner";
+import ZohoDeskWidget from "./components/ZohoDeskWidget";
 import TermsOfService from "./pages/TermsOfService";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import AnalyticsProvider from "./components/AnalyticsProvider";
@@ -73,6 +74,7 @@ const App = () => {
                     </AnalyticsProvider>
                   </MaintenanceCheck>
                     <VersionUpdateBanner />
+                  <ZohoDeskWidget />
                 </BrowserRouter>
                 <CookieConsent />
               </TooltipProvider>
