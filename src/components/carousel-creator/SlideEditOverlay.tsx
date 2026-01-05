@@ -1,22 +1,19 @@
 import { useState, useRef, useEffect } from "react";
-import { Edit2, Check, X, Type, Sparkles, AlertCircle } from "lucide-react";
+import { Edit2, Check, X, Type } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 import { useLanguage } from "@/hooks/useLanguage";
 
 interface SlideEditOverlayProps {
   imageUrl?: string;
   text: string;
-  subtitle?: string;
-  highlightWord?: string;
   slideNumber: number;
   slideType: string;
   isLocked: boolean;
   isEditing: boolean;
   onStartEdit: () => void;
-  onSaveEdit: (text: string, subtitle?: string, highlightWord?: string) => void;
+  onSaveEdit: (text: string) => void;
   onCancelEdit: () => void;
   showWatermark?: boolean;
 }
@@ -24,8 +21,6 @@ interface SlideEditOverlayProps {
 const SlideEditOverlay = ({
   imageUrl,
   text,
-  subtitle,
-  highlightWord,
   slideNumber,
   slideType,
   isLocked,
@@ -37,16 +32,12 @@ const SlideEditOverlay = ({
 }: SlideEditOverlayProps) => {
   const { language } = useLanguage();
   const [editedText, setEditedText] = useState(text);
-  const [editedSubtitle, setEditedSubtitle] = useState(subtitle || "");
-  const [editedHighlightWord, setEditedHighlightWord] = useState(highlightWord || "");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Reset local state when props change
   useEffect(() => {
     setEditedText(text);
-    setEditedSubtitle(subtitle || "");
-    setEditedHighlightWord(highlightWord || "");
-  }, [text, subtitle, highlightWord]);
+  }, [text]);
 
   // Focus textarea when editing starts
   useEffect(() => {
@@ -57,11 +48,7 @@ const SlideEditOverlay = ({
   }, [isEditing]);
 
   const handleSave = () => {
-    onSaveEdit(
-      editedText,
-      slideNumber === 1 ? editedSubtitle || undefined : undefined,
-      slideNumber === 1 ? editedHighlightWord || undefined : undefined
-    );
+    onSaveEdit(editedText);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -142,42 +129,6 @@ const SlideEditOverlay = ({
                 </Button>
               </div>
             </div>
-
-            {/* Cover slide specific fields */}
-            {isCoverSlide && (
-              <div className="space-y-3 p-3 bg-muted/50 rounded-lg">
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Sparkles className="w-3 h-3" />
-                  {language === "pt-BR" ? "Opções da Capa" : language === "es" ? "Opciones de Portada" : "Cover Options"}
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-medium">
-                    {language === "pt-BR" ? "Subtítulo" : language === "es" ? "Subtítulo" : "Subtitle"}
-                  </label>
-                  <Input
-                    value={editedSubtitle}
-                    onChange={(e) => setEditedSubtitle(e.target.value)}
-                    placeholder={language === "pt-BR" ? "Ex: O segredo que ninguém te contou..." : "Ex: The secret no one told you..."}
-                    className="text-sm"
-                    onKeyDown={handleKeyDown}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-medium">
-                    {language === "pt-BR" ? "Palavra em Destaque" : language === "es" ? "Palabra Destacada" : "Highlight Word"}
-                  </label>
-                  <Input
-                    value={editedHighlightWord}
-                    onChange={(e) => setEditedHighlightWord(e.target.value)}
-                    placeholder={language === "pt-BR" ? "Ex: segredo" : "Ex: secret"}
-                    className="text-sm"
-                    onKeyDown={handleKeyDown}
-                  />
-                </div>
-              </div>
-            )}
 
             {/* Main text editor */}
             <div className="space-y-2">
