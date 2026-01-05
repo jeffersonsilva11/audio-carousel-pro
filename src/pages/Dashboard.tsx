@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Mic2, Plus, LogOut, Loader2, Image as ImageIcon, Calendar,
-  Sparkles, FolderOpen, Crown, CreditCard, RefreshCw, AlertTriangle, Globe, Settings, History, Shield, Clock, Bell, X
+  Sparkles, FolderOpen, Crown, CreditCard, RefreshCw, AlertTriangle, Globe, Settings, History, Shield, Clock, Bell, X, Headphones
 } from "lucide-react";
 import { useNotifications } from "@/hooks/useNotifications";
 import UsageStats from "@/components/dashboard/UsageStats";
@@ -245,10 +245,15 @@ const Dashboard = () => {
               )}
               <span className="text-sm text-muted-foreground hidden md:block">{user?.email}</span>
               {isAdmin && (
-                <Button variant="ghost" size="icon" onClick={() => navigate("/admin")} title="Admin Panel">
-                  <Shield className="w-4 h-4 text-accent" />
+                <Button variant="ghost" size="sm" onClick={() => navigate("/admin")} title="Admin Panel">
+                  <Shield className="w-4 h-4 text-accent mr-1" />
+                  Admin
                 </Button>
               )}
+              <Button variant="ghost" size="sm" onClick={() => navigate("/support")} title="Suporte">
+                <Headphones className="w-4 h-4 mr-1" />
+                Suporte
+              </Button>
               <Button variant="ghost" size="icon" onClick={() => navigate("/settings/profile")} title={t("settings", "profile", language)}>
                 <Settings className="w-4 h-4" />
               </Button>
