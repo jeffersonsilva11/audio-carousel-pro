@@ -2,21 +2,21 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Check, Sparkles, Zap, Loader2, Crown } from "lucide-react";
+import { Check, Sparkles, Zap, Loader2, Crown, Building2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useLanguage } from "@/hooks/useLanguage";
 import { usePlansConfig } from "@/hooks/usePlansConfig";
 import { t } from "@/lib/translations";
-import { PLAN_ORDER, PlanTier } from "@/lib/plans";
+import { PlanTier } from "@/lib/plans";
 
 const Pricing = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { plan: currentPlan, createCheckout } = useSubscription();
   const { language } = useLanguage();
-  const { getPlanPrice, getPlanName, getPlanDescription, getPlanFeatures, getPlanLimitations } = usePlansConfig();
-  const [loading, setLoading] = useState<PlanTier | null>(null);
+  const { plans, getPlanPrice, getPlanName, getPlanDescription, getPlanFeatures, getPlanLimitations, loading: plansLoading } = usePlansConfig();
+  const [checkoutLoading, setCheckoutLoading] = useState<PlanTier | null>(null);
 
   // Map language to currency
   const getCurrency = () => {
@@ -43,25 +43,37 @@ const Pricing = () => {
       return;
     }
 
-    setLoading(planTier);
+    setCheckoutLoading(planTier);
     try {
       await createCheckout(planTier, getCurrency());
     } catch (error) {
       console.error("Checkout error:", error);
     } finally {
-      setLoading(null);
+      setCheckoutLoading(null);
     }
   };
 
-  const getPlanIcon = (tier: PlanTier) => {
+  const getPlanIcon = (tier: string) => {
     switch (tier) {
       case "creator": return Crown;
       case "starter": return Zap;
+      case "agency": return Building2;
       default: return Sparkles;
     }
   };
 
-  const getFeaturedPlan = () => "creator";
+  // Get the featured plan (creator, or fallback to the second plan if exists)
+  const getFeaturedPlan = () => {
+    const creatorPlan = plans.find(p => p.tier === "creator");
+    if (creatorPlan) return "creator";
+    return plans.length > 1 ? plans[1].tier : plans[0]?.tier;
+  };
+
+  // Determine plan order for comparison (higher index = higher tier)
+  const getPlanOrder = (tier: string) => {
+    const index = plans.findIndex(p => p.tier === tier);
+    return index >= 0 ? index : -1;
+  };
 
   return (
     <section id="pricing" className="py-24 md:py-32 bg-secondary/30">
@@ -80,8 +92,13 @@ const Pricing = () => {
         </div>
 
         {/* Pricing Cards */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
-          {PLAN_ORDER.map((tier) => {
+        <div className={`grid gap-6 max-w-5xl mx-auto ${plans.length === 4 ? 'md:grid-cols-2 lg:grid-cols-4' : 'md:grid-cols-2 lg:grid-cols-3'}`}>
+          {plansLoading ? (
+            <div className="col-span-full flex justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin text-accent" />
+            </div>
+          ) : plans.map((plan) => {
+            const tier = plan.tier as PlanTier;
             const isFeatured = tier === getFeaturedPlan();
             const isCurrentPlan = currentPlan === tier;
             const Icon = getPlanIcon(tier);
@@ -159,9 +176,9 @@ const Pricing = () => {
                     size="lg"
                     className={`w-full ${isFeatured ? "bg-primary-foreground text-primary hover:bg-primary-foreground/90" : ""}`}
                     onClick={() => handlePlanAction(tier)}
-                    disabled={loading === tier}
+                    disabled={checkoutLoading === tier}
                   >
-                    {loading === tier ? (
+                    {checkoutLoading === tier ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
                       <>

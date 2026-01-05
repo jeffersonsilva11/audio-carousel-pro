@@ -95,19 +95,40 @@ export default function RevenueReports() {
   });
 
   const [recentSubscriptions, setRecentSubscriptions] = useState<RecentSubscription[]>([]);
+  const [adminUserIds, setAdminUserIds] = useState<string[]>([]);
 
   useEffect(() => {
     fetchAllStats();
   }, [period]);
 
+  // First fetch admin user IDs to exclude them from revenue
+  const fetchAdminUserIds = async (): Promise<string[]> => {
+    try {
+      const { data: adminRoles } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "admin");
+
+      const ids = adminRoles?.map(r => r.user_id) || [];
+      setAdminUserIds(ids);
+      return ids;
+    } catch (error) {
+      console.error("Error fetching admin user IDs:", error);
+      return [];
+    }
+  };
+
   const fetchAllStats = async () => {
     setLoading(true);
     try {
+      // First get admin IDs to exclude from revenue calculations
+      const adminIds = await fetchAdminUserIds();
+
       await Promise.all([
-        fetchSubscriptionStats(),
-        fetchRevenueStats(),
+        fetchSubscriptionStats(adminIds),
+        fetchRevenueStats(adminIds),
         fetchCouponStats(),
-        fetchRecentSubscriptions(),
+        fetchRecentSubscriptions(adminIds),
       ]);
     } catch (error) {
       console.error("Error fetching stats:", error);
@@ -116,32 +137,36 @@ export default function RevenueReports() {
     }
   };
 
-  const fetchSubscriptionStats = async () => {
+  const fetchSubscriptionStats = async (adminIds: string[]) => {
     try {
-      // Get subscription counts
+      // Get subscription counts (excluding admins)
       const { data: subs, error } = await supabase
         .from("subscriptions")
-        .select("plan_tier, status");
+        .select("plan_tier, status, user_id");
 
       if (error) throw error;
 
-      const active = subs?.filter((s) => s.status === "active") || [];
+      // Filter out admin users
+      const nonAdminSubs = subs?.filter((s) => !adminIds.includes(s.user_id)) || [];
+      const active = nonAdminSubs.filter((s) => s.status === "active");
       const byPlan: Record<string, number> = {};
 
       active.forEach((s) => {
         byPlan[s.plan_tier] = (byPlan[s.plan_tier] || 0) + 1;
       });
 
-      // Get manual subscriptions
+      // Get manual subscriptions (excluding admins)
       const { data: manualSubs } = await supabase
         .from("manual_subscriptions")
-        .select("id")
+        .select("id, user_id")
         .eq("is_active", true);
 
+      const nonAdminManualSubs = manualSubs?.filter((s) => !adminIds.includes(s.user_id)) || [];
+
       setSubscriptionStats({
-        total_subscriptions: subs?.length || 0,
+        total_subscriptions: nonAdminSubs.length,
         active_subscriptions: active.length,
-        manual_subscriptions: manualSubs?.length || 0,
+        manual_subscriptions: nonAdminManualSubs.length,
         by_plan: byPlan,
       });
     } catch (error) {
@@ -149,7 +174,7 @@ export default function RevenueReports() {
     }
   };
 
-  const fetchRevenueStats = async () => {
+  const fetchRevenueStats = async (adminIds: string[]) => {
     try {
       // Get plan configs for pricing
       const { data: plans } = await supabase
@@ -161,37 +186,42 @@ export default function RevenueReports() {
         planPrices[p.tier] = p.price_brl;
       });
 
-      // Get active subscriptions
+      // Get active subscriptions (excluding admins)
       const { data: subs } = await supabase
         .from("subscriptions")
-        .select("plan_tier")
+        .select("plan_tier, user_id")
         .eq("status", "active");
 
-      // Calculate MRR
+      // Filter out admin users
+      const nonAdminSubs = subs?.filter((s) => !adminIds.includes(s.user_id)) || [];
+
+      // Calculate MRR (excluding admin revenue)
       let mrr = 0;
-      subs?.forEach((s) => {
+      nonAdminSubs.forEach((s) => {
         mrr += planPrices[s.plan_tier] || 0;
       });
 
-      // Get cancelled subscriptions for churn rate
+      // Get cancelled subscriptions for churn rate (excluding admins)
       const periodDays = parseInt(period.replace("d", "")) || 30;
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - periodDays);
 
       const { data: cancelled } = await supabase
         .from("subscriptions")
-        .select("id")
+        .select("id, user_id")
         .eq("status", "cancelled")
         .gte("updated_at", startDate.toISOString());
 
-      const churnRate = subs && subs.length > 0
-        ? ((cancelled?.length || 0) / subs.length) * 100
+      const nonAdminCancelled = cancelled?.filter((s) => !adminIds.includes(s.user_id)) || [];
+
+      const churnRate = nonAdminSubs.length > 0
+        ? (nonAdminCancelled.length / nonAdminSubs.length) * 100
         : 0;
 
       setRevenueStats({
         mrr,
         total_revenue: mrr * 12, // Estimated annual
-        avg_subscription_value: subs && subs.length > 0 ? mrr / subs.length : 0,
+        avg_subscription_value: nonAdminSubs.length > 0 ? mrr / nonAdminSubs.length : 0,
         churn_rate: churnRate,
       });
     } catch (error) {
@@ -222,26 +252,30 @@ export default function RevenueReports() {
     }
   };
 
-  const fetchRecentSubscriptions = async () => {
+  const fetchRecentSubscriptions = async (adminIds: string[]) => {
     try {
-      // Get recent Stripe subscriptions
+      // Get recent Stripe subscriptions (excluding admins)
       const { data: stripeSubs } = await supabase
         .from("subscriptions")
         .select("id, user_id, plan_tier, created_at, status")
         .order("created_at", { ascending: false })
-        .limit(5);
+        .limit(10);
 
-      // Get recent manual subscriptions
+      // Get recent manual subscriptions (excluding admins)
       const { data: manualSubs } = await supabase
         .from("manual_subscriptions")
         .select("id, user_id, plan_tier, created_at, is_active")
         .order("created_at", { ascending: false })
-        .limit(5);
+        .limit(10);
+
+      // Filter out admin users and combine
+      const nonAdminStripeSubs = (stripeSubs || []).filter((s) => !adminIds.includes(s.user_id));
+      const nonAdminManualSubs = (manualSubs || []).filter((s) => !adminIds.includes(s.user_id));
 
       // Combine and sort
       const allSubs = [
-        ...(stripeSubs || []).map((s) => ({ ...s, is_manual: false, status: s.status })),
-        ...(manualSubs || []).map((s) => ({ ...s, is_manual: true, status: s.is_active ? "active" : "inactive" })),
+        ...nonAdminStripeSubs.map((s) => ({ ...s, is_manual: false, status: s.status })),
+        ...nonAdminManualSubs.map((s) => ({ ...s, is_manual: true, status: s.is_active ? "active" : "inactive" })),
       ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
       // Fetch user emails

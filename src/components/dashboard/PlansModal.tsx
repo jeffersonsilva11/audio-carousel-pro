@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useSubscription } from "@/hooks/useSubscription";
 import { usePlansConfig } from "@/hooks/usePlansConfig";
-import { PlanTier, PLAN_ORDER } from "@/lib/plans";
+import { PlanTier } from "@/lib/plans";
 import { t } from "@/lib/translations";
 import {
   Dialog,
@@ -35,10 +35,16 @@ const cancellationReasons = [
 export default function PlansModal({ open, onOpenChange }: PlansModalProps) {
   const { language } = useLanguage();
   const { plan: currentPlan, createCheckout, openCustomerPortal, isPro } = useSubscription();
-  const { getPlanPrice, getPlanName, getPlanDescription, getPlanFeatures, getPlanLimitations } = usePlansConfig();
+  const { plans, getPlanPrice, getPlanName, getPlanDescription, getPlanFeatures, getPlanLimitations } = usePlansConfig();
   const [loading, setLoading] = useState<PlanTier | null>(null);
   const [step, setStep] = useState<CancellationStep>("plans");
   const [selectedReason, setSelectedReason] = useState<string | null>(null);
+
+  // Get plan order for comparison
+  const getPlanOrder = (tier: string) => {
+    const index = plans.findIndex(p => p.tier === tier);
+    return index >= 0 ? index : -1;
+  };
 
   // Map language to currency
   const getCurrency = () => {
@@ -275,9 +281,6 @@ export default function PlansModal({ open, onOpenChange }: PlansModalProps) {
     return null;
   };
 
-  // Available plans
-  const availablePlans = PLAN_ORDER;
-
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -293,12 +296,13 @@ export default function PlansModal({ open, onOpenChange }: PlansModalProps) {
           renderCancellationFlow()
         ) : (
           <>
-            <div className="grid gap-4 md:grid-cols-3 py-4">
-              {availablePlans.map((planTier) => {
+            <div className={`grid gap-4 py-4 ${plans.length === 4 ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
+              {plans.map((plan) => {
+                const planTier = plan.tier as PlanTier;
                 const isCurrentPlan = currentPlan === planTier;
                 const isPopular = planTier === "creator";
-                const canUpgrade = PLAN_ORDER.indexOf(planTier) > PLAN_ORDER.indexOf(currentPlan);
-                const canDowngrade = PLAN_ORDER.indexOf(planTier) < PLAN_ORDER.indexOf(currentPlan) && isPro;
+                const canUpgrade = getPlanOrder(planTier) > getPlanOrder(currentPlan);
+                const canDowngrade = getPlanOrder(planTier) < getPlanOrder(currentPlan) && isPro;
                 const features = getPlanFeatures(planTier, language);
                 const limitations = getPlanLimitations(planTier, language);
 
