@@ -1,0 +1,496 @@
+import { useState, useCallback, useEffect, useMemo } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  Check,
+  Undo2,
+  Redo2,
+  AlertTriangle,
+  Sparkles,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "@/hooks/useLanguage";
+import { useUndoRedo } from "@/hooks/useUndoRedo";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  horizontalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { SortableSlide } from "./SortableSlide";
+
+interface Slide {
+  number: number;
+  type: string;
+  text: string;
+  imageUrl?: string;
+  subtitle?: string;
+  highlightWord?: string;
+}
+
+interface CarouselEditViewProps {
+  slides: Slide[];
+  onSlidesUpdate: (slides: Slide[]) => void;
+  onFinalize: (editedSlides: Slide[], changedIndices: number[]) => void;
+  isRegenerating?: boolean;
+  regeneratingProgress?: { current: number; total: number };
+}
+
+const CarouselEditView = ({
+  slides: initialSlides,
+  onSlidesUpdate,
+  onFinalize,
+  isRegenerating = false,
+  regeneratingProgress,
+}: CarouselEditViewProps) => {
+  const { t } = useTranslation();
+  const { toast } = useToast();
+
+  // Undo/Redo hook for slides
+  const {
+    state: slides,
+    setState: setSlides,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+  } = useUndoRedo<Slide[]>(initialSlides);
+
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [originalSlides] = useState<Slide[]>(initialSlides);
+
+  // Local editing state (always in edit mode)
+  const [editedText, setEditedText] = useState(initialSlides[0]?.text || "");
+  const [editedSubtitle, setEditedSubtitle] = useState(initialSlides[0]?.subtitle || "");
+  const [editedHighlightWord, setEditedHighlightWord] = useState(initialSlides[0]?.highlightWord || "");
+
+  // Track which slides have been modified
+  const getChangedIndices = useCallback(() => {
+    return slides
+      .map((slide, index) => {
+        const original = originalSlides[index];
+        if (!original) return -1;
+        if (
+          slide.text !== original.text ||
+          slide.subtitle !== original.subtitle ||
+          slide.highlightWord !== original.highlightWord
+        ) {
+          return index;
+        }
+        return -1;
+      })
+      .filter((i) => i !== -1);
+  }, [slides, originalSlides]);
+
+  const hasAnyChanges = getChangedIndices().length > 0;
+
+  // Update local state when changing slides
+  useEffect(() => {
+    const current = slides[currentSlide];
+    if (current) {
+      setEditedText(current.text);
+      setEditedSubtitle(current.subtitle || "");
+      setEditedHighlightWord(current.highlightWord || "");
+    }
+  }, [currentSlide, slides]);
+
+  // Save current slide edits to state
+  const saveCurrentSlideEdits = useCallback(() => {
+    const updatedSlides = slides.map((slide, index) => {
+      if (index !== currentSlide) return slide;
+
+      if (index === 0) {
+        return {
+          ...slide,
+          text: editedText,
+          subtitle: editedSubtitle || undefined,
+          highlightWord: editedHighlightWord || undefined,
+        };
+      }
+      return { ...slide, text: editedText };
+    });
+
+    if (JSON.stringify(updatedSlides) !== JSON.stringify(slides)) {
+      setSlides(updatedSlides);
+      onSlidesUpdate(updatedSlides);
+    }
+  }, [currentSlide, editedText, editedSubtitle, editedHighlightWord, slides, setSlides, onSlidesUpdate]);
+
+  // Auto-save when text changes (debounced effect)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      saveCurrentSlideEdits();
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [editedText, editedSubtitle, editedHighlightWord, saveCurrentSlideEdits]);
+
+  // DnD sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const sortableIds = useMemo(() => slides.map((_, i) => `slide-${i}`), [slides]);
+
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+      if (over && active.id !== over.id) {
+        const oldIndex = parseInt(String(active.id).replace("slide-", ""));
+        const newIndex = parseInt(String(over.id).replace("slide-", ""));
+
+        const newSlides = arrayMove(slides, oldIndex, newIndex).map((slide, index) => ({
+          ...slide,
+          number: index + 1,
+        }));
+
+        setSlides(newSlides);
+        onSlidesUpdate(newSlides);
+
+        if (currentSlide === oldIndex) {
+          setCurrentSlide(newIndex);
+        } else if (currentSlide > oldIndex && currentSlide <= newIndex) {
+          setCurrentSlide(currentSlide - 1);
+        } else if (currentSlide < oldIndex && currentSlide >= newIndex) {
+          setCurrentSlide(currentSlide + 1);
+        }
+      }
+    },
+    [slides, currentSlide, setSlides, onSlidesUpdate]
+  );
+
+  const goToSlide = (index: number) => {
+    if (index >= 0 && index < slides.length) {
+      saveCurrentSlideEdits();
+      setCurrentSlide(index);
+    }
+  };
+
+  const handleFinalize = () => {
+    saveCurrentSlideEdits();
+    const changedIndices = getChangedIndices();
+    onFinalize(slides, changedIndices);
+  };
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "z") {
+        e.preventDefault();
+        if (e.shiftKey) {
+          if (canRedo) redo();
+        } else {
+          if (canUndo) undo();
+        }
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === "y") {
+        e.preventDefault();
+        if (canRedo) redo();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [canUndo, canRedo, undo, redo]);
+
+  const currentSlideData = slides[currentSlide];
+  const isCoverSlide = currentSlide === 0;
+  const currentSlideHasChanges = (() => {
+    const original = originalSlides[currentSlide];
+    if (!original) return false;
+    return (
+      currentSlideData?.text !== original.text ||
+      currentSlideData?.subtitle !== original.subtitle ||
+      currentSlideData?.highlightWord !== original.highlightWord
+    );
+  })();
+
+  return (
+    <div className="space-y-6">
+      {/* Warning banner */}
+      <div className="flex items-start gap-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg text-sm">
+        <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+        <div>
+          <p className="text-amber-600 dark:text-amber-400 font-medium">
+            {t("carouselEditor", "editWarningTitle") || "Revise todos os slides"}
+          </p>
+          <p className="text-muted-foreground text-xs mt-0.5">
+            {t("carouselEditor", "editWarningDesc") ||
+              "Após finalizar, os slides editados serão regenerados e você poderá baixá-los."}
+          </p>
+        </div>
+      </div>
+
+      {/* Main content - Side by side on desktop */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Left: Slide Preview */}
+        <div className="space-y-4">
+          <Card className="overflow-hidden bg-muted/30">
+            <CardContent className="p-4">
+              <div className="relative aspect-square bg-background rounded-lg overflow-hidden shadow-lg">
+                {currentSlideData?.imageUrl ? (
+                  <img
+                    src={currentSlideData.imageUrl}
+                    alt={`Slide ${currentSlide + 1}`}
+                    className="w-full h-full object-contain"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                    {t("carouselPreview", "loading")}
+                  </div>
+                )}
+
+                {/* Navigation arrows */}
+                <button
+                  onClick={() => goToSlide(currentSlide - 1)}
+                  disabled={currentSlide === 0}
+                  className={cn(
+                    "absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-background/80 backdrop-blur flex items-center justify-center transition-opacity",
+                    currentSlide === 0 ? "opacity-30 cursor-not-allowed" : "hover:bg-background"
+                  )}
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+
+                <button
+                  onClick={() => goToSlide(currentSlide + 1)}
+                  disabled={currentSlide === slides.length - 1}
+                  className={cn(
+                    "absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-background/80 backdrop-blur flex items-center justify-center transition-opacity",
+                    currentSlide === slides.length - 1 ? "opacity-30 cursor-not-allowed" : "hover:bg-background"
+                  )}
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+
+                {/* Modified indicator */}
+                {currentSlideHasChanges && (
+                  <div className="absolute top-2 right-2 px-2 py-1 bg-amber-500/90 text-white text-xs font-medium rounded-full">
+                    {t("carouselEditor", "modified") || "Editado"}
+                  </div>
+                )}
+
+                {/* Regenerating overlay */}
+                {isRegenerating && (
+                  <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-20">
+                    <div className="text-center">
+                      <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-accent" />
+                      <p className="text-sm font-medium">
+                        {t("carouselEditor", "regeneratingSlides") || "Regenerando slides..."}
+                      </p>
+                      {regeneratingProgress && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {regeneratingProgress.current}/{regeneratingProgress.total}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Slide info */}
+              <div className="mt-3 text-center">
+                <p className="text-sm text-muted-foreground">
+                  <span className="font-medium text-foreground">Slide {currentSlide + 1}</span>
+                  {" "}de {slides.length}
+                  {currentSlideData?.type && (
+                    <span className="ml-2 text-accent">• {currentSlideData.type}</span>
+                  )}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Thumbnails */}
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={sortableIds} strategy={horizontalListSortingStrategy}>
+              <div className="flex gap-2 overflow-x-auto pb-2 justify-center">
+                {slides.map((slide, index) => {
+                  const original = originalSlides[index];
+                  const isModified =
+                    original &&
+                    (slide.text !== original.text ||
+                      slide.subtitle !== original.subtitle ||
+                      slide.highlightWord !== original.highlightWord);
+                  return (
+                    <SortableSlide
+                      key={`slide-${index}`}
+                      slide={slide}
+                      index={index}
+                      isActive={currentSlide === index}
+                      isModified={isModified}
+                      onClick={() => goToSlide(index)}
+                      disabled={false}
+                    />
+                  );
+                })}
+              </div>
+            </SortableContext>
+          </DndContext>
+        </div>
+
+        {/* Right: Text Editor */}
+        <div className="space-y-4">
+          <Card>
+            <CardContent className="p-4 space-y-4">
+              {/* Header with undo/redo */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-medium">
+                    {isCoverSlide ? "Capa" : `Slide ${currentSlide + 1}`}
+                  </h3>
+                  {currentSlideData?.type && (
+                    <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
+                      {currentSlideData.type}
+                    </span>
+                  )}
+                </div>
+
+                {(canUndo || canRedo) && (
+                  <TooltipProvider>
+                    <div className="flex items-center gap-1">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={undo}
+                            disabled={!canUndo}
+                            className="h-8 w-8"
+                          >
+                            <Undo2 className="w-4 h-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Desfazer (⌘Z)</TooltipContent>
+                      </Tooltip>
+
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={redo}
+                            disabled={!canRedo}
+                            className="h-8 w-8"
+                          >
+                            <Redo2 className="w-4 h-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Refazer (⌘⇧Z)</TooltipContent>
+                      </Tooltip>
+                    </div>
+                  </TooltipProvider>
+                )}
+              </div>
+
+              {/* Cover slide specific fields */}
+              {isCoverSlide && (
+                <div className="space-y-3 p-3 bg-muted/50 rounded-lg">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Sparkles className="w-3 h-3" />
+                    Opções da Capa
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="subtitle" className="text-sm">
+                      Subtítulo
+                    </Label>
+                    <Input
+                      id="subtitle"
+                      value={editedSubtitle}
+                      onChange={(e) => setEditedSubtitle(e.target.value)}
+                      placeholder="Ex: O segredo que ninguém te contou..."
+                      className="text-sm"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="highlightWord" className="text-sm">
+                      Palavra em Destaque
+                    </Label>
+                    <Input
+                      id="highlightWord"
+                      value={editedHighlightWord}
+                      onChange={(e) => setEditedHighlightWord(e.target.value)}
+                      placeholder="Ex: segredo"
+                      className="text-sm"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Main text */}
+              <div className="space-y-2">
+                <Label className="text-sm">
+                  {isCoverSlide ? "Título Principal" : "Texto do Slide"}
+                </Label>
+                <Textarea
+                  value={editedText}
+                  onChange={(e) => setEditedText(e.target.value)}
+                  className="min-h-[150px] resize-none"
+                  placeholder="Digite o texto..."
+                />
+                <p className="text-xs text-muted-foreground">
+                  {editedText.length} caracteres
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Changes summary */}
+          {hasAnyChanges && (
+            <div className="text-sm text-muted-foreground text-center">
+              {getChangedIndices().length} slide(s) editado(s)
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Finalize button */}
+      <div className="flex justify-center pt-4 border-t border-border">
+        <Button
+          variant="accent"
+          size="lg"
+          onClick={handleFinalize}
+          disabled={isRegenerating}
+          className="min-w-[200px]"
+        >
+          {isRegenerating ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Processando...
+            </>
+          ) : (
+            <>
+              <Check className="w-4 h-4 mr-2" />
+              Finalizar Edição
+            </>
+          )}
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+export default CarouselEditView;
