@@ -70,15 +70,13 @@ const TEXT_MODE_INSTRUCTIONS = {
 - Apenas organize, reduza e divida em slides
 - Não adicione dramatização ou mudanças de estilo
 - Preserve a essência e linguagem do autor
-- Foque em clareza e concisão
-- OBRIGATÓRIO: O primeiro slide (HOOK) SEMPRE precisa ter "subtitle" curto (4-8 palavras)`,
+- Foque em clareza e concisão`,
 
   creative: `MODO CRIATIVO:
 - Ajuste tom, ritmo e impacto conforme o estilo escolhido
 - Adicione elementos de storytelling
 - Use técnicas de copywriting
-- Crie conexão emocional com o leitor
-- OBRIGATÓRIO: O primeiro slide (HOOK) SEMPRE precisa ter "subtitle" curto (4-8 palavras)`,
+- Crie conexão emocional com o leitor`,
 
   single: `MODO TEXTO ÚNICO:
 - Gere apenas 1 slide com texto mais longo

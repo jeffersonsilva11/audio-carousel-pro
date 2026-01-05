@@ -15,33 +15,35 @@ const ProcessingStatus = ({ status }: ProcessingStatusProps) => {
   const [progress, setProgress] = useState(0);
 
   const steps = [
-    { 
-      id: "TRANSCRIBING", 
+    {
+      id: "TRANSCRIBING",
       name: t("processingStatus", "transcribing"),
       description: t("processingStatus", "transcribingDesc"),
       icon: Mic2
     },
-    { 
-      id: "SCRIPTING", 
+    {
+      id: "SCRIPTING",
       name: t("processingStatus", "scripting"),
       description: t("processingStatus", "scriptingDesc"),
       icon: FileText
     },
-    { 
-      id: "GENERATING", 
+    {
+      id: "GENERATING",
       name: t("processingStatus", "generating"),
       description: t("processingStatus", "generatingDesc"),
       icon: Image
     },
-    { 
-      id: "COMPLETED", 
+    {
+      id: "COMPLETED",
       name: t("processingStatus", "completed"),
       description: t("processingStatus", "completedDesc"),
       icon: Check
     },
   ];
-  
-  const currentStepIndex = steps.findIndex(s => s.id === status);
+
+  // Ensure currentStepIndex is never negative
+  const rawIndex = steps.findIndex(s => s.id === status);
+  const currentStepIndex = rawIndex >= 0 ? rawIndex : 0;
   const progressPerStep = 100 / (steps.length - 1);
 
   useEffect(() => {

@@ -16,7 +16,6 @@ interface Slide {
   type: string;
   text: string;
   imageUrl?: string;
-  subtitle?: string;
 }
 
 interface GenerationResult {
@@ -58,7 +57,6 @@ export interface CarouselGenerationOptions {
     customGradientColors?: string[];
     slideImages?: (string | null)[];
     textAlignment?: 'left' | 'center' | 'right';
-    subtitlePosition?: 'above' | 'below';
     showNavigationDots?: boolean;
     showNavigationArrow?: boolean;
   };
