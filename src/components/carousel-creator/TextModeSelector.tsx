@@ -1,16 +1,25 @@
-import { Minimize2, Sparkles, FileText, CheckCircle2, Heart, Briefcase, Zap } from "lucide-react";
+import { Minimize2, Sparkles, FileText, CheckCircle2, Heart, Briefcase, Zap, AlignLeft, AlignCenter, AlignRight, Type, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { TEXT_MODES, TextModeId, getTextModeLabel } from "@/lib/constants";
+import { TEXT_MODES, TextModeId, getTextModeLabel, AVAILABLE_FONTS, FontId } from "@/lib/constants";
 import { useLanguage, useTranslation } from "@/hooks/useLanguage";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { LockedFeature } from "@/components/ui/locked-feature";
 
 export type CreativeTone = "emotional" | "professional" | "provocative";
+export type TextAlignment = 'left' | 'center' | 'right';
 
 interface TextModeSelectorProps {
   selectedMode: TextModeId;
   setSelectedMode: (mode: TextModeId) => void;
   creativeTone: CreativeTone;
   setCreativeTone: (tone: CreativeTone) => void;
+  // Creator+ customization props
+  fontId?: FontId;
+  onFontChange?: (fontId: FontId) => void;
+  textAlignment?: TextAlignment;
+  onTextAlignmentChange?: (alignment: TextAlignment) => void;
+  isCreator?: boolean;
 }
 
 const iconMap = {
@@ -23,7 +32,12 @@ const TextModeSelector = ({
   selectedMode,
   setSelectedMode,
   creativeTone,
-  setCreativeTone
+  setCreativeTone,
+  fontId = 'inter',
+  onFontChange,
+  textAlignment = 'center',
+  onTextAlignmentChange,
+  isCreator = false,
 }: TextModeSelectorProps) => {
   const { language } = useLanguage();
   const { t } = useTranslation();
@@ -179,6 +193,101 @@ const TextModeSelector = ({
           </div>
         </div>
       )}
+
+      {/* Font + Alignment - Creator+ only */}
+      <div className="space-y-4 pt-4 border-t border-border">
+        <div className="flex items-center gap-2">
+          <Type className="w-4 h-4 text-muted-foreground" />
+          <h3 className="text-lg font-semibold">
+            {language === "pt-BR" ? "Personalização do Texto" : language === "es" ? "Personalización del Texto" : "Text Customization"}
+          </h3>
+          <Badge variant="secondary" className="text-[10px] bg-accent/20 text-accent">Creator+</Badge>
+        </div>
+
+        {isCreator ? (
+          <div className="space-y-4">
+            {/* Text Alignment */}
+            <div className="space-y-2">
+              <p className="text-sm font-medium">
+                {language === "pt-BR" ? "Alinhamento do Texto" : language === "es" ? "Alineación del Texto" : "Text Alignment"}
+              </p>
+              <div className="flex gap-2">
+                {([
+                  { value: 'left' as TextAlignment, icon: AlignLeft, label: language === "pt-BR" ? 'Esquerda' : language === "es" ? 'Izquierda' : 'Left' },
+                  { value: 'center' as TextAlignment, icon: AlignCenter, label: language === "pt-BR" ? 'Centro' : language === "es" ? 'Centro' : 'Center' },
+                  { value: 'right' as TextAlignment, icon: AlignRight, label: language === "pt-BR" ? 'Direita' : language === "es" ? 'Derecha' : 'Right' }
+                ]).map(({ value, icon: Icon, label }) => (
+                  <button
+                    key={value}
+                    onClick={() => onTextAlignmentChange?.(value)}
+                    className={cn(
+                      "flex-1 flex flex-col items-center gap-1 p-3 rounded-lg border-2 transition-all",
+                      textAlignment === value
+                        ? "border-accent bg-accent/10"
+                        : "border-border hover:border-accent/50"
+                    )}
+                  >
+                    <Icon className="w-5 h-5" />
+                    <span className="text-xs">{label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Font Selection */}
+            <div className="space-y-2">
+              <p className="text-sm font-medium">
+                {language === "pt-BR" ? "Fonte" : language === "es" ? "Fuente" : "Font"}
+              </p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {AVAILABLE_FONTS.map((font) => (
+                  <button
+                    key={font.id}
+                    onClick={() => onFontChange?.(font.id)}
+                    className={cn(
+                      "p-3 rounded-lg border-2 transition-all text-center",
+                      fontId === font.id
+                        ? "border-accent bg-accent/10"
+                        : "border-border hover:border-accent/50"
+                    )}
+                  >
+                    <span
+                      className="block text-lg font-medium truncate"
+                      style={{ fontFamily: font.family }}
+                    >
+                      Abc
+                    </span>
+                    <span className="text-xs text-muted-foreground mt-1 block truncate">
+                      {font.name}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <LockedFeature
+            requiredPlan="creator"
+            title={language === "pt-BR" ? "Fonte e Alinhamento" : language === "es" ? "Fuente y Alineación" : "Font and Alignment"}
+            description={
+              language === "pt-BR"
+                ? "Personalize a fonte e o alinhamento do texto"
+                : language === "es"
+                ? "Personaliza la fuente y alineación del texto"
+                : "Customize font and text alignment"
+            }
+            icon={Type}
+            features={
+              language === "pt-BR"
+                ? ["12 fontes exclusivas", "Alinhamento personalizado", "Preview em tempo real"]
+                : language === "es"
+                ? ["12 fuentes exclusivas", "Alineación personalizada", "Vista previa en tiempo real"]
+                : ["12 exclusive fonts", "Custom alignment", "Real-time preview"]
+            }
+            hasAccess={false}
+          />
+        )}
+      </div>
     </div>
   );
 };

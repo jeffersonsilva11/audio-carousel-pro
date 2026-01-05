@@ -1,15 +1,11 @@
 import { useState, useRef } from "react";
 import {
-  Type,
   Palette,
   ImagePlus,
   X,
   Upload,
   Sparkles,
   Loader2,
-  AlignLeft,
-  AlignCenter,
-  AlignRight,
   ArrowUp,
   ArrowDown,
   Settings2
@@ -25,13 +21,12 @@ import { t } from "@/lib/translations";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { LockedFeature } from "@/components/ui/locked-feature";
-import { 
-  AVAILABLE_FONTS, 
-  GRADIENT_PRESETS, 
+import {
+  GRADIENT_PRESETS,
   GRADIENT_CATEGORY_LABELS,
-  FontId, 
+  FontId,
   GradientId,
-  GradientCategory 
+  GradientCategory
 } from "@/lib/constants";
 
 export type TextAlignment = 'left' | 'center' | 'right';
@@ -78,22 +73,22 @@ const AdvancedTemplateEditor = ({
   const getLockedFeatures = () => {
     const features = {
       "pt-BR": [
-        "12 fontes personalizadas exclusivas",
         "40+ gradientes premium",
-        "Upload de imagem de capa",
-        "Opções de navegação e subtítulos"
+        "Upload de imagem de capa personalizada",
+        "Posição do subtítulo customizável",
+        "Opções de navegação visual"
       ],
       "es": [
-        "12 fuentes personalizadas exclusivas",
         "40+ gradientes premium",
-        "Carga de imagen de portada",
-        "Opciones de navegación y subtítulos"
+        "Carga de imagen de portada personalizada",
+        "Posición de subtítulo personalizable",
+        "Opciones de navegación visual"
       ],
       "en": [
-        "12 exclusive custom fonts",
         "40+ premium gradients",
         "Custom cover image upload",
-        "Navigation and subtitle options"
+        "Customizable subtitle position",
+        "Visual navigation options"
       ]
     };
     return features[language] || features["en"];
@@ -117,14 +112,6 @@ const AdvancedTemplateEditor = ({
       />
     );
   }
-
-  const handleFontChange = (fontId: FontId) => {
-    setCustomization({ ...customization, fontId });
-  };
-
-  const handleTextAlignmentChange = (alignment: TextAlignment) => {
-    setCustomization({ ...customization, textAlignment: alignment });
-  };
 
   const handleSubtitlePositionChange = (position: SubtitlePosition) => {
     setCustomization({ ...customization, subtitlePosition: position });
@@ -295,86 +282,26 @@ const AdvancedTemplateEditor = ({
         </div>
       </div>
 
-      <Tabs defaultValue="fonts" className="p-4">
-        <TabsList className="grid w-full grid-cols-4 mb-4">
-          <TabsTrigger value="fonts" className="gap-1.5">
-            <Type className="w-4 h-4" />
-            <span className="hidden sm:inline">{t("advancedEditor", "fonts", language)}</span>
-          </TabsTrigger>
-          <TabsTrigger value="gradients" className="gap-1.5">
-            <Palette className="w-4 h-4" />
-            <span className="hidden sm:inline">{t("advancedEditor", "gradients", language)}</span>
-          </TabsTrigger>
-          <TabsTrigger value="images" className="gap-1.5">
+      <Tabs defaultValue="capa" className="p-4">
+        <TabsList className="grid w-full grid-cols-2 mb-4">
+          <TabsTrigger value="capa" className="gap-1.5">
             <ImagePlus className="w-4 h-4" />
-            <span className="hidden sm:inline">{t("advancedEditor", "slideImages", language)}</span>
+            <span className="hidden sm:inline">
+              {language === "pt-BR" ? "Capa" : language === "es" ? "Portada" : "Cover"}
+            </span>
           </TabsTrigger>
           <TabsTrigger value="options" className="gap-1.5">
             <Settings2 className="w-4 h-4" />
-            <span className="hidden sm:inline">Opções</span>
+            <span className="hidden sm:inline">
+              {language === "pt-BR" ? "Opções" : language === "es" ? "Opciones" : "Options"}
+            </span>
           </TabsTrigger>
         </TabsList>
 
-        {/* Fonts Tab */}
-        <TabsContent value="fonts" className="space-y-4">
-          {/* Text Alignment */}
-          <div className="space-y-2">
-            <p className="text-sm font-medium">Alinhamento do Texto</p>
-            <div className="flex gap-2">
-              {([
-                { value: 'left' as TextAlignment, icon: AlignLeft, label: 'Esquerda' },
-                { value: 'center' as TextAlignment, icon: AlignCenter, label: 'Centro' },
-                { value: 'right' as TextAlignment, icon: AlignRight, label: 'Direita' }
-              ]).map(({ value, icon: Icon, label }) => (
-                <button
-                  key={value}
-                  onClick={() => handleTextAlignmentChange(value)}
-                  className={cn(
-                    "flex-1 flex flex-col items-center gap-1 p-3 rounded-lg border-2 transition-all",
-                    customization.textAlignment === value
-                      ? "border-accent bg-accent/10"
-                      : "border-border hover:border-accent/50"
-                  )}
-                >
-                  <Icon className="w-5 h-5" />
-                  <span className="text-xs">{label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Font Selection */}
-          <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">{t("advancedEditor", "selectFont", language)}</p>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {AVAILABLE_FONTS.map((font) => (
-                <button
-                  key={font.id}
-                  onClick={() => handleFontChange(font.id)}
-                  className={cn(
-                    "p-3 rounded-lg border-2 transition-all text-center",
-                    customization.fontId === font.id
-                      ? "border-accent bg-accent/10"
-                      : "border-border hover:border-accent/50"
-                  )}
-                >
-                  <span
-                    className="block text-lg font-medium truncate"
-                    style={{ fontFamily: font.family }}
-                  >
-                    Abc
-                  </span>
-                  <span className="text-xs text-muted-foreground mt-1 block truncate">
-                    {font.name}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-        </TabsContent>
-
-        {/* Gradients Tab */}
-        <TabsContent value="gradients" className="space-y-4">
+        {/* Capa Tab - Gradient + Cover Image */}
+        <TabsContent value="capa" className="space-y-6">
+          {/* Gradient Selection */}
+          <div className="space-y-4">
           <p className="text-sm text-muted-foreground">{t("advancedEditor", "selectGradient", language)}</p>
           
           {/* Category Tabs */}
@@ -446,7 +373,7 @@ const AdvancedTemplateEditor = ({
                     onChange={(e) => handleCustomColorChange(0, e.target.value)}
                     className="w-10 h-10 rounded border-0 cursor-pointer"
                   />
-                  <Input 
+                  <Input
                     value={customColor1}
                     onChange={(e) => handleCustomColorChange(0, e.target.value)}
                     className="flex-1 font-mono text-sm"
@@ -463,7 +390,7 @@ const AdvancedTemplateEditor = ({
                     onChange={(e) => handleCustomColorChange(1, e.target.value)}
                     className="w-10 h-10 rounded border-0 cursor-pointer"
                   />
-                  <Input 
+                  <Input
                     value={customColor2}
                     onChange={(e) => handleCustomColorChange(1, e.target.value)}
                     className="flex-1 font-mono text-sm"
@@ -473,142 +400,166 @@ const AdvancedTemplateEditor = ({
               </div>
             </div>
           )}
-        </TabsContent>
-
-        {/* Cover Image Tab - Only slide 1 */}
-        <TabsContent value="images" className="space-y-4">
-          <div>
-            <h4 className="text-sm font-medium mb-1">Imagem de Capa</h4>
-            <p className="text-sm text-muted-foreground mb-4">
-              Adicione uma imagem de fundo para o primeiro slide (capa) do carrossel.
-              Os demais slides terão fundo sólido ou gradiente.
-            </p>
           </div>
 
-          {(() => {
-            const coverImageUrl = customization.slideImages[0];
-            const isUploading = uploadingIndex === 0;
+          {/* Cover Image Section */}
+          <div className="space-y-4 pt-4 border-t border-border">
+            <div>
+              <h4 className="text-sm font-medium mb-1">
+                {language === "pt-BR" ? "Imagem de Capa" : language === "es" ? "Imagen de Portada" : "Cover Image"}
+              </h4>
+              <p className="text-sm text-muted-foreground mb-4">
+                {language === "pt-BR"
+                  ? "Adicione uma imagem de fundo para o primeiro slide (capa) do carrossel."
+                  : language === "es"
+                  ? "Agregue una imagen de fondo para el primer slide (portada) del carrusel."
+                  : "Add a background image for the first slide (cover) of the carousel."}
+              </p>
+            </div>
 
-            return (
-              <div className="flex justify-center">
-                <div className="relative w-48">
-                  <div
-                    className={cn(
-                      "aspect-square rounded-lg border-2 border-dashed overflow-hidden transition-all",
-                      coverImageUrl ? "border-accent" : "border-border hover:border-accent/50",
-                      isUploading && "opacity-50"
-                    )}
-                  >
-                    {isUploading ? (
-                      <div className="w-full h-full flex items-center justify-center bg-muted/50">
-                        <Loader2 className="w-6 h-6 animate-spin text-accent" />
-                      </div>
-                    ) : coverImageUrl ? (
-                      <img
-                        src={coverImageUrl}
-                        alt="Capa do carrossel"
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
+            {(() => {
+              const coverImageUrl = customization.slideImages[0];
+              const isUploading = uploadingIndex === 0;
+
+              return (
+                <div className="flex justify-center">
+                  <div className="relative w-48">
+                    <div
+                      className={cn(
+                        "aspect-square rounded-lg border-2 border-dashed overflow-hidden transition-all",
+                        coverImageUrl ? "border-accent" : "border-border hover:border-accent/50",
+                        isUploading && "opacity-50"
+                      )}
+                    >
+                      {isUploading ? (
+                        <div className="w-full h-full flex items-center justify-center bg-muted/50">
+                          <Loader2 className="w-6 h-6 animate-spin text-accent" />
+                        </div>
+                      ) : coverImageUrl ? (
+                        <img
+                          src={coverImageUrl}
+                          alt={language === "pt-BR" ? "Capa do carrossel" : language === "es" ? "Portada del carrusel" : "Carousel cover"}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <button
+                          onClick={() => fileInputRefs.current[0]?.click()}
+                          className="w-full h-full flex flex-col items-center justify-center gap-2 hover:bg-accent/5 transition-colors"
+                        >
+                          <Upload className="w-6 h-6 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground text-center px-2">
+                            {language === "pt-BR"
+                              ? "Clique para adicionar imagem"
+                              : language === "es"
+                              ? "Clic para agregar imagen"
+                              : "Click to add image"}
+                          </span>
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Remove button */}
+                    {coverImageUrl && !isUploading && (
                       <button
-                        onClick={() => fileInputRefs.current[0]?.click()}
-                        className="w-full h-full flex flex-col items-center justify-center gap-2 hover:bg-accent/5 transition-colors"
+                        onClick={() => handleRemoveImage(0)}
+                        className="absolute -top-2 -right-2 w-6 h-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-transform"
                       >
-                        <Upload className="w-6 h-6 text-muted-foreground" />
-                        <span className="text-xs text-muted-foreground text-center px-2">
-                          Clique para adicionar imagem de capa
-                        </span>
+                        <X className="w-4 h-4" />
                       </button>
                     )}
+
+                    {/* Hidden file input */}
+                    <input
+                      ref={el => fileInputRefs.current[0] = el}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleImageUpload(0, file);
+                        e.target.value = '';
+                      }}
+                    />
                   </div>
-
-                  {/* Remove button */}
-                  {coverImageUrl && !isUploading && (
-                    <button
-                      onClick={() => handleRemoveImage(0)}
-                      className="absolute -top-2 -right-2 w-6 h-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-transform"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  )}
-
-                  {/* Hidden file input */}
-                  <input
-                    ref={el => fileInputRefs.current[0] = el}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) handleImageUpload(0, file);
-                      e.target.value = '';
-                    }}
-                  />
                 </div>
-              </div>
-            );
-          })()}
+              );
+            })()}
 
-          <div className="space-y-2">
-            <p className="text-xs text-muted-foreground text-center">
-              💡 A imagem de capa aparecerá no primeiro slide com o título do carrossel sobreposto.
-            </p>
             <p className="text-xs text-center px-4 py-2 bg-accent/10 rounded-lg text-accent">
-              <strong>Tamanho recomendado:</strong> Mínimo 1080x1080px para Feed, 1080x1350px para Retrato, ou 1080x1920px para Stories/Reels.
-              Use imagens em alta resolução para melhor qualidade.
+              <strong>
+                {language === "pt-BR" ? "Tamanho recomendado:" : language === "es" ? "Tamaño recomendado:" : "Recommended size:"}
+              </strong>{" "}
+              {language === "pt-BR"
+                ? "1080x1080px (Feed), 1080x1350px (Retrato), ou 1080x1920px (Stories)"
+                : language === "es"
+                ? "1080x1080px (Feed), 1080x1350px (Retrato), o 1080x1920px (Stories)"
+                : "1080x1080px (Feed), 1080x1350px (Portrait), or 1080x1920px (Stories)"}
             </p>
           </div>
         </TabsContent>
 
         {/* Options Tab */}
         <TabsContent value="options" className="space-y-6">
-          {/* Cover Slide Options */}
-          <div className="space-y-4">
-            <h4 className="text-sm font-medium flex items-center gap-2">
-              <span className="w-6 h-6 rounded bg-accent/20 text-accent flex items-center justify-center text-xs font-bold">1</span>
-              Opções da Capa
+          {/* Subtitle Position */}
+          <div className="space-y-3">
+            <h4 className="text-sm font-medium">
+              {language === "pt-BR" ? "Posição do Subtítulo" : language === "es" ? "Posición del Subtítulo" : "Subtitle Position"}
             </h4>
-
-            {/* Subtitle Position */}
-            <div className="space-y-2 pl-8">
-              <Label className="text-sm">Posição do Subtítulo</Label>
-              <div className="flex gap-2">
-                {([
-                  { value: 'above' as SubtitlePosition, icon: ArrowUp, label: 'Acima do Título' },
-                  { value: 'below' as SubtitlePosition, icon: ArrowDown, label: 'Abaixo do Título' }
-                ]).map(({ value, icon: Icon, label }) => (
-                  <button
-                    key={value}
-                    onClick={() => handleSubtitlePositionChange(value)}
-                    className={cn(
-                      "flex-1 flex items-center justify-center gap-2 p-3 rounded-lg border-2 transition-all",
-                      customization.subtitlePosition === value
-                        ? "border-accent bg-accent/10"
-                        : "border-border hover:border-accent/50"
-                    )}
-                  >
-                    <Icon className="w-4 h-4" />
-                    <span className="text-sm">{label}</span>
-                  </button>
-                ))}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Define onde o subtítulo aparece em relação ao título principal na capa
-              </p>
+            <div className="flex gap-2">
+              {([
+                {
+                  value: 'above' as SubtitlePosition,
+                  icon: ArrowUp,
+                  label: language === "pt-BR" ? 'Acima do Título' : language === "es" ? 'Arriba del Título' : 'Above Title'
+                },
+                {
+                  value: 'below' as SubtitlePosition,
+                  icon: ArrowDown,
+                  label: language === "pt-BR" ? 'Abaixo do Título' : language === "es" ? 'Debajo del Título' : 'Below Title'
+                }
+              ]).map(({ value, icon: Icon, label }) => (
+                <button
+                  key={value}
+                  onClick={() => handleSubtitlePositionChange(value)}
+                  className={cn(
+                    "flex-1 flex items-center justify-center gap-2 p-3 rounded-lg border-2 transition-all",
+                    customization.subtitlePosition === value
+                      ? "border-accent bg-accent/10"
+                      : "border-border hover:border-accent/50"
+                  )}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span className="text-sm">{label}</span>
+                </button>
+              ))}
             </div>
-
+            <p className="text-xs text-muted-foreground">
+              {language === "pt-BR"
+                ? "Define onde o subtítulo aparece em relação ao título principal na capa"
+                : language === "es"
+                ? "Define dónde aparece el subtítulo en relación al título principal"
+                : "Defines where the subtitle appears in relation to the main title"}
+            </p>
           </div>
 
           {/* Navigation Options */}
           <div className="space-y-4 border-t border-border pt-4">
-            <h4 className="text-sm font-medium">Navegação Visual</h4>
+            <h4 className="text-sm font-medium">
+              {language === "pt-BR" ? "Navegação Visual" : language === "es" ? "Navegación Visual" : "Visual Navigation"}
+            </h4>
 
             {/* Navigation Dots */}
-            <div className="flex items-center justify-between pl-4">
+            <div className="flex items-center justify-between">
               <div className="space-y-1">
-                <Label className="text-sm">Pontos de Navegação</Label>
+                <Label className="text-sm">
+                  {language === "pt-BR" ? "Pontos de Navegação" : language === "es" ? "Puntos de Navegación" : "Navigation Dots"}
+                </Label>
                 <p className="text-xs text-muted-foreground">
-                  Mostra indicadores de posição no rodapé dos slides
+                  {language === "pt-BR"
+                    ? "Mostra indicadores de posição no rodapé dos slides"
+                    : language === "es"
+                    ? "Muestra indicadores de posición en el pie de los slides"
+                    : "Shows position indicators at the bottom of slides"}
                 </p>
               </div>
               <Switch
@@ -618,11 +569,17 @@ const AdvancedTemplateEditor = ({
             </div>
 
             {/* Navigation Arrow */}
-            <div className="flex items-center justify-between pl-4">
+            <div className="flex items-center justify-between">
               <div className="space-y-1">
-                <Label className="text-sm">Seta de Navegação</Label>
+                <Label className="text-sm">
+                  {language === "pt-BR" ? "Seta de Navegação" : language === "es" ? "Flecha de Navegación" : "Navigation Arrow"}
+                </Label>
                 <p className="text-xs text-muted-foreground">
-                  Mostra seta indicando próximo slide (exceto no último)
+                  {language === "pt-BR"
+                    ? "Mostra seta indicando próximo slide (exceto no último)"
+                    : language === "es"
+                    ? "Muestra flecha indicando el próximo slide (excepto en el último)"
+                    : "Shows arrow indicating next slide (except on last)"}
                 </p>
               </div>
               <Switch
@@ -631,10 +588,6 @@ const AdvancedTemplateEditor = ({
               />
             </div>
           </div>
-
-          <p className="text-xs text-muted-foreground text-center pt-2">
-            💡 Estas opções afetam a aparência visual dos slides gerados
-          </p>
         </TabsContent>
       </Tabs>
     </div>

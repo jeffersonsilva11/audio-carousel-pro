@@ -724,13 +724,18 @@ const CreateCarousel = () => {
                     />
                   </div>
 
-                  {/* 4. Text Mode + Tone (unified) */}
+                  {/* 4. Text Mode + Tone + Font/Alignment (unified) */}
                   <div className="border-t border-border pt-8">
                     <TextModeSelector
                       selectedMode={selectedTextMode}
                       setSelectedMode={setSelectedTextMode}
                       creativeTone={creativeTone}
                       setCreativeTone={setCreativeTone}
+                      fontId={templateCustomization.fontId}
+                      onFontChange={(fontId) => setTemplateCustomization({ ...templateCustomization, fontId })}
+                      textAlignment={templateCustomization.textAlignment}
+                      onTextAlignmentChange={(textAlignment) => setTemplateCustomization({ ...templateCustomization, textAlignment })}
+                      isCreator={isCreator}
                     />
                   </div>
 
@@ -750,7 +755,7 @@ const CreateCarousel = () => {
                     />
                   </div>
 
-                  {/* 7. Advanced Customization (Cover, Fonts, etc.) - Creator+ only */}
+                  {/* 7. Cover + Advanced Options - Creator+ only */}
                   <div className="border-t border-border pt-8">
                     <AdvancedTemplateEditor
                       customization={templateCustomization}
