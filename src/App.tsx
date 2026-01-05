@@ -21,7 +21,10 @@ import CarouselDetail from "./pages/CarouselDetail";
 import ProfileSettings from "./pages/ProfileSettings";
 import History from "./pages/History";
 import Admin from "./pages/Admin";
+import Maintenance from "./pages/Maintenance";
 import NotFound from "./pages/NotFound";
+import MaintenanceCheck from "./components/MaintenanceCheck";
+import VersionUpdateBanner from "./components/VersionUpdateBanner";
 import TermsOfService from "./pages/TermsOfService";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import AnalyticsProvider from "./components/AnalyticsProvider";
@@ -47,25 +50,29 @@ const App = () => {
                 <Toaster />
                 <Sonner />
                 <BrowserRouter>
-                  <AnalyticsProvider>
-                    <Routes>
-                      <Route path="/" element={<Index />} />
-                      <Route path="/auth" element={<Auth />} />
-                      <Route path="/auth/verify" element={<VerifyEmail />} />
-                      <Route path="/auth/forgot-password" element={<ForgotPassword />} />
-                      <Route path="/auth/reset-password" element={<ResetPassword />} />
-                      <Route path="/dashboard" element={<Dashboard />} />
-                      <Route path="/create" element={<CreateCarousel />} />
-                      <Route path="/carousel/:id" element={<CarouselDetail />} />
-                      <Route path="/settings/profile" element={<ProfileSettings />} />
-                      <Route path="/history" element={<History />} />
-                      <Route path="/admin" element={<Admin />} />
-                      <Route path="/terms" element={<TermsOfService />} />
-                      <Route path="/privacy" element={<PrivacyPolicy />} />
-                      {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                      <Route path="*" element={<NotFound />} />
-                    </Routes>
-                  </AnalyticsProvider>
+                  <MaintenanceCheck>
+                    <AnalyticsProvider>
+                      <Routes>
+                        <Route path="/" element={<Index />} />
+                        <Route path="/auth" element={<Auth />} />
+                        <Route path="/auth/verify" element={<VerifyEmail />} />
+                        <Route path="/auth/forgot-password" element={<ForgotPassword />} />
+                        <Route path="/auth/reset-password" element={<ResetPassword />} />
+                        <Route path="/dashboard" element={<Dashboard />} />
+                        <Route path="/create" element={<CreateCarousel />} />
+                        <Route path="/carousel/:id" element={<CarouselDetail />} />
+                        <Route path="/settings/profile" element={<ProfileSettings />} />
+                        <Route path="/history" element={<History />} />
+                        <Route path="/admin" element={<Admin />} />
+                        <Route path="/maintenance" element={<Maintenance />} />
+                        <Route path="/terms" element={<TermsOfService />} />
+                        <Route path="/privacy" element={<PrivacyPolicy />} />
+                        {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                        <Route path="*" element={<NotFound />} />
+                      </Routes>
+                    </AnalyticsProvider>
+                  </MaintenanceCheck>
+                    <VersionUpdateBanner />
                 </BrowserRouter>
                 <CookieConsent />
               </TooltipProvider>
