@@ -63,19 +63,14 @@ interface TemplateCustomization {
   customGradientColors?: string[];
   slideImages?: (string | null)[];
   textAlignment?: 'left' | 'center' | 'right';
-  // Cover slide specific
-  subtitlePosition?: 'above' | 'below'; // Position relative to title
-  highlightColor?: string; // Highlight color for keyword
-  showNavigationDots?: boolean; // Show navigation dots
-  showNavigationArrow?: boolean; // Show navigation arrow indicator
+  showNavigationDots?: boolean;
+  showNavigationArrow?: boolean;
 }
 
 interface SlideData {
   number: number;
   type: string;
   text: string;
-  subtitle?: string; // Only for HOOK slide
-  highlightWord?: string; // Word to highlight in title
 }
 
 const logStep = (step: string, details?: unknown) => {
@@ -493,54 +488,6 @@ function generateNavigationArrow(
   </g>`;
 }
 
-// Apply highlight to a word in text (returns SVG with background rect)
-function applyHighlightToWord(
-  line: string,
-  highlightWord: string,
-  x: number,
-  y: number,
-  fontSize: number,
-  fontFamily: string,
-  textAnchor: string,
-  highlightColor: string = '#F97316'
-): string {
-  if (!highlightWord || !line.toLowerCase().includes(highlightWord.toLowerCase())) {
-    return `<text x="${x}" y="${y}" text-anchor="${textAnchor}" fill="#FFFFFF" font-family="${fontFamily}" font-size="${fontSize}" font-weight="800" letter-spacing="-0.02em">${escapeXml(line)}</text>`;
-  }
-
-  // Find the word position
-  const regex = new RegExp(`(${highlightWord})`, 'gi');
-  const parts = line.split(regex);
-
-  // For simplicity, wrap the entire line if it contains the highlight word
-  // Calculate approximate text width
-  const avgCharWidth = fontSize * 0.55;
-  const padding = 12;
-  const wordWidth = highlightWord.length * avgCharWidth + padding * 2;
-  const wordHeight = fontSize * 1.2;
-
-  // Find word position in line
-  const beforeWord = line.substring(0, line.toLowerCase().indexOf(highlightWord.toLowerCase()));
-  const beforeWidth = beforeWord.length * avgCharWidth;
-
-  let rectX: number;
-  if (textAnchor === 'start') {
-    rectX = x + beforeWidth - padding;
-  } else if (textAnchor === 'middle') {
-    const totalWidth = line.length * avgCharWidth;
-    rectX = x - totalWidth / 2 + beforeWidth - padding;
-  } else {
-    const totalWidth = line.length * avgCharWidth;
-    rectX = x - totalWidth + beforeWidth - padding;
-  }
-
-  return `
-    <g class="highlight-group">
-      <rect x="${rectX}" y="${y - fontSize * 0.85}" width="${wordWidth}" height="${wordHeight}" rx="4" fill="${highlightColor}"/>
-      <text x="${x}" y="${y}" text-anchor="${textAnchor}" fill="#FFFFFF" font-family="${fontFamily}" font-size="${fontSize}" font-weight="800" letter-spacing="-0.02em">${escapeXml(line)}</text>
-    </g>`;
-}
-
 // Generate SVG for COVER slide (slide 1 - HOOK)
 function generateCoverSlideSVG(
   slideData: SlideData,
@@ -562,8 +509,7 @@ function generateCoverSlideSVG(
   const hasDarkBackground = hasImage || hasGradient;
 
   // Extract slide data
-  const { text, subtitle } = slideData;
-  const subtitlePosition = customization?.subtitlePosition || 'above';
+  const { text } = slideData;
   const showDots = customization?.showNavigationDots !== false; // Default true
   const showArrow = customization?.showNavigationArrow !== false; // Default true
 
@@ -571,9 +517,8 @@ function generateCoverSlideSVG(
   const textColor = hasDarkBackground ? '#FFFFFF' : (style === 'BLACK_WHITE' ? '#FFFFFF' : '#0A0A0A');
   const counterColor = hasDarkBackground ? 'rgba(255,255,255,0.6)' : (style === 'BLACK_WHITE' ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)');
 
-  // Calculate font sizes - LARGER title, proportional subtitle
+  // Calculate font size for title
   const titleFontSize = calculateFontSize(text.length, 'cover', format);
-  const subtitleFontSize = Math.round(titleFontSize * 0.32); // Smaller subtitle relative to larger title
 
   // Get text alignment
   const textAlignment = customization?.textAlignment || 'left';
@@ -590,46 +535,16 @@ function generateCoverSlideSVG(
   const lineHeight = titleFontSize * 1.15;
   const totalTitleHeight = lines.length * lineHeight;
 
-  // Calculate vertical positioning
-  const subtitleHeight = subtitle ? subtitleFontSize * 1.5 : 0;
-  const subtitleGap = subtitle ? 20 : 0;
-  const totalContentHeight = totalTitleHeight + subtitleHeight + subtitleGap;
-
   let titleStartY: number;
-  let subtitleY: number;
 
   if (hasImage) {
     // Position at bottom with dots space
     const bottomPadding = showDots ? 100 : 70;
     titleStartY = height - bottomPadding - totalTitleHeight + titleFontSize;
-
-    if (subtitle) {
-      if (subtitlePosition === 'above') {
-        subtitleY = titleStartY - subtitleGap - subtitleFontSize * 0.3;
-        // Adjust title down slightly if subtitle above
-      } else {
-        subtitleY = titleStartY + totalTitleHeight + subtitleGap;
-        titleStartY -= subtitleHeight + subtitleGap;
-      }
-    }
   } else {
     // Center vertically
-    titleStartY = (height - totalContentHeight) / 2 + titleFontSize * 0.8;
-
-    if (subtitle) {
-      if (subtitlePosition === 'above') {
-        subtitleY = titleStartY - subtitleGap;
-        titleStartY += subtitleHeight;
-      } else {
-        subtitleY = titleStartY + totalTitleHeight + subtitleGap;
-      }
-    }
+    titleStartY = (height - totalTitleHeight) / 2 + titleFontSize * 0.8;
   }
-
-  // Generate subtitle element with better styling
-  const subtitleElement = subtitle ? `
-    <text x="${textX}" y="${subtitleY}" text-anchor="${textAnchor}" fill="${textColor}" opacity="0.9" font-family="${fontFamily}" font-size="${subtitleFontSize}" font-weight="600" letter-spacing="0.08em">${escapeXml(subtitle.toUpperCase())}</text>
-  ` : '';
 
   // Generate title text elements (simplified - no highlight)
   const textElements = lines.map((line, index) => {
@@ -682,7 +597,6 @@ function generateCoverSlideSVG(
   ${backgroundElement}
   ${profileIdentity}
   ${counter}
-  ${subtitleElement}
   <g class="title">
     ${textElements}
   </g>
@@ -1030,13 +944,11 @@ serve(async (req) => {
       const slide = script.slides[index];
       const isSignature = slide.type === 'SIGNATURE';
 
-      // Create SlideData object with all fields
+      // Create SlideData object
       const slideData: SlideData = {
         number: index + 1,
         type: slide.type,
-        text: slide.text,
-        subtitle: slide.subtitle,
-        highlightWord: slide.highlightWord
+        text: slide.text
       };
 
       const svg = generateSlideSVG(
@@ -1126,12 +1038,10 @@ serve(async (req) => {
       }
     }
 
-    const slides = script.slides.map((slide: { type: string; text: string; subtitle?: string; highlightWord?: string }, index: number) => ({
+    const slides = script.slides.map((slide: { type: string; text: string }, index: number) => ({
       number: index + 1,
       type: slide.type,
       text: slide.text,
-      subtitle: slide.subtitle, // Include subtitle for HOOK slide
-      highlightWord: slide.highlightWord, // Include highlight word
       imageUrl: imageUrls[index]
     }));
 

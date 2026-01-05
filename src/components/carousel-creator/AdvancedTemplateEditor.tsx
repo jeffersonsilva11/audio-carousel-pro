@@ -30,7 +30,6 @@ import {
 } from "@/lib/constants";
 
 export type TextAlignment = 'left' | 'center' | 'right';
-export type SubtitlePosition = 'above' | 'below';
 
 export interface TemplateCustomization {
   fontId: FontId;
@@ -38,8 +37,6 @@ export interface TemplateCustomization {
   customGradientColors?: string[];
   slideImages: (string | null)[]; // Array of storage URLs per slide
   textAlignment: TextAlignment;
-  subtitlePosition: SubtitlePosition;
-  highlightColor: string;
   showNavigationDots: boolean;
   showNavigationArrow: boolean;
 }

@@ -63,8 +63,6 @@ interface Slide {
   type: string;
   text: string;
   imageUrl?: string;
-  subtitle?: string; // Only for HOOK slide (slide 1)
-  highlightWord?: string; // Word to highlight in title
 }
 
 const CreateCarousel = () => {
@@ -126,8 +124,6 @@ const CreateCarousel = () => {
     customGradientColors: undefined,
     slideImages: [],
     textAlignment: 'center',
-    subtitlePosition: 'above',
-    highlightColor: '#FF6B35',
     showNavigationDots: true,
     showNavigationArrow: true,
   });
@@ -213,7 +209,6 @@ const CreateCarousel = () => {
                     customGradientColors: templateCustomization.customGradientColors,
                     slideImages: templateCustomization.slideImages,
                     textAlignment: templateCustomization.textAlignment,
-                    subtitlePosition: templateCustomization.subtitlePosition,
                     showNavigationDots: templateCustomization.showNavigationDots,
                     showNavigationArrow: templateCustomization.showNavigationArrow,
                   } : undefined
@@ -518,7 +513,6 @@ const CreateCarousel = () => {
           customGradientColors: templateCustomization.customGradientColors,
           slideImages: templateCustomization.slideImages,
           textAlignment: templateCustomization.textAlignment,
-          subtitlePosition: templateCustomization.subtitlePosition,
           showNavigationDots: templateCustomization.showNavigationDots,
           showNavigationArrow: templateCustomization.showNavigationArrow,
         } : undefined
@@ -868,12 +862,8 @@ const CreateCarousel = () => {
                   {/* 8. Advanced Options - Creator+ only */}
                   <div className="border-t border-border pt-8">
                     <AdvancedOptionsEditor
-                      subtitlePosition={templateCustomization.subtitlePosition}
                       showNavigationDots={templateCustomization.showNavigationDots}
                       showNavigationArrow={templateCustomization.showNavigationArrow}
-                      onSubtitlePositionChange={(subtitlePosition) =>
-                        setTemplateCustomization({ ...templateCustomization, subtitlePosition })
-                      }
                       onNavigationDotsChange={(showNavigationDots) =>
                         setTemplateCustomization({ ...templateCustomization, showNavigationDots })
                       }
