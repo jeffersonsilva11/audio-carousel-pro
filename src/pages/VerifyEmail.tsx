@@ -98,16 +98,19 @@ const VerifyEmail = () => {
     setIsLoading(true);
 
     try {
-      const { error } = await supabase.auth.verifyOtp({
-        email,
-        token: otpCode,
-        type: "email",
+      // Use custom verification endpoint via SMTP
+      const response = await supabase.functions.invoke("verify-email-token", {
+        body: {
+          email,
+          token: otpCode,
+        },
       });
 
-      if (error) {
+      if (response.error || response.data?.error) {
+        const errorMessage = response.data?.error || response.error?.message || "Código inválido";
         toast({
           title: "Código inválido",
-          description: "O código informado está incorreto ou expirou. Tente novamente.",
+          description: errorMessage,
           variant: "destructive",
         });
         setOtp(["", "", "", "", "", ""]);
@@ -119,11 +122,10 @@ const VerifyEmail = () => {
           description: "Sua conta foi ativada com sucesso.",
         });
 
-        // Wait for auth state to update before redirecting
-        // The verifyOtp should have created a session, let's refresh it
+        // Refresh session to update email_confirmed_at
         await supabase.auth.refreshSession();
 
-        // Redirect to dashboard after short delay to allow state to propagate
+        // Redirect to dashboard after short delay
         setTimeout(() => {
           navigate("/dashboard");
         }, 1500);
@@ -145,15 +147,31 @@ const VerifyEmail = () => {
     setIsResending(true);
 
     try {
-      const { error } = await supabase.auth.resend({
-        type: "signup",
-        email,
-      });
+      // Get current user to resend verification
+      const { data: { user } } = await supabase.auth.getUser();
 
-      if (error) {
+      if (!user) {
         toast({
           title: "Erro ao reenviar",
-          description: error.message,
+          description: "Usuário não encontrado. Tente fazer login novamente.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Use custom SMTP function to resend verification email
+      const response = await supabase.functions.invoke("send-signup-verification", {
+        body: {
+          userId: user.id,
+          email,
+        },
+      });
+
+      if (response.error || response.data?.error) {
+        const errorMessage = response.data?.error || response.error?.message || "Erro ao reenviar";
+        toast({
+          title: "Erro ao reenviar",
+          description: errorMessage,
           variant: "destructive",
         });
       } else {

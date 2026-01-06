@@ -217,6 +217,24 @@ const Auth = () => {
             });
             navigate("/dashboard");
           } else {
+            // Get the user to send verification email
+            const { data: { user: newUser } } = await supabase.auth.getUser();
+
+            if (newUser) {
+              // Send verification email via SMTP
+              try {
+                await supabase.functions.invoke("send-signup-verification", {
+                  body: {
+                    userId: newUser.id,
+                    email: email,
+                    name: name || undefined
+                  },
+                });
+              } catch (emailError) {
+                console.error("Error sending verification email:", emailError);
+              }
+            }
+
             toast({
               title: t("auth", "accountCreated", language),
               description: t("auth", "checkEmailVerification", language),
