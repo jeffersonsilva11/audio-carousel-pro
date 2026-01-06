@@ -141,7 +141,8 @@ export function useAuthProtection() {
   return {
     failedAttempts,
     isLocked: isDevelopment() ? false : isLocked,
-    requiresInteractiveCaptcha: isDevelopment() ? false : requiresInteractiveCaptcha,
+    // Interactive captcha (v2) disabled - using only invisible reCAPTCHA v3
+    requiresInteractiveCaptcha: false,
     recordFailedAttempt,
     recordSuccessfulAttempt,
     getRemainingLockoutTime,
