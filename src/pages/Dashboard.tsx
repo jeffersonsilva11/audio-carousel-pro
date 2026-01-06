@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Mic2, Plus, LogOut, Loader2, Image as ImageIcon, Calendar,
-  Sparkles, FolderOpen, Crown, CreditCard, RefreshCw, AlertTriangle, Globe, User, History, Shield, Clock, Bell, X, Headphones
+  Sparkles, FolderOpen, Crown, CreditCard, RefreshCw, AlertTriangle, Globe, User, History, Shield, Clock, Bell, X, Headphones, Menu
 } from "lucide-react";
 import { useNotifications } from "@/hooks/useNotifications";
 import NotificationBell from "@/components/NotificationBell";
@@ -30,6 +30,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface Carousel {
   id: string;
@@ -223,7 +230,8 @@ const Dashboard = () => {
               <span className="font-bold text-lg tracking-tight">{BRAND.name}</span>
             </a>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4">
+              {/* Plan badge - hidden on mobile */}
               {!subLoading && (
                 <div className="hidden sm:flex items-center gap-2">
                   {isPro ? (
@@ -232,9 +240,9 @@ const Dashboard = () => {
                       {PLANS[plan].name}
                     </span>
                   ) : (
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={handleUpgrade}
                       disabled={checkoutLoading}
                       className="text-accent border-accent/30 hover:bg-accent/10"
@@ -251,24 +259,63 @@ const Dashboard = () => {
                   )}
                 </div>
               )}
-              {isAdmin && (
-                <Button variant="ghost" size="sm" onClick={() => navigate("/admin")} title="Admin Panel">
-                  <Shield className="w-4 h-4 text-accent mr-1" />
-                  Admin
+
+              {/* Desktop: Show all buttons */}
+              <div className="hidden md:flex items-center gap-2">
+                {isAdmin && (
+                  <Button variant="ghost" size="sm" onClick={() => navigate("/admin")} title="Admin Panel">
+                    <Shield className="w-4 h-4 text-accent mr-1" />
+                    Admin
+                  </Button>
+                )}
+                <Button variant="ghost" size="sm" onClick={() => navigate("/support")} title="Suporte">
+                  <Headphones className="w-4 h-4 mr-1" />
+                  Suporte
                 </Button>
-              )}
-              <Button variant="ghost" size="sm" onClick={() => navigate("/support")} title="Suporte">
-                <Headphones className="w-4 h-4 mr-1" />
-                Suporte
-              </Button>
-              <NotificationBell />
-              <Button variant="ghost" size="icon" onClick={() => navigate("/settings/profile")} title={t("settings", "profile", language)}>
-                <User className="w-4 h-4" />
-              </Button>
-              <Button variant="ghost" size="sm" onClick={handleSignOut}>
-                <LogOut className="w-4 h-4 mr-2" />
-                {t("nav", "logout", language)}
-              </Button>
+                <NotificationBell />
+                <Button variant="ghost" size="icon" onClick={() => navigate("/settings/profile")} title={t("settings", "profile", language)}>
+                  <User className="w-4 h-4" />
+                </Button>
+                <Button variant="ghost" size="sm" onClick={handleSignOut}>
+                  <LogOut className="w-4 h-4 mr-2" />
+                  {t("nav", "logout", language)}
+                </Button>
+              </div>
+
+              {/* Mobile: Notification + Support + Menu */}
+              <div className="flex md:hidden items-center gap-1">
+                <NotificationBell />
+                <Button variant="ghost" size="icon" onClick={() => navigate("/support")} title="Suporte">
+                  <Headphones className="w-4 h-4" />
+                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                      <Menu className="w-5 h-5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    {isAdmin && (
+                      <>
+                        <DropdownMenuItem onClick={() => navigate("/admin")}>
+                          <Shield className="w-4 h-4 mr-2 text-accent" />
+                          Admin
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                      </>
+                    )}
+                    <DropdownMenuItem onClick={() => navigate("/settings/profile")}>
+                      <User className="w-4 h-4 mr-2" />
+                      {t("settings", "profile", language)}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive">
+                      <LogOut className="w-4 h-4 mr-2" />
+                      {t("nav", "logout", language)}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
           </nav>
         </div>
