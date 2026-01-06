@@ -50,3 +50,9 @@ verify_jwt = false
 
 [functions.verify-reset-token]
 verify_jwt = false
+
+[functions.send-signup-verification]
+verify_jwt = false
+
+[functions.verify-email-token]
+verify_jwt = false
