@@ -34,7 +34,6 @@ import TrustedCompaniesManager from "@/components/admin/TrustedCompaniesManager"
 import AdvancedAnalytics from "@/components/admin/AdvancedAnalytics";
 import PlansConfigManager from "@/components/admin/PlansConfigManager";
 import ManualSubscriptionManager from "@/components/admin/ManualSubscriptionManager";
-import CouponsManager from "@/components/admin/CouponsManager";
 import RevenueReports from "@/components/admin/RevenueReports";
 import SystemControlCard from "@/components/admin/SystemControlCard";
 import SupportSettingsCard from "@/components/admin/SupportSettingsCard";
@@ -108,8 +107,6 @@ const Admin = () => {
         return <PlansConfigManager />;
       case "manual-subs":
         return <ManualSubscriptionManager />;
-      case "coupons":
-        return <CouponsManager />;
       case "users":
         return <UsersTable />;
       case "roles":
@@ -144,7 +141,6 @@ const Admin = () => {
       companies: { pt: "Empresas Parceiras", en: "Partner Companies" },
       plans: { pt: "Configuração de Planos", en: "Plans Configuration" },
       "manual-subs": { pt: "Assinaturas Manuais", en: "Manual Subscriptions" },
-      coupons: { pt: "Gerenciador de Cupons", en: "Coupons Manager" },
       users: { pt: "Usuários", en: "Users" },
       roles: { pt: "Permissões e Roles", en: "Permissions & Roles" },
       email: { pt: "Configurações de E-mail", en: "Email Settings" },

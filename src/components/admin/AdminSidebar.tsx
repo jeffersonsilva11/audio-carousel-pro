@@ -30,7 +30,6 @@ import {
   BarChart3,
   Crown,
   Gift,
-  Ticket,
   TrendingUp,
   Headphones,
   Mail,
@@ -71,7 +70,6 @@ const AdminSidebar = ({ activeSection, onSectionChange }: AdminSidebarProps) => 
       items: [
         { id: "plans", icon: Crown, label: language === "pt-BR" ? "Planos" : "Plans" },
         { id: "manual-subs", icon: Gift, label: language === "pt-BR" ? "Assinaturas" : "Subscriptions" },
-        { id: "coupons", icon: Ticket, label: language === "pt-BR" ? "Cupons" : "Coupons" },
       ],
     },
     {
