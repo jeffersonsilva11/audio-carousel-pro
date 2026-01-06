@@ -28,7 +28,8 @@ const Auth = () => {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string; name?: string }>({});
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
-  
+  const [isRedirectingToVerify, setIsRedirectingToVerify] = useState(false);
+
   const { user, signIn, signUp, signInWithGoogle, isEmailConfirmed } = useAuth();
   const { verifyRecaptcha } = useRecaptcha();
   const {
@@ -55,11 +56,14 @@ const Auth = () => {
   const nameSchema = z.string().min(2, t("auth", "nameMinLength", language)).optional();
 
   useEffect(() => {
+    // Don't redirect if we're in the process of redirecting to verify
+    if (isRedirectingToVerify) return;
+
     // Redirect to dashboard if user exists AND (email is confirmed OR verification is disabled)
     if (user && (isEmailConfirmed || !emailVerificationEnabled)) {
       navigate("/dashboard");
     }
-  }, [user, isEmailConfirmed, emailVerificationEnabled, navigate]);
+  }, [user, isEmailConfirmed, emailVerificationEnabled, navigate, isRedirectingToVerify]);
 
   // Update lockout countdown
   useEffect(() => {
@@ -151,6 +155,7 @@ const Auth = () => {
               title: t("auth", "emailNotVerified", language),
               description: t("auth", "pleaseVerifyEmail", language),
             });
+            setIsRedirectingToVerify(true);
             navigate(`/auth/verify?email=${encodeURIComponent(unverifiedEmail)}`);
             return;
           }
@@ -239,6 +244,8 @@ const Auth = () => {
               title: t("auth", "accountCreated", language),
               description: t("auth", "checkEmailVerification", language),
             });
+            // Set flag to prevent useEffect from redirecting to dashboard
+            setIsRedirectingToVerify(true);
             // Redirect to email verification page
             navigate(`/auth/verify?email=${encodeURIComponent(email)}`);
           }

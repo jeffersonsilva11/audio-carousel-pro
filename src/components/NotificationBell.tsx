@@ -106,7 +106,7 @@ const NotificationBell = () => {
                       <p className={`text-sm font-medium ${!notification.read ? "text-foreground" : "text-muted-foreground"}`}>
                         {notification.title}
                       </p>
-                      <p className="text-xs text-muted-foreground line-clamp-2">
+                      <p className="text-xs text-muted-foreground line-clamp-3">
                         {notification.message}
                       </p>
                       <p className="text-xs text-muted-foreground/70 mt-1">
