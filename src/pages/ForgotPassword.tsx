@@ -37,13 +37,15 @@ const ForgotPassword = () => {
     setIsLoading(true);
 
     try {
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/reset-password`,
+      // Call custom password reset function that sends OTP via SMTP
+      const response = await supabase.functions.invoke("request-password-reset", {
+        body: { email },
       });
 
-      if (resetError) {
-        // Don't reveal if email exists or not for security
-        if (resetError.message.includes("rate limit")) {
+      if (response.error) {
+        const errorMessage = response.error.message || "Erro ao enviar email";
+
+        if (errorMessage.includes("rate limit") || errorMessage.includes("muitas solicitações")) {
           toast({
             title: "Muitas tentativas",
             description: "Aguarde alguns minutos antes de tentar novamente.",
@@ -56,8 +58,8 @@ const ForgotPassword = () => {
       } else {
         setEmailSent(true);
         toast({
-          title: "Email enviado!",
-          description: "Verifique sua caixa de entrada para redefinir a senha.",
+          title: "Código enviado!",
+          description: "Verifique sua caixa de entrada para o código de recuperação.",
         });
       }
     } catch (err) {
@@ -88,22 +90,29 @@ const ForgotPassword = () => {
               <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
                 <CheckCircle2 className="w-10 h-10 text-green-600 dark:text-green-400" />
               </div>
-              <h2 className="text-2xl font-bold mb-2">Email Enviado!</h2>
+              <h2 className="text-2xl font-bold mb-2">Código Enviado!</h2>
               <p className="text-muted-foreground mb-2">
                 Se existe uma conta com o email
               </p>
               <p className="font-medium text-foreground mb-4">{email}</p>
               <p className="text-muted-foreground mb-6">
-                você receberá um link para redefinir sua senha.
+                você receberá um código de 6 dígitos para redefinir sua senha.
               </p>
 
               <div className="p-4 bg-muted/50 rounded-lg mb-6">
                 <p className="text-sm text-muted-foreground">
-                  💡 Verifique também a pasta de spam. O link expira em 1 hora.
+                  💡 Verifique também a pasta de spam. O código expira em 1 hora.
                 </p>
               </div>
 
               <div className="space-y-3">
+                <Button
+                  variant="accent"
+                  className="w-full"
+                  onClick={() => navigate(`/auth/reset-password?email=${encodeURIComponent(email)}`)}
+                >
+                  Inserir código de verificação
+                </Button>
                 <Button
                   variant="outline"
                   className="w-full"
@@ -156,7 +165,7 @@ const ForgotPassword = () => {
               Esqueceu a senha?
             </CardTitle>
             <CardDescription>
-              Digite seu email para receber um link de recuperação
+              Digite seu email para receber um código de recuperação
             </CardDescription>
           </CardHeader>
 
@@ -193,7 +202,7 @@ const ForgotPassword = () => {
                     Enviando...
                   </>
                 ) : (
-                  "Enviar link de recuperação"
+                  "Enviar código de recuperação"
                 )}
               </Button>
             </form>

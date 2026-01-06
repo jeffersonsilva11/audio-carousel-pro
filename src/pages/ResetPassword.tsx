@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Mic2, ArrowLeft, Loader2, Lock, CheckCircle2, Eye, EyeOff, AlertCircle } from "lucide-react";
+import { Mic2, ArrowLeft, Loader2, Lock, CheckCircle2, Eye, EyeOff, AlertCircle, Mail, KeyRound } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { BRAND } from "@/lib/constants";
 import { z } from "zod";
@@ -17,14 +17,20 @@ const ResetPassword = () => {
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
 
+  // Get email from URL params
+  const emailFromParams = searchParams.get("email") || "";
+
+  const [email, setEmail] = useState(emailFromParams);
+  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [errors, setErrors] = useState<{ password?: string; confirmPassword?: string }>({});
-  const [isValidSession, setIsValidSession] = useState<boolean | null>(null);
+  const [errors, setErrors] = useState<{ email?: string; otp?: string; password?: string; confirmPassword?: string }>({});
+
+  const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const passwordSchema = z.string()
     .min(8, "A senha deve ter no mínimo 8 caracteres")
@@ -32,56 +38,50 @@ const ResetPassword = () => {
     .regex(/[a-z]/, "A senha deve conter ao menos uma letra minúscula")
     .regex(/[0-9]/, "A senha deve conter ao menos um número");
 
-  // Check if we have a valid recovery session
-  useEffect(() => {
-    const checkSession = async () => {
-      // Supabase automatically handles the recovery token from URL hash
-      const { data: { session }, error } = await supabase.auth.getSession();
+  const emailSchema = z.string().email("Por favor, insira um email válido.");
 
-      if (session) {
-        setIsValidSession(true);
-      } else {
-        // Check if there's an error in URL params
-        const errorDesc = searchParams.get("error_description");
-        if (errorDesc) {
-          toast({
-            title: "Link expirado",
-            description: "Este link de recuperação expirou. Solicite um novo.",
-            variant: "destructive",
-          });
-          setIsValidSession(false);
-        } else {
-          // Try to exchange the token
-          const hashParams = new URLSearchParams(window.location.hash.slice(1));
-          const accessToken = hashParams.get("access_token");
-          const refreshToken = hashParams.get("refresh_token");
-          const type = hashParams.get("type");
+  // Handle OTP input
+  const handleOtpChange = (index: number, value: string) => {
+    // Only allow numbers
+    if (value && !/^\d$/.test(value)) return;
 
-          if (type === "recovery" && accessToken && refreshToken) {
-            const { error: sessionError } = await supabase.auth.setSession({
-              access_token: accessToken,
-              refresh_token: refreshToken,
-            });
+    const newOtp = [...otp];
+    newOtp[index] = value;
+    setOtp(newOtp);
+    setErrors({ ...errors, otp: undefined });
 
-            if (sessionError) {
-              toast({
-                title: "Erro de autenticação",
-                description: "Não foi possível validar o link. Solicite um novo.",
-                variant: "destructive",
-              });
-              setIsValidSession(false);
-            } else {
-              setIsValidSession(true);
-            }
-          } else {
-            setIsValidSession(false);
-          }
-        }
+    // Auto-focus next input
+    if (value && index < 5) {
+      otpInputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  // Handle backspace on OTP input
+  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Backspace" && !otp[index] && index > 0) {
+      otpInputRefs.current[index - 1]?.focus();
+    }
+  };
+
+  // Handle paste on OTP input
+  const handleOtpPaste = (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    if (pastedData) {
+      const newOtp = [...otp];
+      for (let i = 0; i < pastedData.length; i++) {
+        newOtp[i] = pastedData[i];
       }
-    };
-
-    checkSession();
-  }, [searchParams, toast]);
+      setOtp(newOtp);
+      // Focus the next empty input or the last one
+      const nextEmpty = newOtp.findIndex(v => !v);
+      if (nextEmpty !== -1) {
+        otpInputRefs.current[nextEmpty]?.focus();
+      } else {
+        otpInputRefs.current[5]?.focus();
+      }
+    }
+  };
 
   // Password strength indicator
   const getPasswordStrength = (pwd: string): { score: number; label: string; color: string } => {
@@ -101,13 +101,27 @@ const ResetPassword = () => {
   const passwordStrength = getPasswordStrength(password);
 
   const validateForm = () => {
-    const newErrors: { password?: string; confirmPassword?: string } = {};
+    const newErrors: { email?: string; otp?: string; password?: string; confirmPassword?: string } = {};
 
+    // Validate email
+    const emailResult = emailSchema.safeParse(email);
+    if (!emailResult.success) {
+      newErrors.email = emailResult.error.errors[0].message;
+    }
+
+    // Validate OTP
+    const otpValue = otp.join("");
+    if (otpValue.length !== 6) {
+      newErrors.otp = "Digite o código completo de 6 dígitos";
+    }
+
+    // Validate password
     const passwordResult = passwordSchema.safeParse(password);
     if (!passwordResult.success) {
       newErrors.password = passwordResult.error.errors[0].message;
     }
 
+    // Validate password match
     if (password !== confirmPassword) {
       newErrors.confirmPassword = "As senhas não coincidem";
     }
@@ -124,24 +138,32 @@ const ResetPassword = () => {
     setIsLoading(true);
 
     try {
-      const { error } = await supabase.auth.updateUser({
-        password: password,
+      const otpValue = otp.join("");
+
+      // Call verify-reset-token edge function
+      const response = await supabase.functions.invoke("verify-reset-token", {
+        body: {
+          email,
+          token: otpValue,
+          newPassword: password,
+        },
       });
 
-      if (error) {
-        if (error.message.includes("same as the old password")) {
-          toast({
-            title: "Senha já utilizada",
-            description: "Escolha uma senha diferente da anterior.",
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "Erro ao alterar senha",
-            description: error.message,
-            variant: "destructive",
-          });
-        }
+      if (response.error) {
+        const errorData = response.error;
+        toast({
+          title: "Erro ao alterar senha",
+          description: errorData.message || "Código inválido ou expirado. Tente novamente.",
+          variant: "destructive",
+        });
+        setErrors({ otp: "Código inválido ou expirado" });
+      } else if (response.data?.error) {
+        toast({
+          title: "Erro ao alterar senha",
+          description: response.data.error,
+          variant: "destructive",
+        });
+        setErrors({ otp: response.data.error });
       } else {
         setIsSuccess(true);
         toast({
@@ -149,9 +171,8 @@ const ResetPassword = () => {
           description: "Sua senha foi atualizada com sucesso.",
         });
 
-        // Sign out and redirect to login
-        setTimeout(async () => {
-          await supabase.auth.signOut();
+        // Redirect to login
+        setTimeout(() => {
           navigate("/auth");
         }, 3000);
       }
@@ -165,56 +186,6 @@ const ResetPassword = () => {
       setIsLoading(false);
     }
   };
-
-  // Loading state while checking session
-  if (isValidSession === null) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-accent" />
-          <p className="text-muted-foreground">Validando link de recuperação...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Invalid session - show error
-  if (!isValidSession) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <div className="w-full max-w-md">
-          <Card className="border-border/50 shadow-2xl">
-            <CardContent className="pt-12 pb-8 text-center">
-              <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-                <AlertCircle className="w-10 h-10 text-red-600 dark:text-red-400" />
-              </div>
-              <h2 className="text-2xl font-bold mb-2">Link Inválido</h2>
-              <p className="text-muted-foreground mb-6">
-                Este link de recuperação é inválido ou já expirou.
-              </p>
-
-              <div className="space-y-3">
-                <Button
-                  variant="accent"
-                  className="w-full"
-                  onClick={() => navigate("/auth/forgot-password")}
-                >
-                  Solicitar novo link
-                </Button>
-                <Button
-                  variant="ghost"
-                  className="w-full"
-                  onClick={() => navigate("/auth")}
-                >
-                  Voltar para login
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
 
   // Success state
   if (isSuccess) {
@@ -261,21 +232,70 @@ const ResetPassword = () => {
             </Link>
 
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-accent/10 flex items-center justify-center">
-              <Lock className="w-8 h-8 text-accent" />
+              <KeyRound className="w-8 h-8 text-accent" />
             </div>
 
             <CardTitle className="text-2xl font-bold">
-              Nova Senha
+              Redefinir Senha
             </CardTitle>
             <CardDescription>
-              Crie uma nova senha segura para sua conta
+              Digite o código enviado para seu email e crie uma nova senha
             </CardDescription>
           </CardHeader>
 
           <CardContent className="pt-6">
             <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Email */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Email</label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    type="email"
+                    placeholder="Seu email"
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      setErrors({ ...errors, email: undefined });
+                    }}
+                    className="pl-10"
+                    required
+                  />
+                </div>
+                {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
+              </div>
+
+              {/* OTP Input */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Código de verificação</label>
+                <div className="flex gap-2 justify-center">
+                  {otp.map((digit, index) => (
+                    <Input
+                      key={index}
+                      ref={el => otpInputRefs.current[index] = el}
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={1}
+                      value={digit}
+                      onChange={(e) => handleOtpChange(index, e.target.value)}
+                      onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                      onPaste={index === 0 ? handleOtpPaste : undefined}
+                      className={cn(
+                        "w-12 h-12 text-center text-xl font-bold",
+                        errors.otp && "border-destructive"
+                      )}
+                    />
+                  ))}
+                </div>
+                {errors.otp && <p className="text-sm text-destructive text-center">{errors.otp}</p>}
+                <p className="text-xs text-muted-foreground text-center">
+                  Digite o código de 6 dígitos enviado para seu email
+                </p>
+              </div>
+
               {/* New Password */}
               <div className="space-y-2">
+                <label className="text-sm font-medium">Nova senha</label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
@@ -288,7 +308,6 @@ const ResetPassword = () => {
                     }}
                     className="pl-10 pr-10"
                     required
-                    autoFocus
                   />
                   <button
                     type="button"
@@ -330,6 +349,7 @@ const ResetPassword = () => {
 
               {/* Confirm Password */}
               <div className="space-y-2">
+                <label className="text-sm font-medium">Confirme a nova senha</label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
@@ -396,6 +416,18 @@ const ResetPassword = () => {
                 )}
               </Button>
             </form>
+
+            <div className="mt-6 text-center">
+              <p className="text-sm text-muted-foreground">
+                Não recebeu o código?{" "}
+                <Link
+                  to="/auth/forgot-password"
+                  className="text-accent hover:underline font-medium"
+                >
+                  Solicitar novo código
+                </Link>
+              </p>
+            </div>
           </CardContent>
         </Card>
       </div>

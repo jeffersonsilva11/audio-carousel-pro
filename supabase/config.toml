@@ -44,3 +44,9 @@ verify_jwt = false
 
 [functions.update-smtp-password]
 verify_jwt = false
+
+[functions.request-password-reset]
+verify_jwt = false
+
+[functions.verify-reset-token]
+verify_jwt = false
