@@ -310,7 +310,9 @@ serve(async (req) => {
     logStep("Connecting to SMTP", { host: smtp.host, port: smtp.port, secure: smtp.secure });
 
     try {
-      // Create SMTP client
+      logStep("Creating SMTP client...");
+
+      // Create SMTP client with timeout
       const client = new SMTPClient({
         connection: {
           hostname: smtp.host,
@@ -321,7 +323,15 @@ serve(async (req) => {
             password: smtp.password,
           },
         },
+        debug: {
+          log: true,
+          allowUnsecure: false,
+          encodeLB: false,
+          noStartTLS: false,
+        },
       });
+
+      logStep("SMTP client created, sending email...");
 
       // Send email
       await client.send({
@@ -332,18 +342,36 @@ serve(async (req) => {
         html: emailHtml,
       });
 
+      logStep("Email sent, closing connection...");
+
       await client.close();
 
       logStep("Email sent successfully", { to });
     } catch (smtpError: any) {
-      logStep("SMTP ERROR", {
+      logStep("SMTP ERROR DETAILS", {
         message: smtpError?.message,
         name: smtpError?.name,
+        stack: smtpError?.stack?.slice(0, 500),
         host: smtp.host,
         port: smtp.port,
-        secure: smtp.secure
+        secure: smtp.secure,
+        user: smtp.user
       });
-      throw new Error(`Erro SMTP: ${smtpError?.message || "Falha ao conectar ao servidor de e-mail"}`);
+
+      // Provide helpful error messages
+      let errorMsg = smtpError?.message || "Falha ao conectar ao servidor de e-mail";
+
+      if (errorMsg.includes("connection refused") || errorMsg.includes("ECONNREFUSED")) {
+        errorMsg = `Conexão recusada pelo servidor ${smtp.host}:${smtp.port}. Verifique host e porta.`;
+      } else if (errorMsg.includes("timeout") || errorMsg.includes("ETIMEDOUT")) {
+        errorMsg = `Timeout ao conectar em ${smtp.host}:${smtp.port}. Servidor pode estar bloqueado.`;
+      } else if (errorMsg.includes("auth") || errorMsg.includes("535") || errorMsg.includes("authentication")) {
+        errorMsg = `Falha na autenticação. Verifique usuário e senha SMTP.`;
+      } else if (errorMsg.includes("certificate") || errorMsg.includes("SSL") || errorMsg.includes("TLS")) {
+        errorMsg = `Erro de certificado SSL/TLS. Tente alterar a porta (465 SSL ou 587 TLS).`;
+      }
+
+      throw new Error(`Erro SMTP: ${errorMsg}`);
     }
 
     return new Response(
