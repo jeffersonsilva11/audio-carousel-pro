@@ -71,33 +71,40 @@ const Dashboard = () => {
     }
   }, [searchParams, language]);
 
+  // State to track if we're checking email verification
+  const [checkingVerification, setCheckingVerification] = useState(true);
+
   useEffect(() => {
     if (!loading && !user) {
       navigate("/auth");
+      return;
     }
-  }, [user, loading, navigate]);
 
-  // Redirect to email verification if user exists but email not confirmed
-  // Add a small delay to allow auth state to propagate after OTP verification
-  useEffect(() => {
-    if (!loading && user && !isEmailConfirmed) {
-      // Wait a moment to allow session state to update (especially after OTP verification)
-      const timer = setTimeout(async () => {
-        // Refresh session to get latest email_confirmed_at status
-        const { data } = await supabase.auth.getSession();
-        const confirmedNow = Boolean(data.session?.user?.email_confirmed_at);
+    // Check email verification status
+    if (!loading && user) {
+      const checkVerification = async () => {
+        // Check if email verification is required
+        const { data: settingsData } = await supabase
+          .from("app_settings")
+          .select("value")
+          .eq("key", "email_verification_enabled")
+          .maybeSingle();
 
-        if (!confirmedNow) {
-          // Still not confirmed, sign out and redirect to verify page
-          signOut().then(() => {
-            navigate(`/auth/verify?email=${encodeURIComponent(user.email || "")}`);
-          });
+        const verificationRequired = settingsData?.value !== "false";
+
+        if (verificationRequired && !isEmailConfirmed) {
+          // Email verification required but not confirmed - redirect to verify page
+          navigate(`/auth/verify?email=${encodeURIComponent(user.email || "")}`);
+          return;
         }
-      }, 500);
 
-      return () => clearTimeout(timer);
+        // All checks passed
+        setCheckingVerification(false);
+      };
+
+      checkVerification();
     }
-  }, [user, loading, isEmailConfirmed, navigate, signOut]);
+  }, [user, loading, isEmailConfirmed, navigate]);
 
   useEffect(() => {
     if (user) {
@@ -192,7 +199,7 @@ const Dashboard = () => {
     return t("dashboard", "errorStatus", language);
   };
 
-  if (loading || subLoading || onboardingLoading) {
+  if (loading || subLoading || onboardingLoading || checkingVerification) {
     return <DashboardSkeleton />;
   }
 
