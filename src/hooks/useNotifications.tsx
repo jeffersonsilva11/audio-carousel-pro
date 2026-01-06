@@ -144,18 +144,18 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
 
     const checkDailyLimit = async () => {
       const today = new Date().toISOString().split("T")[0];
-      
+
       const { data: profile } = await supabase
         .from("profiles")
         .select("daily_carousels_used, plan_tier")
         .eq("user_id", user.id)
-        .single();
-      
+        .maybeSingle();
+
       const { data: subscription } = await supabase
         .from("subscriptions")
         .select("daily_limit")
         .eq("user_id", user.id)
-        .single();
+        .maybeSingle();
 
       if (profile && subscription) {
         const used = profile.daily_carousels_used || 0;
