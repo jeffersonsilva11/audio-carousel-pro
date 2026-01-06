@@ -146,18 +146,39 @@ const EmailSettingsCard = () => {
         }
       });
 
-      if (error) throw error;
+      // Check for error in response
+      if (error) {
+        throw new Error(error.message || "Erro ao chamar função");
+      }
+
+      // Check for error in data (function returned error)
+      if (data?.error) {
+        throw new Error(data.error);
+      }
 
       setTestResult("success");
       toast({
         title: "E-mail enviado!",
         description: `Teste enviado para ${customEmailFromAddress || smtpUser}`,
       });
-    } catch (error) {
+    } catch (error: any) {
       setTestResult("error");
+      console.error("SMTP test error:", error);
+
+      // Try to extract meaningful error message
+      let errorMsg = "Verifique as configurações SMTP";
+      if (error?.message) {
+        errorMsg = error.message;
+      } else if (error?.context?.body) {
+        try {
+          const body = JSON.parse(error.context.body);
+          errorMsg = body.error || errorMsg;
+        } catch {}
+      }
+
       toast({
         title: "Erro ao enviar",
-        description: error instanceof Error ? error.message : "Verifique as configurações SMTP",
+        description: errorMsg,
         variant: "destructive",
       });
     } finally {

@@ -309,31 +309,42 @@ serve(async (req) => {
 
     logStep("Connecting to SMTP", { host: smtp.host, port: smtp.port, secure: smtp.secure });
 
-    // Create SMTP client
-    const client = new SMTPClient({
-      connection: {
-        hostname: smtp.host,
-        port: smtp.port,
-        tls: smtp.secure,
-        auth: {
-          username: smtp.user,
-          password: smtp.password,
+    try {
+      // Create SMTP client
+      const client = new SMTPClient({
+        connection: {
+          hostname: smtp.host,
+          port: smtp.port,
+          tls: smtp.secure,
+          auth: {
+            username: smtp.user,
+            password: smtp.password,
+          },
         },
-      },
-    });
+      });
 
-    // Send email
-    await client.send({
-      from: `${smtp.fromName} <${smtp.fromAddress || smtp.user}>`,
-      to: to,
-      subject: emailSubject,
-      content: "auto",
-      html: emailHtml,
-    });
+      // Send email
+      await client.send({
+        from: `${smtp.fromName} <${smtp.fromAddress || smtp.user}>`,
+        to: to,
+        subject: emailSubject,
+        content: "auto",
+        html: emailHtml,
+      });
 
-    await client.close();
+      await client.close();
 
-    logStep("Email sent successfully", { to });
+      logStep("Email sent successfully", { to });
+    } catch (smtpError: any) {
+      logStep("SMTP ERROR", {
+        message: smtpError?.message,
+        name: smtpError?.name,
+        host: smtp.host,
+        port: smtp.port,
+        secure: smtp.secure
+      });
+      throw new Error(`Erro SMTP: ${smtpError?.message || "Falha ao conectar ao servidor de e-mail"}`);
+    }
 
     return new Response(
       JSON.stringify({
