@@ -14,7 +14,7 @@ import { ptBR, es, enUS } from "date-fns/locale";
 import { motion, AnimatePresence } from "framer-motion";
 
 const NotificationBell = () => {
-  const { notifications, unreadCount, markAsRead, markAllAsRead, clearNotification, requestPermission, hasPermission } = useNotifications();
+  const { notifications, unreadCount, markAsRead, markAllAsRead, clearNotification } = useNotifications();
   const { language } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -74,28 +74,6 @@ const NotificationBell = () => {
             </Button>
           )}
         </div>
-
-        {/* Permission Banner */}
-        {!hasPermission && (
-          <div className="p-3 bg-accent/10 border-b border-border">
-            <p className="text-xs text-muted-foreground mb-2">
-              {language === "pt-BR" 
-                ? "Ative as notificações para saber quando seu carrossel estiver pronto."
-                : language === "es"
-                ? "Activa las notificaciones para saber cuando tu carrusel esté listo."
-                : "Enable notifications to know when your carousel is ready."}
-            </p>
-            <Button
-              size="sm"
-              variant="accent"
-              className="w-full"
-              onClick={requestPermission}
-            >
-              <Bell className="w-3 h-3 mr-1" />
-              {language === "pt-BR" ? "Ativar" : language === "es" ? "Activar" : "Enable"}
-            </Button>
-          </div>
-        )}
 
         <ScrollArea className="max-h-80">
           <AnimatePresence mode="popLayout">

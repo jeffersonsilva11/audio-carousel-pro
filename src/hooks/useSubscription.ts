@@ -3,11 +3,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 import { PlanTier, PLANS } from "@/lib/plans";
 
+export type LimitPeriod = "daily" | "weekly" | "monthly";
+
 interface SubscriptionState {
   subscribed: boolean;
   plan: PlanTier;
   dailyLimit: number;
-  dailyUsed: number;
+  limitPeriod: LimitPeriod;
+  periodUsed: number;
+  dailyUsed: number; // Kept for backward compatibility
   hasWatermark: boolean;
   hasEditor: boolean;
   hasHistory: boolean;
@@ -26,6 +30,8 @@ export function useSubscription() {
     subscribed: false,
     plan: "free",
     dailyLimit: 1,
+    limitPeriod: "daily",
+    periodUsed: 0,
     dailyUsed: 0,
     hasWatermark: true,
     hasEditor: false,
@@ -45,6 +51,8 @@ export function useSubscription() {
         subscribed: false,
         plan: "free",
         dailyLimit: 1,
+        limitPeriod: "daily",
+        periodUsed: 0,
         dailyUsed: 0,
         hasWatermark: true,
         hasEditor: false,
@@ -79,6 +87,8 @@ export function useSubscription() {
           subscribed: false,
           plan: "free",
           dailyLimit: 1,
+          limitPeriod: "daily",
+          periodUsed: 0,
           dailyUsed: 0,
           hasWatermark: true,
           hasEditor: false,
@@ -101,6 +111,8 @@ export function useSubscription() {
           subscribed: false,
           plan: "free",
           dailyLimit: 1,
+          limitPeriod: "daily",
+          periodUsed: 0,
           dailyUsed: 0,
           hasWatermark: true,
           hasEditor: false,
@@ -123,6 +135,8 @@ export function useSubscription() {
         subscribed: data.subscribed,
         plan,
         dailyLimit: data.daily_limit || planConfig.dailyLimit,
+        limitPeriod: (data.limit_period || "daily") as LimitPeriod,
+        periodUsed: data.period_used || data.daily_used || 0,
         dailyUsed: data.daily_used || 0,
         hasWatermark: data.has_watermark ?? planConfig.hasWatermark,
         hasEditor: data.has_editor ?? planConfig.hasEditor,
@@ -142,6 +156,8 @@ export function useSubscription() {
         subscribed: false,
         plan: "free",
         dailyLimit: 1,
+        limitPeriod: "daily",
+        periodUsed: 0,
         dailyUsed: 0,
         hasWatermark: true,
         hasEditor: false,
@@ -226,14 +242,23 @@ export function useSubscription() {
   const canCreateCarousel = () => {
     if (state.plan === "free") {
       // Free users: 1 carousel total
-      return state.dailyUsed < 1;
+      return state.periodUsed < 1;
     }
-    // Paid users: daily limit
-    return state.dailyUsed < state.dailyLimit;
+    // Paid users: check against period limit
+    return state.periodUsed < state.dailyLimit;
   };
 
   const getRemainingCarousels = () => {
-    return Math.max(0, state.dailyLimit - state.dailyUsed);
+    return Math.max(0, state.dailyLimit - state.periodUsed);
+  };
+
+  const getPeriodLabel = (language: string = "pt-BR") => {
+    const labels: Record<string, Record<LimitPeriod, string>> = {
+      "pt-BR": { daily: "hoje", weekly: "esta semana", monthly: "este mês" },
+      en: { daily: "today", weekly: "this week", monthly: "this month" },
+      es: { daily: "hoy", weekly: "esta semana", monthly: "este mes" },
+    };
+    return labels[language]?.[state.limitPeriod] || labels["pt-BR"][state.limitPeriod];
   };
 
   const getDaysRemaining = () => {
@@ -260,6 +285,7 @@ export function useSubscription() {
     openCustomerPortal,
     canCreateCarousel,
     getRemainingCarousels,
+    getPeriodLabel,
     getDaysRemaining,
     isCancelled,
     isLastDay,

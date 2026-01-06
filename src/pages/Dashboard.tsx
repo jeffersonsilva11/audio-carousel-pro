@@ -13,6 +13,7 @@ import {
   Sparkles, FolderOpen, Crown, CreditCard, RefreshCw, AlertTriangle, Globe, Settings, History, Shield, Clock, Bell, X, Headphones
 } from "lucide-react";
 import { useNotifications } from "@/hooks/useNotifications";
+import NotificationBell from "@/components/NotificationBell";
 import UsageStats from "@/components/dashboard/UsageStats";
 import DashboardSkeleton from "@/components/skeletons/DashboardSkeleton";
 import OnboardingModal from "@/components/onboarding/OnboardingModal";
@@ -45,7 +46,7 @@ interface Carousel {
 const Dashboard = () => {
   const { user, loading, signOut, isEmailConfirmed } = useAuth();
   const { isAdmin } = useAdminAccess();
-  const { isPro, plan, dailyUsed, dailyLimit, subscriptionEnd, createCheckout, openCustomerPortal, loading: subLoading, getRemainingCarousels, getDaysRemaining, isCancelled, isLastDay, cancelAtPeriodEnd, status, failedPaymentCount } = useSubscription();
+  const { isPro, plan, dailyUsed, dailyLimit, limitPeriod, periodUsed, subscriptionEnd, createCheckout, openCustomerPortal, loading: subLoading, getRemainingCarousels, getPeriodLabel, getDaysRemaining, isCancelled, isLastDay, cancelAtPeriodEnd, status, failedPaymentCount } = useSubscription();
   const { notifications, unreadCount, markAsRead, clearNotification } = useNotifications();
   const { language, setLanguage } = useLanguage();
   const { showOnboarding, loading: onboardingLoading, completeOnboarding } = useOnboarding();
@@ -254,6 +255,7 @@ const Dashboard = () => {
                 <Headphones className="w-4 h-4 mr-1" />
                 Suporte
               </Button>
+              <NotificationBell />
               <Button variant="ghost" size="icon" onClick={() => navigate("/settings/profile")} title={t("settings", "profile", language)}>
                 <Settings className="w-4 h-4" />
               </Button>
@@ -325,8 +327,8 @@ const Dashboard = () => {
                   </div>
                   <p className="text-sm text-muted-foreground">
                     {isPro
-                      ? `${getRemainingCarousels()} ${t("dashboard", "remainingToday", language)}`
-                      : `${dailyUsed}/1 ${t("dashboard", "carouselUsed", language)}`}
+                      ? `${getRemainingCarousels()} ${language === "pt-BR" ? "restantes" : language === "es" ? "restantes" : "remaining"} ${getPeriodLabel(language)}`
+                      : `${periodUsed}/1 ${t("dashboard", "carouselUsed", language)}`}
                   </p>
                 </div>
               </div>

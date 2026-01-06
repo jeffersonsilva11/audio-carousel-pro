@@ -43,7 +43,10 @@ const Auth = () => {
 
   // Check if registration is disabled
   const registrationDisabled = systemSettings.registrationDisabled && !isLogin;
-  
+
+  // Check if email verification is required
+  const emailVerificationEnabled = systemSettings.emailVerificationEnabled !== false;
+
   const [lockoutSeconds, setLockoutSeconds] = useState(0);
 
   const emailSchema = z.string().email(t("auth", "invalidEmail", language));
@@ -51,11 +54,11 @@ const Auth = () => {
   const nameSchema = z.string().min(2, t("auth", "nameMinLength", language)).optional();
 
   useEffect(() => {
-    // Only redirect to dashboard if user exists AND email is confirmed
-    if (user && isEmailConfirmed) {
+    // Redirect to dashboard if user exists AND (email is confirmed OR verification is disabled)
+    if (user && (isEmailConfirmed || !emailVerificationEnabled)) {
       navigate("/dashboard");
     }
-  }, [user, isEmailConfirmed, navigate]);
+  }, [user, isEmailConfirmed, emailVerificationEnabled, navigate]);
 
   // Update lockout countdown
   useEffect(() => {
@@ -140,11 +143,24 @@ const Auth = () => {
 
         // Check if user needs to verify email first
         if (needsEmailVerification && unverifiedEmail) {
+          if (emailVerificationEnabled) {
+            // Email verification is required - sign out and redirect to verify page
+            const { supabase } = await import("@/integrations/supabase/client");
+            await supabase.auth.signOut();
+            toast({
+              title: t("auth", "emailNotVerified", language),
+              description: t("auth", "pleaseVerifyEmail", language),
+            });
+            navigate(`/auth/verify?email=${encodeURIComponent(unverifiedEmail)}`);
+            return;
+          }
+          // Email verification is disabled - allow login without email confirmation
+          await recordSuccessfulAttempt();
           toast({
-            title: t("auth", "emailNotVerified", language),
-            description: t("auth", "pleaseVerifyEmail", language),
+            title: t("auth", "welcomeBack", language),
+            description: t("auth", "loginSuccess", language),
           });
-          navigate(`/auth/verify?email=${encodeURIComponent(unverifiedEmail)}`);
+          navigate("/dashboard");
           return;
         }
 
@@ -192,12 +208,22 @@ const Auth = () => {
           }
         } else {
           await recordSuccessfulAttempt();
-          toast({
-            title: t("auth", "accountCreated", language),
-            description: t("auth", "checkEmailVerification", language),
-          });
-          // Redirect to email verification page
-          navigate(`/auth/verify?email=${encodeURIComponent(email)}`);
+
+          // If email verification is disabled, go directly to dashboard
+          if (!emailVerificationEnabled) {
+            toast({
+              title: t("auth", "accountCreated", language),
+              description: t("auth", "loginSuccess", language),
+            });
+            navigate("/dashboard");
+          } else {
+            toast({
+              title: t("auth", "accountCreated", language),
+              description: t("auth", "checkEmailVerification", language),
+            });
+            // Redirect to email verification page
+            navigate(`/auth/verify?email=${encodeURIComponent(email)}`);
+          }
         }
       }
     } finally {

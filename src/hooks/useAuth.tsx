@@ -61,10 +61,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     // Check if user exists but email is not confirmed
+    // Note: The calling component should decide whether to allow login based on email_verification_enabled setting
     if (!error && data.user && !data.user.email_confirmed_at) {
-      // Sign out immediately - user needs to confirm email first
-      await supabase.auth.signOut();
-      return { error: null, needsEmailVerification: true, email };
+      // Return flag indicating email is not verified - let caller decide what to do
+      return { error: null, needsEmailVerification: true, email, user: data.user };
     }
 
     return { error };
