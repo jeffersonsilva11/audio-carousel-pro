@@ -6,6 +6,7 @@ import { useRecaptcha } from "@/hooks/useRecaptcha";
 import { useAuthProtection } from "@/hooks/useAuthProtection";
 import { useSystemSettings } from "@/hooks/useSystemSettings";
 import { t } from "@/lib/translations";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -145,7 +146,6 @@ const Auth = () => {
         if (needsEmailVerification && unverifiedEmail) {
           if (emailVerificationEnabled) {
             // Email verification is required - sign out and redirect to verify page
-            const { supabase } = await import("@/integrations/supabase/client");
             await supabase.auth.signOut();
             toast({
               title: t("auth", "emailNotVerified", language),
