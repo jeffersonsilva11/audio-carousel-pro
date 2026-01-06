@@ -20,7 +20,9 @@ import {
   AlertCircle,
   Settings,
   FileText,
+  Edit3,
 } from "lucide-react";
+import EmailTemplateEditor from "./EmailTemplateEditor";
 import { useSystemSettings } from "@/hooks/useSystemSettings";
 import { useToast } from "@/hooks/use-toast";
 
@@ -48,6 +50,9 @@ const EmailSettingsCard = () => {
   // Test states
   const [testingEmail, setTestingEmail] = useState(false);
   const [testResult, setTestResult] = useState<"success" | "error" | null>(null);
+
+  // Template editor state
+  const [showTemplateEditor, setShowTemplateEditor] = useState(false);
 
   // Sync local state with fetched settings
   useEffect(() => {
@@ -440,68 +445,86 @@ const EmailSettingsCard = () => {
 
         {/* Templates Tab */}
         <TabsContent value="templates">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Templates de E-mail</CardTitle>
-              <CardDescription>
-                Templates pré-configurados para diferentes tipos de e-mail
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="p-4 border rounded-lg">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Mail className="w-4 h-4 text-blue-500" />
-                    <h4 className="font-medium">Verificação de Conta</h4>
+          {showTemplateEditor ? (
+            <EmailTemplateEditor onBack={() => setShowTemplateEditor(false)} />
+          ) : (
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-lg">Templates de E-mail</CardTitle>
+                    <CardDescription>
+                      Templates pré-configurados para diferentes tipos de e-mail
+                    </CardDescription>
                   </div>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Enviado quando usuário se cadastra para confirmar o e-mail
-                  </p>
-                  <Badge variant="secondary">Automático</Badge>
+                  <Button onClick={() => setShowTemplateEditor(true)} className="gap-2">
+                    <Edit3 className="w-4 h-4" />
+                    Editar Templates
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="p-4 border rounded-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Mail className="w-4 h-4 text-blue-500" />
+                      <h4 className="font-medium">Verificação de Conta</h4>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Enviado quando usuário se cadastra para confirmar o e-mail
+                    </p>
+                    <Badge variant="secondary">Automático</Badge>
+                  </div>
+
+                  <div className="p-4 border rounded-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Lock className="w-4 h-4 text-amber-500" />
+                      <h4 className="font-medium">Recuperação de Senha</h4>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Enviado quando usuário solicita redefinição de senha
+                    </p>
+                    <Badge variant="secondary">Automático</Badge>
+                  </div>
+
+                  <div className="p-4 border rounded-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      <CheckCircle className="w-4 h-4 text-green-500" />
+                      <h4 className="font-medium">Boas-vindas</h4>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Enviado após confirmação de conta bem-sucedida
+                    </p>
+                    <Badge variant="secondary">Automático</Badge>
+                  </div>
+
+                  <div className="p-4 border rounded-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Settings className="w-4 h-4 text-gray-500" />
+                      <h4 className="font-medium">E-mail de Teste</h4>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Usado para testar configurações SMTP
+                    </p>
+                    <Badge variant="outline">Manual</Badge>
+                  </div>
                 </div>
 
-                <div className="p-4 border rounded-lg">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Lock className="w-4 h-4 text-amber-500" />
-                    <h4 className="font-medium">Recuperação de Senha</h4>
+                <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <Edit3 className="w-5 h-5 text-blue-500 mt-0.5" />
+                    <div>
+                      <h4 className="font-medium text-sm mb-1">Templates Editáveis</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Clique em "Editar Templates" para personalizar o assunto e conteúdo HTML de cada e-mail.
+                        As alterações são salvas no banco de dados e aplicadas imediatamente.
+                      </p>
+                    </div>
                   </div>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Enviado quando usuário solicita redefinição de senha
-                  </p>
-                  <Badge variant="secondary">Automático</Badge>
                 </div>
-
-                <div className="p-4 border rounded-lg">
-                  <div className="flex items-center gap-2 mb-2">
-                    <CheckCircle className="w-4 h-4 text-green-500" />
-                    <h4 className="font-medium">Boas-vindas</h4>
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Enviado após confirmação de conta bem-sucedida
-                  </p>
-                  <Badge variant="secondary">Automático</Badge>
-                </div>
-
-                <div className="p-4 border rounded-lg">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Settings className="w-4 h-4 text-gray-500" />
-                    <h4 className="font-medium">E-mail de Teste</h4>
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Usado para testar configurações SMTP
-                  </p>
-                  <Badge variant="outline">Manual</Badge>
-                </div>
-              </div>
-
-              <div className="p-4 bg-muted/50 rounded-lg">
-                <p className="text-sm text-muted-foreground">
-                  Os templates incluem o logo e cores da sua marca automaticamente.
-                  Para personalizar os templates, edite os arquivos em <code className="bg-muted px-1 rounded">supabase/functions/send-smtp-email/index.ts</code>
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
       </Tabs>
     </div>

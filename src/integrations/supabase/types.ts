@@ -919,6 +919,45 @@ export type Database = {
         }
         Relationships: []
       }
+      email_templates: {
+        Row: {
+          id: string
+          template_key: string
+          name: string
+          description: string | null
+          subject: string
+          html_content: string
+          variables: Json
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          template_key: string
+          name: string
+          description?: string | null
+          subject: string
+          html_content: string
+          variables?: Json
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          template_key?: string
+          name?: string
+          description?: string | null
+          subject?: string
+          html_content?: string
+          variables?: Json
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
