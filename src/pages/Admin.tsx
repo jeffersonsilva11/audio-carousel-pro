@@ -1,34 +1,24 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdminAccess } from "@/hooks/useAdminAccess";
 import { useLanguage } from "@/hooks/useLanguage";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  ChevronLeft,
   Shield,
   Loader2,
-  Users,
-  Activity,
-  CreditCard,
   AlertTriangle,
-  Flag,
-  DollarSign,
-  UserCog,
-  Settings,
-  FileText,
-  HelpCircle,
-  Quote,
-  Building,
-  BarChart3,
-  Crown,
-  Gift,
-  Ticket,
-  TrendingUp,
-  Headphones,
+  Menu,
 } from "lucide-react";
 import { BRAND } from "@/lib/constants";
+import {
+  SidebarProvider,
+  SidebarInset,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
+
+// Admin components
+import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminStats from "@/components/admin/AdminStats";
 import UsersTable from "@/components/admin/UsersTable";
 import UsageLogsTable from "@/components/admin/UsageLogsTable";
@@ -48,12 +38,14 @@ import CouponsManager from "@/components/admin/CouponsManager";
 import RevenueReports from "@/components/admin/RevenueReports";
 import SystemControlCard from "@/components/admin/SystemControlCard";
 import SupportSettingsCard from "@/components/admin/SupportSettingsCard";
+import EmailSettingsCard from "@/components/admin/EmailSettingsCard";
 
 const Admin = () => {
   const { user, loading: authLoading } = useAuth();
   const { isAdmin, loading: adminLoading } = useAdminAccess();
   const { language } = useLanguage();
   const navigate = useNavigate();
+  const [activeSection, setActiveSection] = useState("analytics");
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -83,10 +75,10 @@ const Admin = () => {
           {language === "pt-BR" ? "Acesso negado" : language === "es" ? "Acceso denegado" : "Access denied"}
         </h1>
         <p className="text-muted-foreground">
-          {language === "pt-BR" 
-            ? "Você não tem permissão para acessar esta página." 
-            : language === "es" 
-            ? "No tienes permiso para acceder a esta página." 
+          {language === "pt-BR"
+            ? "Você não tem permissão para acessar esta página."
+            : language === "es"
+            ? "No tienes permiso para acceder a esta página."
             : "You don't have permission to access this page."}
         </p>
         <Button onClick={() => navigate("/dashboard")}>
@@ -96,204 +88,110 @@ const Admin = () => {
     );
   }
 
+  const renderContent = () => {
+    switch (activeSection) {
+      case "analytics":
+        return <AdvancedAnalytics />;
+      case "system":
+        return <SystemControlCard />;
+      case "revenue":
+        return <RevenueReports />;
+      case "landing":
+        return <LandingContentManager />;
+      case "faqs":
+        return <FAQManager />;
+      case "testimonials":
+        return <TestimonialsManager />;
+      case "companies":
+        return <TrustedCompaniesManager />;
+      case "plans":
+        return <PlansConfigManager />;
+      case "manual-subs":
+        return <ManualSubscriptionManager />;
+      case "coupons":
+        return <CouponsManager />;
+      case "users":
+        return <UsersTable />;
+      case "roles":
+        return <RoleManagement />;
+      case "email":
+        return <EmailSettingsCard />;
+      case "support":
+        return <SupportSettingsCard />;
+      case "settings":
+        return <AppSettingsCard />;
+      case "flags":
+        return <FeatureFlagsCard />;
+      case "api":
+        return <ApiUsageCard />;
+      case "logs":
+        return <UsageLogsTable />;
+      case "stripe":
+        return <StripeEventsTable />;
+      default:
+        return <AdvancedAnalytics />;
+    }
+  };
+
+  const getSectionTitle = () => {
+    const titles: Record<string, { pt: string; en: string }> = {
+      analytics: { pt: "Analytics", en: "Analytics" },
+      system: { pt: "Controle do Sistema", en: "System Control" },
+      revenue: { pt: "Relatórios de Receita", en: "Revenue Reports" },
+      landing: { pt: "Landing Page", en: "Landing Page" },
+      faqs: { pt: "Perguntas Frequentes", en: "FAQs" },
+      testimonials: { pt: "Depoimentos", en: "Testimonials" },
+      companies: { pt: "Empresas Parceiras", en: "Partner Companies" },
+      plans: { pt: "Configuração de Planos", en: "Plans Configuration" },
+      "manual-subs": { pt: "Assinaturas Manuais", en: "Manual Subscriptions" },
+      coupons: { pt: "Gerenciador de Cupons", en: "Coupons Manager" },
+      users: { pt: "Usuários", en: "Users" },
+      roles: { pt: "Permissões e Roles", en: "Permissions & Roles" },
+      email: { pt: "Configurações de E-mail", en: "Email Settings" },
+      support: { pt: "Configurações de Suporte", en: "Support Settings" },
+      settings: { pt: "Configurações Gerais", en: "General Settings" },
+      flags: { pt: "Feature Flags", en: "Feature Flags" },
+      api: { pt: "Uso da API", en: "API Usage" },
+      logs: { pt: "Logs de Uso", en: "Usage Logs" },
+      stripe: { pt: "Eventos Stripe", en: "Stripe Events" },
+    };
+    return language === "pt-BR" ? titles[activeSection]?.pt : titles[activeSection]?.en;
+  };
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border/50 bg-background/80 backdrop-blur-xl sticky top-0 z-50">
-        <div className="container mx-auto px-4">
-          <nav className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-4">
-              <Button 
-                variant="ghost" 
-                size="icon"
-                onClick={() => navigate("/dashboard")}
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </Button>
-              <div className="flex items-center gap-2">
-                <Shield className="w-5 h-5 text-accent" />
-                <h1 className="font-semibold">
-                  {language === "pt-BR" ? "Painel Admin" : language === "es" ? "Panel Admin" : "Admin Panel"}
-                </h1>
+    <SidebarProvider>
+      <AdminSidebar
+        activeSection={activeSection}
+        onSectionChange={setActiveSection}
+      />
+      <SidebarInset>
+        {/* Top Header */}
+        <header className="flex h-14 items-center gap-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 lg:px-6">
+          <SidebarTrigger className="md:hidden" />
+          <div className="flex-1">
+            <h1 className="text-lg font-semibold">{getSectionTitle()}</h1>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span className="hidden sm:inline">{user?.email}</span>
+          </div>
+        </header>
+
+        {/* Main Content */}
+        <main className="flex-1 overflow-auto">
+          <div className="container max-w-7xl mx-auto p-4 lg:p-6 space-y-6">
+            {/* Stats - only show on analytics */}
+            {activeSection === "analytics" && (
+              <div className="mb-6">
+                <AdminStats />
               </div>
-            </div>
-            <span className="text-sm text-muted-foreground">{user?.email}</span>
-          </nav>
-        </div>
-      </header>
+            )}
 
-      {/* Main content */}
-      <main className="container mx-auto px-4 py-8">
-        {/* Page title */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">
-            {language === "pt-BR" ? "Painel Administrativo" : language === "es" ? "Panel Administrativo" : "Admin Dashboard"}
-          </h1>
-          <p className="text-muted-foreground">
-            {language === "pt-BR" 
-              ? `Gerencie usuários, visualize métricas e monitore o ${BRAND.name}` 
-              : language === "es" 
-              ? `Gestiona usuarios, visualiza métricas y monitorea ${BRAND.name}` 
-              : `Manage users, view metrics and monitor ${BRAND.name}`}
-          </p>
-        </div>
-
-        {/* Stats */}
-        <div className="mb-8">
-          <AdminStats />
-        </div>
-
-        {/* Tabs */}
-        <Tabs defaultValue="landing" className="space-y-6">
-          <TabsList className="flex-wrap h-auto gap-1">
-            <TabsTrigger value="system" className="gap-2">
-              <AlertTriangle className="w-4 h-4" />
-              {language === "pt-BR" ? "Sistema" : "System"}
-            </TabsTrigger>
-            <TabsTrigger value="analytics" className="gap-2">
-              <BarChart3 className="w-4 h-4" />
-              Analytics
-            </TabsTrigger>
-            <TabsTrigger value="plans" className="gap-2">
-              <Crown className="w-4 h-4" />
-              {language === "pt-BR" ? "Planos" : "Plans"}
-            </TabsTrigger>
-            <TabsTrigger value="manual-subs" className="gap-2">
-              <Gift className="w-4 h-4" />
-              {language === "pt-BR" ? "Assinaturas" : "Subscriptions"}
-            </TabsTrigger>
-            <TabsTrigger value="coupons" className="gap-2">
-              <Ticket className="w-4 h-4" />
-              {language === "pt-BR" ? "Cupons" : "Coupons"}
-            </TabsTrigger>
-            <TabsTrigger value="revenue" className="gap-2">
-              <TrendingUp className="w-4 h-4" />
-              {language === "pt-BR" ? "Receita" : "Revenue"}
-            </TabsTrigger>
-            <TabsTrigger value="landing" className="gap-2">
-              <FileText className="w-4 h-4" />
-              Landing
-            </TabsTrigger>
-            <TabsTrigger value="faqs" className="gap-2">
-              <HelpCircle className="w-4 h-4" />
-              FAQs
-            </TabsTrigger>
-            <TabsTrigger value="support" className="gap-2">
-              <Headphones className="w-4 h-4" />
-              Suporte
-            </TabsTrigger>
-            <TabsTrigger value="testimonials" className="gap-2">
-              <Quote className="w-4 h-4" />
-              Depoimentos
-            </TabsTrigger>
-            <TabsTrigger value="companies" className="gap-2">
-              <Building className="w-4 h-4" />
-              Parceiros
-            </TabsTrigger>
-            <TabsTrigger value="users" className="gap-2">
-              <Users className="w-4 h-4" />
-              {language === "pt-BR" ? "Usuários" : language === "es" ? "Usuarios" : "Users"}
-            </TabsTrigger>
-            <TabsTrigger value="roles" className="gap-2">
-              <UserCog className="w-4 h-4" />
-              {language === "pt-BR" ? "Permissões" : language === "es" ? "Permisos" : "Permissions"}
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="gap-2">
-              <Settings className="w-4 h-4" />
-              {language === "pt-BR" ? "Config" : language === "es" ? "Config" : "Settings"}
-            </TabsTrigger>
-            <TabsTrigger value="flags" className="gap-2">
-              <Flag className="w-4 h-4" />
-              Features
-            </TabsTrigger>
-            <TabsTrigger value="api" className="gap-2">
-              <DollarSign className="w-4 h-4" />
-              API
-            </TabsTrigger>
-            <TabsTrigger value="logs" className="gap-2">
-              <Activity className="w-4 h-4" />
-              Logs
-            </TabsTrigger>
-            <TabsTrigger value="stripe" className="gap-2">
-              <CreditCard className="w-4 h-4" />
-              Stripe
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="system">
-            <SystemControlCard />
-          </TabsContent>
-
-          <TabsContent value="analytics">
-            <AdvancedAnalytics />
-          </TabsContent>
-
-          <TabsContent value="plans">
-            <PlansConfigManager />
-          </TabsContent>
-
-          <TabsContent value="manual-subs">
-            <ManualSubscriptionManager />
-          </TabsContent>
-
-          <TabsContent value="coupons">
-            <CouponsManager />
-          </TabsContent>
-
-          <TabsContent value="revenue">
-            <RevenueReports />
-          </TabsContent>
-
-          <TabsContent value="landing">
-            <LandingContentManager />
-          </TabsContent>
-
-          <TabsContent value="faqs">
-            <FAQManager />
-          </TabsContent>
-
-          <TabsContent value="support">
-            <SupportSettingsCard />
-          </TabsContent>
-
-          <TabsContent value="testimonials">
-            <TestimonialsManager />
-          </TabsContent>
-
-          <TabsContent value="companies">
-            <TrustedCompaniesManager />
-          </TabsContent>
-
-          <TabsContent value="users">
-            <UsersTable />
-          </TabsContent>
-
-          <TabsContent value="roles">
-            <RoleManagement />
-          </TabsContent>
-
-          <TabsContent value="settings">
-            <AppSettingsCard />
-          </TabsContent>
-
-          <TabsContent value="flags">
-            <FeatureFlagsCard />
-          </TabsContent>
-
-          <TabsContent value="api">
-            <ApiUsageCard />
-          </TabsContent>
-
-          <TabsContent value="logs">
-            <UsageLogsTable />
-          </TabsContent>
-
-          <TabsContent value="stripe">
-            <StripeEventsTable />
-          </TabsContent>
-        </Tabs>
-      </main>
-    </div>
+            {/* Section Content */}
+            {renderContent()}
+          </div>
+        </main>
+      </SidebarInset>
+    </SidebarProvider>
   );
 };
 
