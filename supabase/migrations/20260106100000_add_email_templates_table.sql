@@ -18,34 +18,34 @@ COMMENT ON TABLE public.email_templates IS 'Stores customizable email templates 
 -- Enable RLS
 ALTER TABLE public.email_templates ENABLE ROW LEVEL SECURITY;
 
--- Create policies
+-- Create policies using user_roles table (same pattern as other tables)
 CREATE POLICY "Anyone can read email templates" ON public.email_templates
   FOR SELECT USING (true);
 
 CREATE POLICY "Only admins can insert email templates" ON public.email_templates
   FOR INSERT WITH CHECK (
     EXISTS (
-      SELECT 1 FROM public.profiles
-      WHERE profiles.id = auth.uid()
-      AND profiles.role = 'admin'
+      SELECT 1 FROM public.user_roles
+      WHERE user_roles.user_id = auth.uid()
+      AND user_roles.role = 'admin'
     )
   );
 
 CREATE POLICY "Only admins can update email templates" ON public.email_templates
   FOR UPDATE USING (
     EXISTS (
-      SELECT 1 FROM public.profiles
-      WHERE profiles.id = auth.uid()
-      AND profiles.role = 'admin'
+      SELECT 1 FROM public.user_roles
+      WHERE user_roles.user_id = auth.uid()
+      AND user_roles.role = 'admin'
     )
   );
 
 CREATE POLICY "Only admins can delete email templates" ON public.email_templates
   FOR DELETE USING (
     EXISTS (
-      SELECT 1 FROM public.profiles
-      WHERE profiles.id = auth.uid()
-      AND profiles.role = 'admin'
+      SELECT 1 FROM public.user_roles
+      WHERE user_roles.user_id = auth.uid()
+      AND user_roles.role = 'admin'
     )
   );
 
