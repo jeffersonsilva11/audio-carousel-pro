@@ -194,8 +194,16 @@ const Auth = () => {
           navigate("/dashboard");
         }
       } else {
+        // Set flag BEFORE signup if email verification is enabled
+        // This prevents the useEffect from redirecting to dashboard during onAuthStateChange
+        if (emailVerificationEnabled) {
+          setIsRedirectingToVerify(true);
+        }
+
         const { error } = await signUp(email, password, name);
         if (error) {
+          // Reset flag on error
+          setIsRedirectingToVerify(false);
           await recordFailedAttempt();
           setCaptchaToken(null);
           if (error.message.includes("User already registered")) {
@@ -244,8 +252,6 @@ const Auth = () => {
               title: t("auth", "accountCreated", language),
               description: t("auth", "checkEmailVerification", language),
             });
-            // Set flag to prevent useEffect from redirecting to dashboard
-            setIsRedirectingToVerify(true);
             // Redirect to email verification page
             navigate(`/auth/verify?email=${encodeURIComponent(email)}`);
           }
