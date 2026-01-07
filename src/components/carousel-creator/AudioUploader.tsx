@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Mic, Upload, Square, Trash2, Play, Pause, Loader2 } from "lucide-react";
@@ -13,25 +13,28 @@ interface AudioUploaderProps {
   setAudioFile: (file: File | null) => void;
   audioDuration: number | null;
   setAudioDuration: (duration: number | null) => void;
+  onRecordingStateChange?: (isRecording: boolean) => void;
 }
 
 const MAX_DURATION = 30; // 30 seconds (Whisper limit)
 const MAX_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_TYPES = ["audio/mpeg", "audio/wav", "audio/mp4", "audio/x-m4a", "audio/webm"];
 
-const AudioUploader = ({ 
-  audioFile, 
-  setAudioFile, 
-  audioDuration, 
-  setAudioDuration 
+const AudioUploader = ({
+  audioFile,
+  setAudioFile,
+  audioDuration,
+  setAudioDuration,
+  onRecordingStateChange
 }: AudioUploaderProps) => {
   const { t } = useTranslation();
-  const { verifyRecaptcha, isLoading: recaptchaLoading } = useRecaptcha();
+  const { verifyRecaptcha } = useRecaptcha();
   const { toast } = useToast();
-  
+
   const [isRecording, setIsRecording] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [recordingTime, setRecordingTime] = useState(0);
+  const [totalRecordedTime, setTotalRecordedTime] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
@@ -41,6 +44,15 @@ const AudioUploader = ({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+
+  // Notify parent component when recording state changes
+  useEffect(() => {
+    onRecordingStateChange?.(isRecording);
+  }, [isRecording, onRecordingStateChange]);
+
+  // Check if max duration reached
+  const isMaxDurationReached = totalRecordedTime >= MAX_DURATION;
 
   const validateFile = useCallback((file: File): string | null => {
     if (!ALLOWED_TYPES.includes(file.type)) {
@@ -67,11 +79,11 @@ const AudioUploader = ({
   const handleFileSelect = async (file: File) => {
     setError(null);
     setIsVerifying(true);
-    
+
     try {
       // Verify reCAPTCHA before processing file
       const recaptchaResult = await verifyRecaptcha('audio_upload');
-      
+
       if (!recaptchaResult.success) {
         toast({
           title: t("errors", "recaptchaFailed"),
@@ -95,9 +107,13 @@ const AudioUploader = ({
         setIsVerifying(false);
         return;
       }
-      
+
       setAudioFile(file);
       setAudioDuration(duration);
+      // Reset recording state when a file is uploaded
+      setTotalRecordedTime(0);
+      setIsRecording(false);
+      setIsPaused(false);
     } catch {
       setError(t("audioUploader", "processingError"));
     } finally {
@@ -108,7 +124,7 @@ const AudioUploader = ({
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    
+
     const file = e.dataTransfer.files[0];
     if (file) handleFileSelect(file);
   }, []);
@@ -124,12 +140,22 @@ const AudioUploader = ({
   }, []);
 
   const startRecording = async () => {
+    // If max duration already reached, don't allow recording
+    if (isMaxDurationReached) {
+      toast({
+        title: t("audioUploader", "maxDurationReached"),
+        description: t("audioUploader", "maxDurationReachedDesc"),
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsVerifying(true);
-    
+
     try {
       // Verify reCAPTCHA before recording
       const recaptchaResult = await verifyRecaptcha('audio_record');
-      
+
       if (!recaptchaResult.success) {
         toast({
           title: t("errors", "recaptchaFailed"),
@@ -139,42 +165,51 @@ const AudioUploader = ({
         setIsVerifying(false);
         return;
       }
-      
+
       setIsVerifying(false);
-      
+
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
       const mediaRecorder = new MediaRecorder(stream);
       mediaRecorderRef.current = mediaRecorder;
-      audioChunksRef.current = [];
 
       mediaRecorder.ondataavailable = (e) => {
-        audioChunksRef.current.push(e.data);
+        if (e.data.size > 0) {
+          audioChunksRef.current.push(e.data);
+        }
       };
 
       mediaRecorder.onstop = async () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
         const file = new File([audioBlob], "recording.webm", { type: "audio/webm" });
-        
-        stream.getTracks().forEach(track => track.stop());
-        
-        if (recordingTime <= MAX_DURATION) {
+
+        // Stop all tracks
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach(track => track.stop());
+          streamRef.current = null;
+        }
+
+        if (totalRecordedTime <= MAX_DURATION && totalRecordedTime > 0) {
           setAudioFile(file);
-          setAudioDuration(recordingTime);
+          setAudioDuration(totalRecordedTime);
         }
       };
 
-      mediaRecorder.start();
+      mediaRecorder.start(100); // Collect data every 100ms for better pause support
       setIsRecording(true);
-      setRecordingTime(0);
+      setIsPaused(false);
       setError(null);
 
+      // Start/continue the timer
       recordingIntervalRef.current = setInterval(() => {
-        setRecordingTime(prev => {
-          if (prev >= MAX_DURATION) {
-            stopRecording();
-            return prev;
+        setTotalRecordedTime(prev => {
+          const newTime = prev + 1;
+          if (newTime >= MAX_DURATION) {
+            // Auto-stop at max duration
+            finishRecording();
+            return MAX_DURATION;
           }
-          return prev + 1;
+          return newTime;
         });
       }, 1000);
     } catch {
@@ -183,14 +218,83 @@ const AudioUploader = ({
     }
   };
 
-  const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
+  const pauseRecording = () => {
+    if (mediaRecorderRef.current && isRecording && !isPaused) {
+      mediaRecorderRef.current.pause();
+      setIsPaused(true);
+
+      // Stop the timer
       if (recordingIntervalRef.current) {
         clearInterval(recordingIntervalRef.current);
+        recordingIntervalRef.current = null;
       }
     }
+  };
+
+  const resumeRecording = async () => {
+    // If max duration reached, don't allow resuming
+    if (isMaxDurationReached) {
+      toast({
+        title: t("audioUploader", "maxDurationReached"),
+        description: t("audioUploader", "maxDurationReachedDesc"),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (mediaRecorderRef.current && isRecording && isPaused) {
+      mediaRecorderRef.current.resume();
+      setIsPaused(false);
+
+      // Resume the timer
+      recordingIntervalRef.current = setInterval(() => {
+        setTotalRecordedTime(prev => {
+          const newTime = prev + 1;
+          if (newTime >= MAX_DURATION) {
+            finishRecording();
+            return MAX_DURATION;
+          }
+          return newTime;
+        });
+      }, 1000);
+    }
+  };
+
+  const finishRecording = () => {
+    if (recordingIntervalRef.current) {
+      clearInterval(recordingIntervalRef.current);
+      recordingIntervalRef.current = null;
+    }
+
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+    }
+
+    setIsRecording(false);
+    setIsPaused(false);
+  };
+
+  const cancelRecording = () => {
+    if (recordingIntervalRef.current) {
+      clearInterval(recordingIntervalRef.current);
+      recordingIntervalRef.current = null;
+    }
+
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+    }
+
+    // Stop all tracks
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+
+    // Clear recording data
+    audioChunksRef.current = [];
+    setIsRecording(false);
+    setIsPaused(false);
+    setTotalRecordedTime(0);
   };
 
   const togglePlayback = () => {
@@ -214,6 +318,8 @@ const AudioUploader = ({
     setAudioFile(null);
     setAudioDuration(null);
     setError(null);
+    setTotalRecordedTime(0);
+    audioChunksRef.current = [];
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current = null;
@@ -227,14 +333,17 @@ const AudioUploader = ({
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
+  // Calculate remaining time
+  const remainingTime = MAX_DURATION - totalRecordedTime;
+
   if (audioFile) {
     return (
       <Card className="border-accent/30 bg-accent/5">
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="icon"
                 onClick={togglePlayback}
                 className="rounded-full w-12 h-12"
@@ -252,8 +361,8 @@ const AudioUploader = ({
                 </p>
               </div>
             </div>
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               size="icon"
               onClick={removeAudio}
               className="text-muted-foreground hover:text-destructive"
@@ -261,7 +370,7 @@ const AudioUploader = ({
               <Trash2 className="w-5 h-5" />
             </Button>
           </div>
-          
+
           {/* Waveform animation */}
           <div className="mt-4 flex items-center justify-center">
             <LottieAnimation type="audioWave" size={80} />
@@ -271,46 +380,125 @@ const AudioUploader = ({
     );
   }
 
-  return (
-    <div className="space-y-4">
-      {/* Recording button */}
+  // Recording in progress UI
+  if (isRecording) {
+    return (
       <Card className={cn(
-        "transition-all cursor-pointer",
-        isRecording && "border-red-500 bg-red-500/5"
+        "border-2 transition-all",
+        isPaused ? "border-yellow-500 bg-yellow-500/5" : "border-red-500 bg-red-500/5"
       )}>
         <CardContent className="p-6">
           <div className="flex flex-col items-center text-center">
+            {/* Time display */}
+            <div className="mb-4">
+              <p className="text-4xl font-mono font-bold">
+                {formatTime(totalRecordedTime)}
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">
+                {t("audioUploader", "remaining")}: {formatTime(remainingTime)}
+              </p>
+            </div>
+
+            {/* Progress bar */}
+            <div className="w-full h-2 bg-muted rounded-full mb-6 overflow-hidden">
+              <div
+                className={cn(
+                  "h-full transition-all duration-1000",
+                  isPaused ? "bg-yellow-500" : "bg-red-500"
+                )}
+                style={{ width: `${(totalRecordedTime / MAX_DURATION) * 100}%` }}
+              />
+            </div>
+
+            {/* Recording status */}
+            <p className={cn(
+              "font-semibold mb-4",
+              isPaused ? "text-yellow-600" : "text-red-500"
+            )}>
+              {isPaused ? t("audioUploader", "paused") : t("audioUploader", "recording")}
+            </p>
+
+            {/* Control buttons */}
+            <div className="flex items-center gap-3">
+              {/* Pause/Resume button - only show if not at max duration */}
+              {!isMaxDurationReached && (
+                <Button
+                  variant={isPaused ? "default" : "outline"}
+                  size="lg"
+                  className="rounded-full w-14 h-14"
+                  onClick={isPaused ? resumeRecording : pauseRecording}
+                >
+                  {isPaused ? (
+                    <Mic className="w-6 h-6" />
+                  ) : (
+                    <Pause className="w-6 h-6" />
+                  )}
+                </Button>
+              )}
+
+              {/* Finish button */}
+              <Button
+                variant="accent"
+                size="lg"
+                className="rounded-full w-14 h-14"
+                onClick={finishRecording}
+                disabled={totalRecordedTime < 1}
+              >
+                <Square className="w-5 h-5" />
+              </Button>
+
+              {/* Cancel button */}
+              <Button
+                variant="ghost"
+                size="lg"
+                className="rounded-full w-14 h-14 text-muted-foreground hover:text-destructive"
+                onClick={cancelRecording}
+              >
+                <Trash2 className="w-5 h-5" />
+              </Button>
+            </div>
+
+            <p className="text-xs text-muted-foreground mt-4">
+              {isPaused
+                ? t("audioUploader", "clickToResume")
+                : isMaxDurationReached
+                  ? t("audioUploader", "maxReachedFinish")
+                  : t("audioUploader", "clickToPause")
+              }
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Recording button */}
+      <Card className="transition-all">
+        <CardContent className="p-6">
+          <div className="flex flex-col items-center text-center">
             <Button
-              variant={isRecording ? "destructive" : "outline"}
+              variant="outline"
               size="lg"
               className="w-16 h-16 rounded-full mb-4"
-              onClick={isRecording ? stopRecording : startRecording}
+              onClick={startRecording}
+              disabled={isVerifying}
             >
-              {isRecording ? (
-                <Square className="w-6 h-6" />
+              {isVerifying ? (
+                <Loader2 className="w-6 h-6 animate-spin" />
               ) : (
                 <Mic className="w-6 h-6" />
               )}
             </Button>
-            
-            {isRecording ? (
-              <>
-                <p className="font-semibold text-destructive">{t("audioUploader", "recording")}</p>
-                <p className="text-2xl font-mono font-bold">
-                  {formatTime(recordingTime)}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {t("audioUploader", "maxDuration").replace("{seconds}", String(MAX_DURATION))}
-                </p>
-              </>
-            ) : (
-              <>
-                <p className="font-semibold">{t("audioUploader", "recordAudio")}</p>
-                <p className="text-sm text-muted-foreground">
-                  {t("audioUploader", "clickToRecord")}
-                </p>
-              </>
-            )}
+
+            <p className="font-semibold">{t("audioUploader", "recordAudio")}</p>
+            <p className="text-sm text-muted-foreground">
+              {t("audioUploader", "clickToRecord")}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {t("audioUploader", "maxDuration").replace("{seconds}", String(MAX_DURATION))}
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -349,7 +537,7 @@ const AudioUploader = ({
               {t("audioUploader", "fileTypes").replace("{seconds}", String(MAX_DURATION))}
             </p>
           </div>
-          
+
           <input
             ref={fileInputRef}
             type="file"

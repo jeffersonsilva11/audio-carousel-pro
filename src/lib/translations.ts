@@ -1229,6 +1229,41 @@ export const translations = {
       en: "MP3, WAV, M4A • Maximum {seconds}s • Maximum 10MB",
       es: "MP3, WAV, M4A • Máximo {seconds}s • Máximo 10MB",
     },
+    paused: {
+      "pt-BR": "Pausado",
+      en: "Paused",
+      es: "Pausado",
+    },
+    remaining: {
+      "pt-BR": "Restante",
+      en: "Remaining",
+      es: "Restante",
+    },
+    clickToPause: {
+      "pt-BR": "Clique para pausar a gravação",
+      en: "Click to pause recording",
+      es: "Haz clic para pausar la grabación",
+    },
+    clickToResume: {
+      "pt-BR": "Clique para continuar gravando",
+      en: "Click to resume recording",
+      es: "Haz clic para continuar grabando",
+    },
+    maxDurationReached: {
+      "pt-BR": "Limite atingido",
+      en: "Limit reached",
+      es: "Límite alcanzado",
+    },
+    maxDurationReachedDesc: {
+      "pt-BR": "Você atingiu o limite máximo de 30 segundos de gravação.",
+      en: "You have reached the maximum 30 seconds recording limit.",
+      es: "Has alcanzado el límite máximo de 30 segundos de grabación.",
+    },
+    maxReachedFinish: {
+      "pt-BR": "Limite atingido. Clique para finalizar.",
+      en: "Limit reached. Click to finish.",
+      es: "Límite alcanzado. Haz clic para finalizar.",
+    },
   },
 
   // Tone Selector

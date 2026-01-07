@@ -87,6 +87,7 @@ const CreateCarousel = () => {
   // Audio state
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [audioDuration, setAudioDuration] = useState<number | null>(null);
+  const [isRecordingAudio, setIsRecordingAudio] = useState(false);
 
   // Profile identity state - initialized from preferences
   const [profileIdentity, setProfileIdentity] = useState<ProfileIdentity>({
@@ -436,7 +437,8 @@ const CreateCarousel = () => {
   const canProceed = () => {
     switch (currentStep) {
       case "upload":
-        return audioFile !== null;
+        // Can only proceed if audio file exists AND not currently recording
+        return audioFile !== null && !isRecordingAudio;
       case "customize":
         // Require at least username for profile identity
         return profileIdentity.username.length >= 2;
@@ -766,6 +768,7 @@ const CreateCarousel = () => {
                 setAudioFile={setAudioFile}
                 audioDuration={audioDuration}
                 setAudioDuration={setAudioDuration}
+                onRecordingStateChange={setIsRecordingAudio}
               />
             </>
           )}

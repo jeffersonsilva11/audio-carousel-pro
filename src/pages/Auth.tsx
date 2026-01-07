@@ -59,11 +59,52 @@ const Auth = () => {
     // Don't redirect if we're in the process of redirecting to verify
     if (isRedirectingToVerify) return;
 
-    // Redirect to dashboard if user exists AND (email is confirmed OR verification is disabled)
-    if (user && (isEmailConfirmed || !emailVerificationEnabled)) {
-      navigate("/dashboard");
+    // Don't do anything while settings are loading
+    if (systemLoading) return;
+
+    // If user exists, check email verification
+    if (user) {
+      // If email verification is disabled, go to dashboard
+      if (!emailVerificationEnabled) {
+        navigate("/dashboard");
+        return;
+      }
+
+      // If email is confirmed, go to dashboard
+      if (isEmailConfirmed) {
+        navigate("/dashboard");
+        return;
+      }
+
+      // Email verification is required but not confirmed
+      // Send verification email, sign out and redirect to verify page
+      const handleUnverifiedUser = async () => {
+        setIsRedirectingToVerify(true);
+
+        // Send verification email before signing out
+        try {
+          await supabase.functions.invoke("send-signup-verification", {
+            body: {
+              userId: user.id,
+              email: user.email,
+              name: user.user_metadata?.name || user.user_metadata?.full_name || undefined
+            },
+          });
+        } catch (emailError) {
+          console.error("Error sending verification email:", emailError);
+        }
+
+        await supabase.auth.signOut();
+        toast({
+          title: t("auth", "emailNotVerified", language),
+          description: t("auth", "pleaseVerifyEmail", language),
+        });
+        navigate(`/auth/verify?email=${encodeURIComponent(user.email || "")}`);
+      };
+
+      handleUnverifiedUser();
     }
-  }, [user, isEmailConfirmed, emailVerificationEnabled, navigate, isRedirectingToVerify]);
+  }, [user, isEmailConfirmed, emailVerificationEnabled, navigate, isRedirectingToVerify, systemLoading, toast, language]);
 
   // Update lockout countdown
   useEffect(() => {
