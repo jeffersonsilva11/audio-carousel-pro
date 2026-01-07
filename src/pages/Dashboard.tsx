@@ -87,21 +87,37 @@ const Dashboard = () => {
       return;
     }
 
-    // Check email verification status
+    // Check email verification status via edge function
+    // This handles custom OTP verification correctly
     if (!loading && user) {
       const checkVerification = async () => {
-        // Check if email verification is required
-        const { data: settingsData } = await supabase
-          .from("app_settings")
-          .select("value")
-          .eq("key", "email_verification_enabled")
-          .maybeSingle();
+        try {
+          const { data: verificationData, error: verificationError } = await supabase.functions.invoke(
+            "check-email-verification",
+            {
+              body: {
+                userId: user.id,
+                email: user.email,
+              },
+            }
+          );
 
-        const verificationRequired = settingsData?.value !== "false";
+          if (verificationError) {
+            console.error("Error checking verification:", verificationError);
+            // Fall back to isEmailConfirmed on error
+            if (isEmailConfirmed) {
+              setCheckingVerification(false);
+              return;
+            }
+          }
 
-        if (verificationRequired && !isEmailConfirmed) {
-          // Email verification required but not confirmed
-          // Send verification email, sign out and redirect to verify page
+          // If verified, allow access
+          if (verificationData?.verified) {
+            setCheckingVerification(false);
+            return;
+          }
+
+          // Not verified - send verification email, sign out and redirect
           try {
             await supabase.functions.invoke("send-signup-verification", {
               body: {
@@ -117,11 +133,13 @@ const Dashboard = () => {
           // Sign out and redirect to verify page
           await supabase.auth.signOut();
           navigate(`/auth/verify?email=${encodeURIComponent(user.email || "")}`);
-          return;
+        } catch (err) {
+          console.error("Verification check error:", err);
+          // Fall back to isEmailConfirmed on error
+          if (isEmailConfirmed) {
+            setCheckingVerification(false);
+          }
         }
-
-        // All checks passed
-        setCheckingVerification(false);
       };
 
       checkVerification();
