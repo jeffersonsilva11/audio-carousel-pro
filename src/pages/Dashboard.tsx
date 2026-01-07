@@ -100,7 +100,22 @@ const Dashboard = () => {
         const verificationRequired = settingsData?.value !== "false";
 
         if (verificationRequired && !isEmailConfirmed) {
-          // Email verification required but not confirmed - redirect to verify page
+          // Email verification required but not confirmed
+          // Send verification email, sign out and redirect to verify page
+          try {
+            await supabase.functions.invoke("send-signup-verification", {
+              body: {
+                userId: user.id,
+                email: user.email,
+                name: user.user_metadata?.name || user.user_metadata?.full_name || undefined
+              },
+            });
+          } catch (emailError) {
+            console.error("Error sending verification email:", emailError);
+          }
+
+          // Sign out and redirect to verify page
+          await supabase.auth.signOut();
           navigate(`/auth/verify?email=${encodeURIComponent(user.email || "")}`);
           return;
         }

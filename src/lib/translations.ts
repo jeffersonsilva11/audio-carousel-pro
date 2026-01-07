@@ -996,6 +996,16 @@ export const translations = {
       en: "Download",
       es: "Descarga",
     },
+    validationError: {
+      "pt-BR": "Campos obrigatórios",
+      en: "Required fields",
+      es: "Campos obligatorios",
+    },
+    fillRequiredFields: {
+      "pt-BR": "Por favor, preencha todos os campos obrigatórios: nome, username e foto de perfil.",
+      en: "Please fill in all required fields: name, username and profile photo.",
+      es: "Por favor, completa todos los campos obligatorios: nombre, usuario y foto de perfil.",
+    },
     freePlan: {
       "pt-BR": "Plano Grátis",
       en: "Free Plan",
@@ -1228,6 +1238,41 @@ export const translations = {
       "pt-BR": "MP3, WAV, M4A • Máximo {seconds}s • Máximo 10MB",
       en: "MP3, WAV, M4A • Maximum {seconds}s • Maximum 10MB",
       es: "MP3, WAV, M4A • Máximo {seconds}s • Máximo 10MB",
+    },
+    paused: {
+      "pt-BR": "Pausado",
+      en: "Paused",
+      es: "Pausado",
+    },
+    remaining: {
+      "pt-BR": "Restante",
+      en: "Remaining",
+      es: "Restante",
+    },
+    clickToPause: {
+      "pt-BR": "Clique para pausar a gravação",
+      en: "Click to pause recording",
+      es: "Haz clic para pausar la grabación",
+    },
+    clickToResume: {
+      "pt-BR": "Clique para continuar gravando",
+      en: "Click to resume recording",
+      es: "Haz clic para continuar grabando",
+    },
+    maxDurationReached: {
+      "pt-BR": "Limite atingido",
+      en: "Limit reached",
+      es: "Límite alcanzado",
+    },
+    maxDurationReachedDesc: {
+      "pt-BR": "Você atingiu o limite máximo de 30 segundos de gravação.",
+      en: "You have reached the maximum 30 seconds recording limit.",
+      es: "Has alcanzado el límite máximo de 30 segundos de grabación.",
+    },
+    maxReachedFinish: {
+      "pt-BR": "Limite atingido. Clique para finalizar.",
+      en: "Limit reached. Click to finish.",
+      es: "Límite alcanzado. Haz clic para finalizar.",
     },
   },
 
@@ -2436,6 +2481,36 @@ export const translations = {
       "pt-BR": "seuusername",
       en: "yourusername",
       es: "tuusuario",
+    },
+    name: {
+      "pt-BR": "Nome",
+      en: "Name",
+      es: "Nombre",
+    },
+    namePlaceholder: {
+      "pt-BR": "Seu nome",
+      en: "Your name",
+      es: "Tu nombre",
+    },
+    nameRequired: {
+      "pt-BR": "Nome é obrigatório (mín. 2 caracteres)",
+      en: "Name is required (min. 2 characters)",
+      es: "Nombre es obligatorio (mín. 2 caracteres)",
+    },
+    usernameRequired: {
+      "pt-BR": "Username é obrigatório (mín. 2 caracteres)",
+      en: "Username is required (min. 2 characters)",
+      es: "Usuario es obligatorio (mín. 2 caracteres)",
+    },
+    photoRequired: {
+      "pt-BR": "Foto de perfil é obrigatória",
+      en: "Profile photo is required",
+      es: "Foto de perfil es obligatoria",
+    },
+    recommended: {
+      "pt-BR": "Recomendado: 400x400px ou maior",
+      en: "Recommended: 400x400px or larger",
+      es: "Recomendado: 400x400px o mayor",
     },
     slidePosition: {
       "pt-BR": "Posição no slide",

@@ -3,19 +3,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { 
-  User, 
-  Upload, 
-  Camera, 
-  Instagram, 
+import {
+  User,
+  Upload,
+  Camera,
+  Instagram,
   X,
-  CheckCircle2
+  CheckCircle2,
+  AlertCircle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { 
-  AVATAR_POSITIONS, 
-  DISPLAY_MODES, 
-  type AvatarPosition, 
+import {
+  AVATAR_POSITIONS,
+  DISPLAY_MODES,
+  type AvatarPosition,
   type DisplayMode,
   getPositionLabel,
   getDisplayModeLabel
@@ -37,14 +38,25 @@ export interface ProfileIdentity {
 interface ProfileIdentitySelectorProps {
   profile: ProfileIdentity;
   setProfile: (profile: ProfileIdentity) => void;
+  showValidation?: boolean;
 }
 
-const ProfileIdentitySelector = ({ profile, setProfile }: ProfileIdentitySelectorProps) => {
+const ProfileIdentitySelector = ({ profile, setProfile, showValidation = false }: ProfileIdentitySelectorProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { language } = useLanguage();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+
+  // Validation states
+  const isNameValid = profile.name.length >= 2;
+  const isUsernameValid = profile.username.length >= 2;
+  const isPhotoValid = profile.photoUrl !== null;
+
+  // Show error states only when validation is enabled
+  const showNameError = showValidation && !isNameValid;
+  const showUsernameError = showValidation && !isUsernameValid;
+  const showPhotoError = showValidation && !isPhotoValid;
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -128,16 +140,17 @@ const ProfileIdentitySelector = ({ profile, setProfile }: ProfileIdentitySelecto
       {/* Photo Upload */}
       <div className="flex items-start gap-4">
         <div className="relative">
-          <div 
+          <div
             className={cn(
-              "w-20 h-20 rounded-full overflow-hidden bg-muted flex items-center justify-center border-2 border-dashed border-border transition-colors",
-              profile.photoUrl && "border-solid border-accent"
+              "w-20 h-20 rounded-full overflow-hidden bg-muted flex items-center justify-center border-2 border-dashed transition-colors",
+              profile.photoUrl && "border-solid border-accent",
+              showPhotoError ? "border-destructive bg-destructive/5" : "border-border"
             )}
           >
             {profile.photoUrl ? (
-              <img 
-                src={profile.photoUrl} 
-                alt="Profile" 
+              <img
+                src={profile.photoUrl}
+                alt="Profile"
                 className="w-full h-full object-cover"
               />
             ) : profile.name ? (
@@ -145,7 +158,7 @@ const ProfileIdentitySelector = ({ profile, setProfile }: ProfileIdentitySelecto
                 {getInitials(profile.name)}
               </span>
             ) : (
-              <User className="w-8 h-8 text-muted-foreground" />
+              <User className={cn("w-8 h-8", showPhotoError ? "text-destructive" : "text-muted-foreground")} />
             )}
           </div>
           {profile.photoUrl && (
@@ -155,6 +168,11 @@ const ProfileIdentitySelector = ({ profile, setProfile }: ProfileIdentitySelecto
             >
               <X className="w-3 h-3" />
             </button>
+          )}
+          {showPhotoError && (
+            <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center">
+              <AlertCircle className="w-3 h-3" />
+            </div>
           )}
         </div>
 
@@ -168,7 +186,7 @@ const ProfileIdentitySelector = ({ profile, setProfile }: ProfileIdentitySelecto
           />
           <Button
             type="button"
-            variant="outline"
+            variant={showPhotoError ? "destructive" : "outline"}
             size="sm"
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
@@ -177,49 +195,84 @@ const ProfileIdentitySelector = ({ profile, setProfile }: ProfileIdentitySelecto
             {uploading ? (
               <>
                 <Camera className="w-4 h-4 mr-2 animate-pulse" />
-                Enviando...
+                {t("profileIdentity", "uploading", language)}
               </>
             ) : (
               <>
                 <Upload className="w-4 h-4 mr-2" />
-                {profile.photoUrl ? 'Trocar foto' : 'Carregar foto'}
+                {profile.photoUrl ? t("profileIdentity", "changePhoto", language) : t("profileIdentity", "uploadPhoto", language)}
               </>
             )}
           </Button>
-          <p className="text-xs text-muted-foreground">
-            JPG, PNG ou WebP. Máx 5MB. <span className="text-accent">Recomendado: 400x400px ou maior</span>
-          </p>
+          {showPhotoError ? (
+            <p className="text-xs text-destructive flex items-center gap-1">
+              <AlertCircle className="w-3 h-3" />
+              {t("profileIdentity", "photoRequired", language)}
+            </p>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              JPG, PNG ou WebP. Máx 5MB. <span className="text-accent">{t("profileIdentity", "recommended", language)}</span>
+            </p>
+          )}
         </div>
       </div>
 
       {/* Name and Username */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="profile-name">Nome</Label>
-          <Input
-            id="profile-name"
-            placeholder="Seu nome"
-            value={profile.name}
-            onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-            maxLength={50}
-          />
+          <Label htmlFor="profile-name" className={cn(showNameError && "text-destructive")}>
+            {t("profileIdentity", "name", language)} <span className="text-destructive">*</span>
+          </Label>
+          <div className="relative">
+            <Input
+              id="profile-name"
+              placeholder={t("profileIdentity", "namePlaceholder", language)}
+              value={profile.name}
+              onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+              maxLength={50}
+              className={cn(showNameError && "border-destructive focus-visible:ring-destructive")}
+            />
+            {showNameError && (
+              <AlertCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-destructive" />
+            )}
+          </div>
+          {showNameError && (
+            <p className="text-xs text-destructive flex items-center gap-1">
+              <AlertCircle className="w-3 h-3" />
+              {t("profileIdentity", "nameRequired", language)}
+            </p>
+          )}
         </div>
         <div className="space-y-2">
-          <Label htmlFor="profile-username">@username</Label>
+          <Label htmlFor="profile-username" className={cn(showUsernameError && "text-destructive")}>
+            @username <span className="text-destructive">*</span>
+          </Label>
           <div className="relative">
-            <Instagram className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Instagram className={cn(
+              "absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4",
+              showUsernameError ? "text-destructive" : "text-muted-foreground"
+            )} />
             <Input
               id="profile-username"
-              placeholder="seuusername"
+              placeholder={t("profileIdentity", "usernamePlaceholder", language)}
               value={profile.username}
-              onChange={(e) => setProfile({ 
-                ...profile, 
-                username: e.target.value.replace('@', '').replace(/\s/g, '') 
+              onChange={(e) => setProfile({
+                ...profile,
+                username: e.target.value.replace('@', '').replace(/\s/g, '')
               })}
-              className="pl-10"
+              className={cn("pl-10", showUsernameError && "border-destructive focus-visible:ring-destructive")}
               maxLength={30}
             />
+            {showUsernameError && (
+              <AlertCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-destructive" />
+            )}
           </div>
+          {showUsernameError && (
+            <p className="text-xs text-destructive flex items-center gap-1">
+              <AlertCircle className="w-3 h-3" />
+              {t("profileIdentity", "usernameRequired", language)}
+            </p>
+          )}
         </div>
       </div>
 
