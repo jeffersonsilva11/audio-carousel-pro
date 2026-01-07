@@ -70,39 +70,66 @@ const Auth = () => {
         return;
       }
 
-      // If email is confirmed, go to dashboard
-      if (isEmailConfirmed) {
-        navigate("/dashboard");
-        return;
-      }
-
-      // Email verification is required but not confirmed
-      // Send verification email, sign out and redirect to verify page
-      const handleUnverifiedUser = async () => {
-        setIsRedirectingToVerify(true);
-
-        // Send verification email before signing out
+      // Check email verification status via edge function (handles custom OTP verification)
+      const checkVerificationStatus = async () => {
         try {
-          await supabase.functions.invoke("send-signup-verification", {
-            body: {
-              userId: user.id,
-              email: user.email,
-              name: user.user_metadata?.name || user.user_metadata?.full_name || undefined
-            },
-          });
-        } catch (emailError) {
-          console.error("Error sending verification email:", emailError);
-        }
+          const { data: verificationData, error: verificationError } = await supabase.functions.invoke(
+            "check-email-verification",
+            {
+              body: {
+                userId: user.id,
+                email: user.email,
+              },
+            }
+          );
 
-        await supabase.auth.signOut();
-        toast({
-          title: t("auth", "emailNotVerified", language),
-          description: t("auth", "pleaseVerifyEmail", language),
-        });
-        navigate(`/auth/verify?email=${encodeURIComponent(user.email || "")}`);
+          if (verificationError) {
+            console.error("Error checking verification:", verificationError);
+            // Fall back to isEmailConfirmed on error
+            if (isEmailConfirmed) {
+              navigate("/dashboard");
+              return;
+            }
+          }
+
+          // If verified, go to dashboard
+          if (verificationData?.verified) {
+            navigate("/dashboard");
+            return;
+          }
+
+          // Not verified - sign out and redirect to verify page
+          setIsRedirectingToVerify(true);
+
+          // Send verification email before signing out
+          try {
+            await supabase.functions.invoke("send-signup-verification", {
+              body: {
+                userId: user.id,
+                email: user.email,
+                name: user.user_metadata?.name || user.user_metadata?.full_name || undefined
+              },
+            });
+          } catch (emailError) {
+            console.error("Error sending verification email:", emailError);
+          }
+
+          await supabase.auth.signOut();
+          toast({
+            title: t("auth", "emailNotVerified", language),
+            description: t("auth", "pleaseVerifyEmail", language),
+          });
+          navigate(`/auth/verify?email=${encodeURIComponent(user.email || "")}`);
+        } catch (err) {
+          console.error("Verification check error:", err);
+          // Fall back to isEmailConfirmed on error
+          if (isEmailConfirmed) {
+            navigate("/dashboard");
+          }
+        }
       };
 
-      handleUnverifiedUser();
+      checkVerificationStatus();
     }
   }, [user, isEmailConfirmed, emailVerificationEnabled, navigate, isRedirectingToVerify, systemLoading, toast, language]);
 
@@ -185,30 +212,7 @@ const Auth = () => {
       }
 
       if (isLogin) {
-        const { error, needsEmailVerification, email: unverifiedEmail } = await signIn(email, password);
-
-        // Check if user needs to verify email first
-        if (needsEmailVerification && unverifiedEmail) {
-          if (emailVerificationEnabled) {
-            // Email verification is required - sign out and redirect to verify page
-            await supabase.auth.signOut();
-            toast({
-              title: t("auth", "emailNotVerified", language),
-              description: t("auth", "pleaseVerifyEmail", language),
-            });
-            setIsRedirectingToVerify(true);
-            navigate(`/auth/verify?email=${encodeURIComponent(unverifiedEmail)}`);
-            return;
-          }
-          // Email verification is disabled - allow login without email confirmation
-          await recordSuccessfulAttempt();
-          toast({
-            title: t("auth", "welcomeBack", language),
-            description: t("auth", "loginSuccess", language),
-          });
-          navigate("/dashboard");
-          return;
-        }
+        const { error } = await signIn(email, password);
 
         if (error) {
           await recordFailedAttempt();
@@ -227,6 +231,55 @@ const Auth = () => {
             });
           }
         } else {
+          // Login successful - check email verification via edge function
+          // This handles custom OTP verification correctly
+          if (emailVerificationEnabled) {
+            const { data: { user: loggedInUser } } = await supabase.auth.getUser();
+
+            if (loggedInUser) {
+              try {
+                const { data: verificationData } = await supabase.functions.invoke(
+                  "check-email-verification",
+                  {
+                    body: {
+                      userId: loggedInUser.id,
+                      email: loggedInUser.email,
+                    },
+                  }
+                );
+
+                if (!verificationData?.verified) {
+                  // Not verified - sign out and redirect to verify page
+                  setIsRedirectingToVerify(true);
+
+                  // Send verification email
+                  try {
+                    await supabase.functions.invoke("send-signup-verification", {
+                      body: {
+                        userId: loggedInUser.id,
+                        email: loggedInUser.email,
+                        name: loggedInUser.user_metadata?.name || loggedInUser.user_metadata?.full_name || undefined
+                      },
+                    });
+                  } catch (emailError) {
+                    console.error("Error sending verification email:", emailError);
+                  }
+
+                  await supabase.auth.signOut();
+                  toast({
+                    title: t("auth", "emailNotVerified", language),
+                    description: t("auth", "pleaseVerifyEmail", language),
+                  });
+                  navigate(`/auth/verify?email=${encodeURIComponent(loggedInUser.email || email)}`);
+                  return;
+                }
+              } catch (verifyError) {
+                console.error("Error checking verification:", verifyError);
+                // Continue to dashboard on error (fallback)
+              }
+            }
+          }
+
           await recordSuccessfulAttempt();
           toast({
             title: t("auth", "welcomeBack", language),

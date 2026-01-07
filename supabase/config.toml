@@ -56,3 +56,6 @@ verify_jwt = false
 
 [functions.verify-email-token]
 verify_jwt = false
+
+[functions.check-email-verification]
+verify_jwt = false

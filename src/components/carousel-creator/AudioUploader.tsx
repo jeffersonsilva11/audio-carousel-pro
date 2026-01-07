@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Mic, Upload, Square, Trash2, Play, Pause, Loader2 } from "lucide-react";
+import { Mic, Upload, Trash2, Play, Pause, Loader2, Send } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/hooks/useLanguage";
 import { useRecaptcha } from "@/hooks/useRecaptcha";
@@ -436,15 +436,16 @@ const AudioUploader = ({
                 </Button>
               )}
 
-              {/* Finish button */}
+              {/* Finish/Send button - like WhatsApp */}
               <Button
                 variant="accent"
                 size="lg"
-                className="rounded-full w-14 h-14"
+                className="rounded-full px-6 h-14 gap-2 font-semibold"
                 onClick={finishRecording}
                 disabled={totalRecordedTime < 1}
               >
-                <Square className="w-5 h-5" />
+                <Send className="w-5 h-5" />
+                {t("audioUploader", "send")}
               </Button>
 
               {/* Cancel button */}

@@ -1274,6 +1274,11 @@ export const translations = {
       en: "Limit reached. Click to finish.",
       es: "Límite alcanzado. Haz clic para finalizar.",
     },
+    send: {
+      "pt-BR": "Enviar",
+      en: "Send",
+      es: "Enviar",
+    },
   },
 
   // Tone Selector
