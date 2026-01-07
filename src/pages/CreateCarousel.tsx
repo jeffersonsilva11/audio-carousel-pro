@@ -148,6 +148,9 @@ const CreateCarousel = () => {
   // Lock state - carousel is locked after first export
   const [isCarouselLocked, setIsCarouselLocked] = useState(false);
 
+  // Validation state - show errors when user attempts to proceed
+  const [showProfileValidation, setShowProfileValidation] = useState(false);
+
   // Function to mark carousel as exported (locks editing)
   const handleFirstExport = async () => {
     if (!currentCarouselId) return;
@@ -434,14 +437,23 @@ const CreateCarousel = () => {
 
   const getCurrentStepIndex = () => steps.findIndex(s => s.id === currentStep);
 
+  // Profile validation helper
+  const isProfileValid = () => {
+    return (
+      profileIdentity.name.length >= 2 &&
+      profileIdentity.username.length >= 2 &&
+      profileIdentity.photoUrl !== null
+    );
+  };
+
   const canProceed = () => {
     switch (currentStep) {
       case "upload":
         // Can only proceed if audio file exists AND not currently recording
         return audioFile !== null && !isRecordingAudio;
       case "customize":
-        // Require at least username for profile identity
-        return profileIdentity.username.length >= 2;
+        // Require name, username and photo for profile identity
+        return isProfileValid();
       default:
         return false;
     }
@@ -450,7 +462,20 @@ const CreateCarousel = () => {
   const handleNext = async () => {
     if (currentStep === "upload" && audioFile) {
       setCurrentStep("customize");
+      // Reset validation state when entering customize step
+      setShowProfileValidation(false);
     } else if (currentStep === "customize") {
+      // Check profile validation first
+      if (!isProfileValid()) {
+        setShowProfileValidation(true);
+        toast({
+          title: t("create", "validationError", siteLanguage),
+          description: t("create", "fillRequiredFields", siteLanguage),
+          variant: "destructive",
+        });
+        return;
+      }
+
       // Check usage limit for free users
       if (!isPro && carouselCount >= 1) {
         setShowUpgradeDialog(true);
@@ -789,6 +814,7 @@ const CreateCarousel = () => {
                   <ProfileIdentitySelector
                     profile={profileIdentity}
                     setProfile={setProfileIdentity}
+                    showValidation={showProfileValidation}
                   />
 
                   {/* 2. Slide Count */}

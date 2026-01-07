@@ -996,6 +996,16 @@ export const translations = {
       en: "Download",
       es: "Descarga",
     },
+    validationError: {
+      "pt-BR": "Campos obrigatórios",
+      en: "Required fields",
+      es: "Campos obligatorios",
+    },
+    fillRequiredFields: {
+      "pt-BR": "Por favor, preencha todos os campos obrigatórios: nome, username e foto de perfil.",
+      en: "Please fill in all required fields: name, username and profile photo.",
+      es: "Por favor, completa todos los campos obligatorios: nombre, usuario y foto de perfil.",
+    },
     freePlan: {
       "pt-BR": "Plano Grátis",
       en: "Free Plan",
@@ -2471,6 +2481,36 @@ export const translations = {
       "pt-BR": "seuusername",
       en: "yourusername",
       es: "tuusuario",
+    },
+    name: {
+      "pt-BR": "Nome",
+      en: "Name",
+      es: "Nombre",
+    },
+    namePlaceholder: {
+      "pt-BR": "Seu nome",
+      en: "Your name",
+      es: "Tu nombre",
+    },
+    nameRequired: {
+      "pt-BR": "Nome é obrigatório (mín. 2 caracteres)",
+      en: "Name is required (min. 2 characters)",
+      es: "Nombre es obligatorio (mín. 2 caracteres)",
+    },
+    usernameRequired: {
+      "pt-BR": "Username é obrigatório (mín. 2 caracteres)",
+      en: "Username is required (min. 2 characters)",
+      es: "Usuario es obligatorio (mín. 2 caracteres)",
+    },
+    photoRequired: {
+      "pt-BR": "Foto de perfil é obrigatória",
+      en: "Profile photo is required",
+      es: "Foto de perfil es obligatoria",
+    },
+    recommended: {
+      "pt-BR": "Recomendado: 400x400px ou maior",
+      en: "Recommended: 400x400px or larger",
+      es: "Recomendado: 400x400px o mayor",
     },
     slidePosition: {
       "pt-BR": "Posição no slide",
