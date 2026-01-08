@@ -45,6 +45,13 @@ const AudioUploader = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  // Ref to track recorded time for use in onstop handler (avoids stale closure)
+  const totalRecordedTimeRef = useRef(0);
+
+  // Keep ref in sync with state
+  useEffect(() => {
+    totalRecordedTimeRef.current = totalRecordedTime;
+  }, [totalRecordedTime]);
 
   // Notify parent component when recording state changes
   useEffect(() => {
@@ -189,9 +196,11 @@ const AudioUploader = ({
           streamRef.current = null;
         }
 
-        if (totalRecordedTime <= MAX_DURATION && totalRecordedTime > 0) {
+        // Use ref to get current value (avoids stale closure issue)
+        const recordedTime = totalRecordedTimeRef.current;
+        if (recordedTime <= MAX_DURATION && recordedTime > 0) {
           setAudioFile(file);
-          setAudioDuration(totalRecordedTime);
+          setAudioDuration(recordedTime);
         }
       };
 

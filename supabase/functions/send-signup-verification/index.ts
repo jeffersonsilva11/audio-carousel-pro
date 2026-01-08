@@ -96,13 +96,14 @@ serve(async (req) => {
 
     logStep("Signup verification requested", { userId, email });
 
-    // Check rate limiting - max 3 requests per hour per email
-    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    // Check rate limiting - max 5 requests per 10 minutes per email
+    // This allows reasonable usage while preventing abuse
+    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
     const { count: recentRequests } = await supabaseClient
       .from("email_verification_tokens")
       .select("*", { count: "exact", head: true })
       .eq("email", email)
-      .gte("created_at", oneHourAgo);
+      .gte("created_at", tenMinutesAgo);
 
     if (recentRequests && recentRequests >= 5) {
       logStep("Rate limit exceeded", { email, recentRequests });
