@@ -40,6 +40,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Periodic check to validate user still exists (handles deleted users)
+  useEffect(() => {
+    if (!user) return;
+
+    const validateUser = async () => {
+      try {
+        const { data, error } = await supabase.auth.getUser();
+
+        // If user was deleted or session is invalid, sign out
+        if (error || !data.user) {
+          console.log("User session invalid or user deleted, signing out");
+          await supabase.auth.signOut();
+        }
+      } catch (err) {
+        console.error("Error validating user:", err);
+      }
+    };
+
+    // Check immediately and then every 30 seconds
+    validateUser();
+    const interval = setInterval(validateUser, 30000);
+
+    return () => clearInterval(interval);
+  }, [user?.id]);
+
   const signUp = async (email: string, password: string, name?: string) => {
     const redirectUrl = `${window.location.origin}/`;
     
