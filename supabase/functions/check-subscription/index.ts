@@ -125,14 +125,20 @@ serve(async (req) => {
     logStep("User authenticated", { userId: user.id });
 
     // Run initial checks in parallel for better performance
-    const [roleResult, manualSubResult, localSubResult] = await Promise.all([
+    const [roleResult, manualSubResult, localSubResult, retentionOfferResult] = await Promise.all([
       // Check admin role
       supabaseClient.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").maybeSingle(),
       // Check manual subscription
       supabaseClient.from("manual_subscriptions").select("plan_tier, custom_daily_limit, expires_at").eq("user_id", user.id).eq("is_active", true).maybeSingle(),
       // Check local subscription record (from webhook)
       supabaseClient.from("subscriptions").select("*").eq("user_id", user.id).maybeSingle(),
+      // Check if user can receive retention offer
+      supabaseClient.rpc("can_receive_retention_offer", { p_user_id: user.id }),
     ]);
+
+    // Extract retention offer status
+    const canReceiveRetentionOffer = retentionOfferResult.data ?? true;
+    const retentionOfferUsedAt = localSubResult.data?.retention_offer_used_at || null;
 
     // 1. CHECK ADMIN FIRST
     if (roleResult.data) {
@@ -151,7 +157,9 @@ serve(async (req) => {
         has_editor: true,
         has_history: true,
         has_image_generation: true,
-        is_admin: true
+        is_admin: true,
+        can_receive_retention_offer: canReceiveRetentionOffer,
+        retention_offer_used_at: retentionOfferUsedAt
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
@@ -183,7 +191,9 @@ serve(async (req) => {
           has_history: planConfig?.has_history ?? true,
           has_image_generation: true,
           is_admin: false,
-          is_manual: true
+          is_manual: true,
+          can_receive_retention_offer: canReceiveRetentionOffer,
+          retention_offer_used_at: retentionOfferUsedAt
         }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 200,
@@ -220,7 +230,9 @@ serve(async (req) => {
           cancel_at_period_end: localSub.cancel_at_period_end || false,
           cancelled_at: localSub.cancelled_at,
           failed_payment_count: localSub.failed_payment_count || 0,
-          status: localSub.status
+          status: localSub.status,
+          can_receive_retention_offer: canReceiveRetentionOffer,
+          retention_offer_used_at: retentionOfferUsedAt
         }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 200,
@@ -255,7 +267,9 @@ serve(async (req) => {
           cancel_at_period_end: true,
           cancelled_at: localSub.cancelled_at,
           failed_payment_count: localSub.failed_payment_count || 0,
-          status: localSub.status || "active"
+          status: localSub.status || "active",
+          can_receive_retention_offer: canReceiveRetentionOffer,
+          retention_offer_used_at: retentionOfferUsedAt
         }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 200,
@@ -342,7 +356,9 @@ serve(async (req) => {
       cancel_at_period_end: subscription.cancel_at_period_end || false,
       cancelled_at: null,
       failed_payment_count: 0,
-      status: "active"
+      status: "active",
+      can_receive_retention_offer: canReceiveRetentionOffer,
+      retention_offer_used_at: retentionOfferUsedAt
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,

@@ -75,6 +75,8 @@ interface SubscriptionState {
   cancelledAt: string | null;
   failedPaymentCount: number;
   status: string;
+  canReceiveRetentionOffer: boolean;
+  retentionOfferUsedAt: string | null;
 }
 
 export function useSubscription() {
@@ -96,6 +98,8 @@ export function useSubscription() {
     cancelledAt: null,
     failedPaymentCount: 0,
     status: "active",
+    canReceiveRetentionOffer: true,
+    retentionOfferUsedAt: null,
   });
 
   const checkSubscription = useCallback(async (forceRefresh = false) => {
@@ -117,6 +121,8 @@ export function useSubscription() {
         cancelledAt: null,
         failedPaymentCount: 0,
         status: "active",
+        canReceiveRetentionOffer: true,
+        retentionOfferUsedAt: null,
       });
       return;
     }
@@ -145,6 +151,8 @@ export function useSubscription() {
           cancelledAt: (cachedData.cancelled_at as string) || null,
           failedPaymentCount: (cachedData.failed_payment_count as number) || 0,
           status: (cachedData.status as string) || "active",
+          canReceiveRetentionOffer: (cachedData.can_receive_retention_offer as boolean) ?? true,
+          retentionOfferUsedAt: (cachedData.retention_offer_used_at as string) || null,
         });
         return;
       }
@@ -163,7 +171,7 @@ export function useSubscription() {
         } else {
           console.error("Error checking subscription:", error);
         }
-        
+
         // Fallback to free plan on any error
         setState({
           subscribed: false,
@@ -182,6 +190,8 @@ export function useSubscription() {
           cancelledAt: null,
           failedPaymentCount: 0,
           status: "active",
+          canReceiveRetentionOffer: true,
+          retentionOfferUsedAt: null,
         });
         return;
       }
@@ -206,6 +216,8 @@ export function useSubscription() {
           cancelledAt: null,
           failedPaymentCount: 0,
           status: "active",
+          canReceiveRetentionOffer: true,
+          retentionOfferUsedAt: null,
         });
         return;
       }
@@ -233,6 +245,8 @@ export function useSubscription() {
         cancelledAt: data.cancelled_at || null,
         failedPaymentCount: data.failed_payment_count || 0,
         status: data.status || "active",
+        canReceiveRetentionOffer: data.can_receive_retention_offer ?? true,
+        retentionOfferUsedAt: data.retention_offer_used_at || null,
       });
     } catch (error) {
       console.error("Error checking subscription:", error);
@@ -254,6 +268,8 @@ export function useSubscription() {
         cancelledAt: null,
         failedPaymentCount: 0,
         status: "active",
+        canReceiveRetentionOffer: true,
+        retentionOfferUsedAt: null,
       });
     }
   }, [user, session]);
@@ -365,6 +381,42 @@ export function useSubscription() {
     return getDaysRemaining() === 0 && state.cancelAtPeriodEnd;
   };
 
+  const applyRetentionOffer = async (): Promise<{ success: boolean; error?: string }> => {
+    // Check if user can receive retention offer
+    if (!state.canReceiveRetentionOffer) {
+      return {
+        success: false,
+        error: "already_used"
+      };
+    }
+
+    try {
+      // Clear cache since subscription will change
+      clearSubscriptionCache();
+
+      const { data, error } = await supabase.functions.invoke("apply-retention-offer");
+
+      if (error) throw error;
+
+      if (data?.success) {
+        // Refresh subscription data
+        await checkSubscription(true);
+        return { success: true };
+      }
+
+      return {
+        success: false,
+        error: data?.error || "unknown_error"
+      };
+    } catch (error) {
+      console.error("Error applying retention offer:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "unknown_error"
+      };
+    }
+  };
+
   return {
     ...state,
     checkSubscription,
@@ -377,6 +429,7 @@ export function useSubscription() {
     getDaysRemaining,
     isCancelled,
     isLastDay,
+    applyRetentionOffer,
     isPro: state.plan !== "free",
     isCreator: state.plan === "creator",
   };
