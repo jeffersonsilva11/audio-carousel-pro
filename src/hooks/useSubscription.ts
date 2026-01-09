@@ -5,6 +5,59 @@ import { PlanTier, PLANS } from "@/lib/plans";
 
 export type LimitPeriod = "daily" | "weekly" | "monthly";
 
+// Cache configuration
+const SUBSCRIPTION_CACHE_KEY = "subscription_cache";
+const CACHE_TTL_MS = 2 * 60 * 1000; // 2 minutes
+
+interface CachedSubscription {
+  data: Record<string, unknown>;
+  timestamp: number;
+  userId: string;
+}
+
+// Get cached subscription data
+function getCachedSubscription(userId: string): Record<string, unknown> | null {
+  try {
+    const cached = sessionStorage.getItem(SUBSCRIPTION_CACHE_KEY);
+    if (!cached) return null;
+
+    const parsed: CachedSubscription = JSON.parse(cached);
+
+    // Check if cache is for the same user
+    if (parsed.userId !== userId) return null;
+
+    // Check if cache is still valid (not expired)
+    if (Date.now() - parsed.timestamp > CACHE_TTL_MS) return null;
+
+    return parsed.data;
+  } catch {
+    return null;
+  }
+}
+
+// Save subscription data to cache
+function setCachedSubscription(userId: string, data: Record<string, unknown>): void {
+  try {
+    const cacheData: CachedSubscription = {
+      data,
+      timestamp: Date.now(),
+      userId,
+    };
+    sessionStorage.setItem(SUBSCRIPTION_CACHE_KEY, JSON.stringify(cacheData));
+  } catch {
+    // Ignore cache errors
+  }
+}
+
+// Clear subscription cache (call after checkout, upgrade, etc.)
+export function clearSubscriptionCache(): void {
+  try {
+    sessionStorage.removeItem(SUBSCRIPTION_CACHE_KEY);
+  } catch {
+    // Ignore cache errors
+  }
+}
+
 interface SubscriptionState {
   subscribed: boolean;
   plan: PlanTier;
@@ -45,7 +98,7 @@ export function useSubscription() {
     status: "active",
   });
 
-  const checkSubscription = useCallback(async () => {
+  const checkSubscription = useCallback(async (forceRefresh = false) => {
     if (!user || !session) {
       setState({
         subscribed: false,
@@ -66,6 +119,35 @@ export function useSubscription() {
         status: "active",
       });
       return;
+    }
+
+    // Check cache first (unless force refresh)
+    if (!forceRefresh) {
+      const cachedData = getCachedSubscription(user.id);
+      if (cachedData) {
+        const plan = (cachedData.plan || "free") as PlanTier;
+        const planConfig = PLANS[plan];
+
+        setState({
+          subscribed: cachedData.subscribed as boolean,
+          plan,
+          dailyLimit: (cachedData.daily_limit as number) || planConfig.dailyLimit,
+          limitPeriod: (cachedData.limit_period as LimitPeriod) || "daily",
+          periodUsed: (cachedData.period_used as number) || (cachedData.daily_used as number) || 0,
+          dailyUsed: (cachedData.daily_used as number) || 0,
+          hasWatermark: (cachedData.has_watermark as boolean) ?? planConfig.hasWatermark,
+          hasEditor: (cachedData.has_editor as boolean) ?? planConfig.hasEditor,
+          hasHistory: (cachedData.has_history as boolean) ?? planConfig.hasHistory,
+          hasZipDownload: planConfig.hasZipDownload,
+          subscriptionEnd: cachedData.subscription_end as string | null,
+          loading: false,
+          cancelAtPeriodEnd: (cachedData.cancel_at_period_end as boolean) || false,
+          cancelledAt: (cachedData.cancelled_at as string) || null,
+          failedPaymentCount: (cachedData.failed_payment_count as number) || 0,
+          status: (cachedData.status as string) || "active",
+        });
+        return;
+      }
     }
 
     try {
@@ -131,6 +213,9 @@ export function useSubscription() {
       const plan = (data.plan || "free") as PlanTier;
       const planConfig = PLANS[plan];
 
+      // Cache the subscription data
+      setCachedSubscription(user.id, data);
+
       setState({
         subscribed: data.subscribed,
         plan,
@@ -186,6 +271,9 @@ export function useSubscription() {
   }, [user, checkSubscription]);
 
   const createCheckout = async (planTier: PlanTier = "starter", currency: string = "brl", couponCode?: string) => {
+    // Clear cache before checkout (subscription might change)
+    clearSubscriptionCache();
+
     try {
       const { data, error } = await supabase.functions.invoke("create-checkout", {
         body: { planTier, currency, couponCode }

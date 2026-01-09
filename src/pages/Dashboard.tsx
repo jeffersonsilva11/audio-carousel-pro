@@ -87,10 +87,25 @@ const Dashboard = () => {
       return;
     }
 
-    // Check email verification status via edge function
-    // This handles custom OTP verification correctly
+    // Optimized email verification check
+    // Uses sessionStorage cache to avoid duplicate edge function calls
     if (!loading && user) {
       const checkVerification = async () => {
+        // Check if already verified in this session (cache)
+        const sessionVerified = sessionStorage.getItem(`email_verified_${user.id}`);
+        if (sessionVerified === 'true') {
+          setCheckingVerification(false);
+          return;
+        }
+
+        // If Supabase says email is confirmed, trust it (faster)
+        if (isEmailConfirmed) {
+          sessionStorage.setItem(`email_verified_${user.id}`, 'true');
+          setCheckingVerification(false);
+          return;
+        }
+
+        // Only call edge function if we need custom OTP verification
         try {
           const { data: verificationData, error: verificationError } = await supabase.functions.invoke(
             "check-email-verification",
@@ -104,15 +119,14 @@ const Dashboard = () => {
 
           if (verificationError) {
             console.error("Error checking verification:", verificationError);
-            // Fall back to isEmailConfirmed on error
-            if (isEmailConfirmed) {
-              setCheckingVerification(false);
-              return;
-            }
+            // On error, allow access (fail open) to avoid blocking users
+            setCheckingVerification(false);
+            return;
           }
 
-          // If verified, allow access
+          // If verified, cache and allow access
           if (verificationData?.verified) {
+            sessionStorage.setItem(`email_verified_${user.id}`, 'true');
             setCheckingVerification(false);
             return;
           }
@@ -135,10 +149,8 @@ const Dashboard = () => {
           navigate(`/auth/verify?email=${encodeURIComponent(user.email || "")}`);
         } catch (err) {
           console.error("Verification check error:", err);
-          // Fall back to isEmailConfirmed on error
-          if (isEmailConfirmed) {
-            setCheckingVerification(false);
-          }
+          // On error, allow access (fail open)
+          setCheckingVerification(false);
         }
       };
 
