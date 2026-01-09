@@ -56,6 +56,44 @@ serve(async (req) => {
       });
     }
 
+    // Get user from auth.users first - we need this for OAuth check
+    const { data: userData, error: userError } = await supabaseClient.auth.admin.getUserById(userId);
+
+    if (userError || !userData?.user) {
+      logStep("User not found", { error: userError?.message });
+      return new Response(JSON.stringify({
+        verified: false,
+        reason: "user_not_found"
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
+    // Check if user signed up via OAuth (Google, etc.)
+    // OAuth users have their email already verified by the provider
+    const isOAuthUser = userData.user.app_metadata?.provider &&
+                        userData.user.app_metadata.provider !== 'email';
+
+    // Also check identities array for OAuth providers
+    const hasOAuthIdentity = userData.user.identities?.some(
+      (identity: { provider: string }) => identity.provider !== 'email' && identity.provider !== 'phone'
+    );
+
+    if (isOAuthUser || hasOAuthIdentity) {
+      logStep("OAuth user detected, considering as verified", {
+        provider: userData.user.app_metadata?.provider,
+        identities: userData.user.identities?.map((i: { provider: string }) => i.provider)
+      });
+      return new Response(JSON.stringify({
+        verified: true,
+        reason: "oauth_user"
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
     // Check if custom email sending is enabled
     const { data: customEmailSetting } = await supabaseClient
       .from("app_settings")
@@ -68,20 +106,6 @@ serve(async (req) => {
     // If custom email is NOT enabled, fall back to Supabase's email_confirmed_at
     if (!useCustomEmail) {
       logStep("Custom email disabled, checking Supabase email_confirmed_at");
-
-      // Get user from auth.users
-      const { data: userData, error: userError } = await supabaseClient.auth.admin.getUserById(userId);
-
-      if (userError || !userData?.user) {
-        logStep("User not found", { error: userError?.message });
-        return new Response(JSON.stringify({
-          verified: false,
-          reason: "user_not_found"
-        }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
-        });
-      }
 
       const isVerified = Boolean(userData.user.email_confirmed_at);
       logStep("Supabase verification check", {
@@ -118,9 +142,8 @@ serve(async (req) => {
 
     if (tokenError) {
       logStep("Error checking tokens", { error: tokenError.message });
-      // On error, fall back to Supabase check
-      const { data: userData } = await supabaseClient.auth.admin.getUserById(userId);
-      const isVerified = Boolean(userData?.user?.email_confirmed_at);
+      // On error, fall back to Supabase check using already loaded userData
+      const isVerified = Boolean(userData.user.email_confirmed_at);
       return new Response(JSON.stringify({
         verified: isVerified,
         reason: "fallback_to_supabase"
