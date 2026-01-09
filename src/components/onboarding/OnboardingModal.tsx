@@ -53,13 +53,67 @@ const OnboardingModal = ({ open, onComplete }: OnboardingModalProps) => {
   const [selectedStyle, setSelectedStyle] = useState<string>("BLACK_WHITE");
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [profileLoaded, setProfileLoaded] = useState(false);
 
-  // Initialize from user metadata
+  // Initialize from existing profile data (to persist between page reloads)
   useEffect(() => {
-    if (user?.user_metadata?.name) {
-      setName(user.user_metadata.name);
+    const loadProfileData = async () => {
+      if (!user || profileLoaded) return;
+
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('name, instagram_handle, profile_image, default_tone, default_style')
+          .eq('user_id', user.id)
+          .single();
+
+        if (profile) {
+          // Load existing data if available
+          if (profile.name) setName(profile.name);
+          if (profile.instagram_handle) {
+            setUsername(profile.instagram_handle.replace('@', ''));
+          }
+          if (profile.profile_image) setPhotoUrl(profile.profile_image);
+          if (profile.default_tone) setSelectedTone(profile.default_tone);
+          if (profile.default_style) setSelectedStyle(profile.default_style);
+        } else if (user.user_metadata?.name) {
+          // Fallback to user metadata
+          setName(user.user_metadata.name);
+        }
+
+        setProfileLoaded(true);
+      } catch (error) {
+        console.error('Error loading profile:', error);
+        // Fallback to user metadata
+        if (user.user_metadata?.name) {
+          setName(user.user_metadata.name);
+        }
+        setProfileLoaded(true);
+      }
+    };
+
+    loadProfileData();
+  }, [user, profileLoaded]);
+
+  // Save intermediate progress when advancing steps
+  const saveIntermediateProgress = async () => {
+    if (!user) return;
+
+    try {
+      await supabase
+        .from('profiles')
+        .update({
+          name: name || null,
+          instagram_handle: username ? `@${username.replace('@', '')}` : null,
+          profile_image: photoUrl,
+          default_tone: selectedTone,
+          default_style: selectedStyle,
+        })
+        .eq('user_id', user.id);
+    } catch (error) {
+      console.error('Error saving intermediate progress:', error);
     }
-  }, [user]);
+  };
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -97,6 +151,12 @@ const OnboardingModal = ({ open, onComplete }: OnboardingModalProps) => {
         .getPublicUrl(fileName);
 
       setPhotoUrl(publicUrl);
+
+      // Save photo URL immediately to persist across page reloads
+      await supabase
+        .from('profiles')
+        .update({ profile_image: publicUrl })
+        .eq('user_id', user.id);
     } catch (error) {
       console.error('Error uploading photo:', error);
       toast({
@@ -162,7 +222,11 @@ const OnboardingModal = ({ open, onComplete }: OnboardingModalProps) => {
     onComplete();
   };
 
-  const nextStep = () => setStep(prev => Math.min(prev + 1, TOTAL_STEPS));
+  const nextStep = async () => {
+    // Save progress before advancing
+    await saveIntermediateProgress();
+    setStep(prev => Math.min(prev + 1, TOTAL_STEPS));
+  };
   const prevStep = () => setStep(prev => Math.max(prev - 1, 1));
 
   const progress = (step / TOTAL_STEPS) * 100;

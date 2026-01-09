@@ -6,7 +6,6 @@ import { cn } from "@/lib/utils";
 import { useTranslation } from "@/hooks/useLanguage";
 import { useRecaptcha } from "@/hooks/useRecaptcha";
 import { useToast } from "@/hooks/use-toast";
-import { LottieAnimation } from "@/components/animations/LottieAnimations";
 
 interface AudioUploaderProps {
   audioFile: File | null;
@@ -34,6 +33,7 @@ const AudioUploader = ({
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [currentPlaybackTime, setCurrentPlaybackTime] = useState(0);
   const [totalRecordedTime, setTotalRecordedTime] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -45,6 +45,7 @@ const AudioUploader = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const playbackIntervalRef = useRef<NodeJS.Timeout | null>(null);
   // Ref to track recorded time for use in onstop handler (avoids stale closure)
   const totalRecordedTimeRef = useRef(0);
 
@@ -311,15 +312,32 @@ const AudioUploader = ({
 
     if (!audioRef.current) {
       audioRef.current = new Audio(URL.createObjectURL(audioFile));
-      audioRef.current.onended = () => setIsPlaying(false);
+      audioRef.current.onended = () => {
+        setIsPlaying(false);
+        setCurrentPlaybackTime(0);
+        if (playbackIntervalRef.current) {
+          clearInterval(playbackIntervalRef.current);
+          playbackIntervalRef.current = null;
+        }
+      };
     }
 
     if (isPlaying) {
       audioRef.current.pause();
       setIsPlaying(false);
+      if (playbackIntervalRef.current) {
+        clearInterval(playbackIntervalRef.current);
+        playbackIntervalRef.current = null;
+      }
     } else {
       audioRef.current.play();
       setIsPlaying(true);
+      // Update playback time every 100ms
+      playbackIntervalRef.current = setInterval(() => {
+        if (audioRef.current) {
+          setCurrentPlaybackTime(audioRef.current.currentTime);
+        }
+      }, 100);
     }
   };
 
@@ -328,10 +346,15 @@ const AudioUploader = ({
     setAudioDuration(null);
     setError(null);
     setTotalRecordedTime(0);
+    setCurrentPlaybackTime(0);
     audioChunksRef.current = [];
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current = null;
+    }
+    if (playbackIntervalRef.current) {
+      clearInterval(playbackIntervalRef.current);
+      playbackIntervalRef.current = null;
     }
     setIsPlaying(false);
   };
@@ -366,7 +389,10 @@ const AudioUploader = ({
               <div>
                 <p className="font-medium">{audioFile.name}</p>
                 <p className="text-sm text-muted-foreground">
-                  {formatTime(audioDuration || 0)} • {(audioFile.size / 1024 / 1024).toFixed(2)} MB
+                  {isPlaying
+                    ? `${formatTime(currentPlaybackTime)} / ${formatTime(audioDuration || 0)}`
+                    : `${formatTime(audioDuration || 0)} • ${(audioFile.size / 1024 / 1024).toFixed(2)} MB`
+                  }
                 </p>
               </div>
             </div>
@@ -380,9 +406,24 @@ const AudioUploader = ({
             </Button>
           </div>
 
-          {/* Waveform animation */}
-          <div className="mt-4 flex items-center justify-center">
-            <LottieAnimation type="audioWave" size={80} />
+          {/* Progress bar - only animate when playing */}
+          <div className="mt-4">
+            <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+              <div
+                className={cn(
+                  "h-full bg-accent transition-all duration-100",
+                  !isPlaying && "transition-none"
+                )}
+                style={{
+                  width: `${audioDuration ? (currentPlaybackTime / audioDuration) * 100 : 0}%`
+                }}
+              />
+            </div>
+            {isPlaying && (
+              <p className="text-xs text-center text-muted-foreground mt-2">
+                {t("audioUploader", "playing")}
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>

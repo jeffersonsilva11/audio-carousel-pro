@@ -88,6 +88,7 @@ const CreateCarousel = () => {
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [audioDuration, setAudioDuration] = useState<number | null>(null);
   const [isRecordingAudio, setIsRecordingAudio] = useState(false);
+  const [audioRestoredFromStorage, setAudioRestoredFromStorage] = useState(false);
 
   // Profile identity state - initialized from preferences
   const [profileIdentity, setProfileIdentity] = useState<ProfileIdentity>({
@@ -313,6 +314,103 @@ const CreateCarousel = () => {
     profileIdentity, selectedTemplate, selectedTextMode, creativeTone,
     slideCountMode, manualSlideCount, selectedTone, selectedStyle, savePreferences
   ]);
+
+  // Restore audio from sessionStorage on mount
+  useEffect(() => {
+    if (audioRestoredFromStorage) return;
+
+    const savedAudioData = sessionStorage.getItem('carousel_audio_data');
+    const savedAudioDuration = sessionStorage.getItem('carousel_audio_duration');
+    const savedAudioName = sessionStorage.getItem('carousel_audio_name');
+    const savedAudioType = sessionStorage.getItem('carousel_audio_type');
+    const savedStep = sessionStorage.getItem('carousel_current_step');
+
+    if (savedAudioData && savedAudioDuration && savedAudioName) {
+      try {
+        // Convert base64 back to File
+        const byteString = atob(savedAudioData);
+        const ab = new ArrayBuffer(byteString.length);
+        const ia = new Uint8Array(ab);
+        for (let i = 0; i < byteString.length; i++) {
+          ia[i] = byteString.charCodeAt(i);
+        }
+        const mimeType = savedAudioType || 'audio/webm';
+        const blob = new Blob([ab], { type: mimeType });
+        const file = new File([blob], savedAudioName, { type: mimeType });
+
+        setAudioFile(file);
+        setAudioDuration(parseFloat(savedAudioDuration));
+
+        // Restore step if it was on customize
+        if (savedStep === 'customize') {
+          setCurrentStep('customize');
+        }
+
+        toast({
+          title: siteLanguage === "pt-BR" ? "Áudio restaurado" : siteLanguage === "es" ? "Audio restaurado" : "Audio restored",
+          description: siteLanguage === "pt-BR"
+            ? "Seu áudio anterior foi recuperado."
+            : siteLanguage === "es"
+            ? "Tu audio anterior fue recuperado."
+            : "Your previous audio was recovered.",
+        });
+      } catch (err) {
+        console.error('Error restoring audio from storage:', err);
+        // Clear corrupted data
+        sessionStorage.removeItem('carousel_audio_data');
+        sessionStorage.removeItem('carousel_audio_duration');
+        sessionStorage.removeItem('carousel_audio_name');
+        sessionStorage.removeItem('carousel_audio_type');
+        sessionStorage.removeItem('carousel_current_step');
+      }
+    }
+    setAudioRestoredFromStorage(true);
+  }, [audioRestoredFromStorage, siteLanguage, toast]);
+
+  // Save audio to sessionStorage when it changes
+  useEffect(() => {
+    if (!audioFile || !audioDuration) {
+      // Clear storage if no audio
+      sessionStorage.removeItem('carousel_audio_data');
+      sessionStorage.removeItem('carousel_audio_duration');
+      sessionStorage.removeItem('carousel_audio_name');
+      sessionStorage.removeItem('carousel_audio_type');
+      return;
+    }
+
+    // Save audio as base64
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64 = (reader.result as string).split(',')[1];
+      if (base64) {
+        sessionStorage.setItem('carousel_audio_data', base64);
+        sessionStorage.setItem('carousel_audio_duration', String(audioDuration));
+        sessionStorage.setItem('carousel_audio_name', audioFile.name);
+        sessionStorage.setItem('carousel_audio_type', audioFile.type);
+      }
+    };
+    reader.readAsDataURL(audioFile);
+  }, [audioFile, audioDuration]);
+
+  // Save current step to sessionStorage
+  useEffect(() => {
+    if (currentStep === 'customize') {
+      sessionStorage.setItem('carousel_current_step', currentStep);
+    } else if (currentStep === 'upload') {
+      sessionStorage.removeItem('carousel_current_step');
+    }
+  }, [currentStep]);
+
+  // Clear storage when carousel is generated successfully
+  useEffect(() => {
+    if (status === "COMPLETED") {
+      sessionStorage.removeItem('carousel_audio_data');
+      sessionStorage.removeItem('carousel_audio_duration');
+      sessionStorage.removeItem('carousel_audio_name');
+      sessionStorage.removeItem('carousel_audio_type');
+      sessionStorage.removeItem('carousel_current_step');
+    }
+  }, [status]);
 
   useEffect(() => {
     if (!loading && !user) {

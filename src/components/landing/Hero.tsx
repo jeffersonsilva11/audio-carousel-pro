@@ -240,7 +240,7 @@ const Hero = () => {
                 className="flex flex-col sm:flex-row items-center gap-4 mb-8 justify-center lg:justify-start"
               >
                 <Button variant="hero" size="xl" className="group w-full sm:w-auto" asChild>
-                  <a href="/auth">
+                  <a href="/auth?mode=signup">
                     {ctaPrimary}
                     <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                   </a>

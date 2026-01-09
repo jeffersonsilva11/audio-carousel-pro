@@ -1279,6 +1279,11 @@ export const translations = {
       en: "Send",
       es: "Enviar",
     },
+    playing: {
+      "pt-BR": "Reproduzindo...",
+      en: "Playing...",
+      es: "Reproduciendo...",
+    },
   },
 
   // Tone Selector
@@ -3182,14 +3187,19 @@ export const translations = {
   // Live Preview
   livePreview: {
     title: {
-      "pt-BR": "Preview ao vivo",
-      en: "Live preview",
-      es: "Vista previa en vivo",
+      "pt-BR": "Preview do design",
+      en: "Design preview",
+      es: "Vista previa del diseño",
     },
     description: {
-      "pt-BR": "Prévia do resultado final. O conteúdo será gerado pelo seu áudio.",
-      en: "Preview of the final result. Content will be generated from your audio.",
-      es: "Vista previa del resultado final. El contenido se generará de tu audio.",
+      "pt-BR": "⚠️ Este é apenas um exemplo de design. O texto real será gerado a partir do seu áudio após clicar em 'Gerar Carrossel'.",
+      en: "⚠️ This is just a design example. The actual text will be generated from your audio after clicking 'Generate Carousel'.",
+      es: "⚠️ Este es solo un ejemplo de diseño. El texto real se generará a partir de tu audio después de hacer clic en 'Generar Carrusel'.",
+    },
+    onlyDesign: {
+      "pt-BR": "Apenas visualização de estilo",
+      en: "Style preview only",
+      es: "Solo vista previa de estilo",
     },
   },
 
