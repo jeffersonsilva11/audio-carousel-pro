@@ -34,9 +34,10 @@ const cancellationReasons = [
 
 export default function PlansModal({ open, onOpenChange }: PlansModalProps) {
   const { language } = useLanguage();
-  const { plan: currentPlan, createCheckout, openCustomerPortal, isPro } = useSubscription();
+  const { plan: currentPlan, createCheckout, openCustomerPortal, isPro, canReceiveRetentionOffer, applyRetentionOffer } = useSubscription();
   const { plans, getPlanPrice, getPlanName, getPlanDescription, getPlanFeatures, getPlanLimitations } = usePlansConfig();
   const [loading, setLoading] = useState<PlanTier | null>(null);
+  const [applyingOffer, setApplyingOffer] = useState(false);
   const [step, setStep] = useState<CancellationStep>("plans");
   const [selectedReason, setSelectedReason] = useState<string | null>(null);
 
@@ -88,24 +89,59 @@ export default function PlansModal({ open, onOpenChange }: PlansModalProps) {
 
   const handleReasonSelect = (reason: string) => {
     setSelectedReason(reason);
-    // Special offer for certain reasons
-    if (reason === "expensive" || reason === "temporary") {
+    // Special offer for certain reasons - only if user hasn't used retention offer before
+    if ((reason === "expensive" || reason === "temporary") && canReceiveRetentionOffer) {
       setStep("cancel_offer");
     } else {
       setStep("cancel_final");
     }
   };
 
-  const handleAcceptOffer = () => {
-    toast.success(
-      language === "pt-BR"
-        ? "Ótimo! Seu desconto será aplicado na próxima fatura."
-        : language === "es"
-          ? "¡Genial! Tu descuento se aplicará en la próxima factura."
-          : "Great! Your discount will be applied to the next invoice."
-    );
-    setStep("plans");
-    onOpenChange(false);
+  const handleAcceptOffer = async () => {
+    setApplyingOffer(true);
+    try {
+      const result = await applyRetentionOffer();
+
+      if (result.success) {
+        toast.success(
+          language === "pt-BR"
+            ? "Ótimo! Seu desconto de 50% será aplicado na próxima fatura."
+            : language === "es"
+              ? "¡Genial! Tu descuento del 50% se aplicará en la próxima factura."
+              : "Great! Your 50% discount will be applied to the next invoice."
+        );
+        setStep("plans");
+        onOpenChange(false);
+      } else if (result.error === "already_used") {
+        toast.error(
+          language === "pt-BR"
+            ? "Você já utilizou esta oferta anteriormente."
+            : language === "es"
+              ? "Ya has utilizado esta oferta anteriormente."
+              : "You have already used this offer before."
+        );
+        setStep("cancel_final");
+      } else {
+        toast.error(
+          language === "pt-BR"
+            ? "Erro ao aplicar o desconto. Tente novamente."
+            : language === "es"
+              ? "Error al aplicar el descuento. Inténtalo de nuevo."
+              : "Error applying discount. Please try again."
+        );
+      }
+    } catch (error) {
+      console.error("Error applying retention offer:", error);
+      toast.error(
+        language === "pt-BR"
+          ? "Erro ao aplicar o desconto. Tente novamente."
+          : language === "es"
+            ? "Error al aplicar el descuento. Inténtalo de nuevo."
+            : "Error applying discount. Please try again."
+      );
+    } finally {
+      setApplyingOffer(false);
+    }
   };
 
   const handleFinalCancel = async () => {
@@ -235,12 +271,18 @@ export default function PlansModal({ open, onOpenChange }: PlansModalProps) {
           </Card>
 
           <div className="flex gap-3">
-            <Button variant="outline" className="flex-1" onClick={() => setStep("cancel_final")}>
+            <Button variant="outline" className="flex-1" onClick={() => setStep("cancel_final")} disabled={applyingOffer}>
               {language === "pt-BR" ? "Não, obrigado" : language === "es" ? "No, gracias" : "No, thanks"}
             </Button>
-            <Button variant="accent" className="flex-1" onClick={handleAcceptOffer}>
-              <Heart className="w-4 h-4 mr-2" />
-              {language === "pt-BR" ? "Aceitar oferta" : language === "es" ? "Aceptar oferta" : "Accept offer"}
+            <Button variant="accent" className="flex-1" onClick={handleAcceptOffer} disabled={applyingOffer}>
+              {applyingOffer ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <>
+                  <Heart className="w-4 h-4 mr-2" />
+                  {language === "pt-BR" ? "Aceitar oferta" : language === "es" ? "Aceptar oferta" : "Accept offer"}
+                </>
+              )}
             </Button>
           </div>
         </div>

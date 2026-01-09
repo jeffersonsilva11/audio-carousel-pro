@@ -5,6 +5,59 @@ import { PlanTier, PLANS } from "@/lib/plans";
 
 export type LimitPeriod = "daily" | "weekly" | "monthly";
 
+// Cache configuration
+const SUBSCRIPTION_CACHE_KEY = "subscription_cache";
+const CACHE_TTL_MS = 2 * 60 * 1000; // 2 minutes
+
+interface CachedSubscription {
+  data: Record<string, unknown>;
+  timestamp: number;
+  userId: string;
+}
+
+// Get cached subscription data
+function getCachedSubscription(userId: string): Record<string, unknown> | null {
+  try {
+    const cached = sessionStorage.getItem(SUBSCRIPTION_CACHE_KEY);
+    if (!cached) return null;
+
+    const parsed: CachedSubscription = JSON.parse(cached);
+
+    // Check if cache is for the same user
+    if (parsed.userId !== userId) return null;
+
+    // Check if cache is still valid (not expired)
+    if (Date.now() - parsed.timestamp > CACHE_TTL_MS) return null;
+
+    return parsed.data;
+  } catch {
+    return null;
+  }
+}
+
+// Save subscription data to cache
+function setCachedSubscription(userId: string, data: Record<string, unknown>): void {
+  try {
+    const cacheData: CachedSubscription = {
+      data,
+      timestamp: Date.now(),
+      userId,
+    };
+    sessionStorage.setItem(SUBSCRIPTION_CACHE_KEY, JSON.stringify(cacheData));
+  } catch {
+    // Ignore cache errors
+  }
+}
+
+// Clear subscription cache (call after checkout, upgrade, etc.)
+export function clearSubscriptionCache(): void {
+  try {
+    sessionStorage.removeItem(SUBSCRIPTION_CACHE_KEY);
+  } catch {
+    // Ignore cache errors
+  }
+}
+
 interface SubscriptionState {
   subscribed: boolean;
   plan: PlanTier;
@@ -22,6 +75,8 @@ interface SubscriptionState {
   cancelledAt: string | null;
   failedPaymentCount: number;
   status: string;
+  canReceiveRetentionOffer: boolean;
+  retentionOfferUsedAt: string | null;
 }
 
 export function useSubscription() {
@@ -43,9 +98,11 @@ export function useSubscription() {
     cancelledAt: null,
     failedPaymentCount: 0,
     status: "active",
+    canReceiveRetentionOffer: true,
+    retentionOfferUsedAt: null,
   });
 
-  const checkSubscription = useCallback(async () => {
+  const checkSubscription = useCallback(async (forceRefresh = false) => {
     if (!user || !session) {
       setState({
         subscribed: false,
@@ -64,8 +121,41 @@ export function useSubscription() {
         cancelledAt: null,
         failedPaymentCount: 0,
         status: "active",
+        canReceiveRetentionOffer: true,
+        retentionOfferUsedAt: null,
       });
       return;
+    }
+
+    // Check cache first (unless force refresh)
+    if (!forceRefresh) {
+      const cachedData = getCachedSubscription(user.id);
+      if (cachedData) {
+        const plan = (cachedData.plan || "free") as PlanTier;
+        const planConfig = PLANS[plan];
+
+        setState({
+          subscribed: cachedData.subscribed as boolean,
+          plan,
+          dailyLimit: (cachedData.daily_limit as number) || planConfig.dailyLimit,
+          limitPeriod: (cachedData.limit_period as LimitPeriod) || "daily",
+          periodUsed: (cachedData.period_used as number) || (cachedData.daily_used as number) || 0,
+          dailyUsed: (cachedData.daily_used as number) || 0,
+          hasWatermark: (cachedData.has_watermark as boolean) ?? planConfig.hasWatermark,
+          hasEditor: (cachedData.has_editor as boolean) ?? planConfig.hasEditor,
+          hasHistory: (cachedData.has_history as boolean) ?? planConfig.hasHistory,
+          hasZipDownload: planConfig.hasZipDownload,
+          subscriptionEnd: cachedData.subscription_end as string | null,
+          loading: false,
+          cancelAtPeriodEnd: (cachedData.cancel_at_period_end as boolean) || false,
+          cancelledAt: (cachedData.cancelled_at as string) || null,
+          failedPaymentCount: (cachedData.failed_payment_count as number) || 0,
+          status: (cachedData.status as string) || "active",
+          canReceiveRetentionOffer: (cachedData.can_receive_retention_offer as boolean) ?? true,
+          retentionOfferUsedAt: (cachedData.retention_offer_used_at as string) || null,
+        });
+        return;
+      }
     }
 
     try {
@@ -81,7 +171,7 @@ export function useSubscription() {
         } else {
           console.error("Error checking subscription:", error);
         }
-        
+
         // Fallback to free plan on any error
         setState({
           subscribed: false,
@@ -100,6 +190,8 @@ export function useSubscription() {
           cancelledAt: null,
           failedPaymentCount: 0,
           status: "active",
+          canReceiveRetentionOffer: true,
+          retentionOfferUsedAt: null,
         });
         return;
       }
@@ -124,12 +216,17 @@ export function useSubscription() {
           cancelledAt: null,
           failedPaymentCount: 0,
           status: "active",
+          canReceiveRetentionOffer: true,
+          retentionOfferUsedAt: null,
         });
         return;
       }
 
       const plan = (data.plan || "free") as PlanTier;
       const planConfig = PLANS[plan];
+
+      // Cache the subscription data
+      setCachedSubscription(user.id, data);
 
       setState({
         subscribed: data.subscribed,
@@ -148,6 +245,8 @@ export function useSubscription() {
         cancelledAt: data.cancelled_at || null,
         failedPaymentCount: data.failed_payment_count || 0,
         status: data.status || "active",
+        canReceiveRetentionOffer: data.can_receive_retention_offer ?? true,
+        retentionOfferUsedAt: data.retention_offer_used_at || null,
       });
     } catch (error) {
       console.error("Error checking subscription:", error);
@@ -169,6 +268,8 @@ export function useSubscription() {
         cancelledAt: null,
         failedPaymentCount: 0,
         status: "active",
+        canReceiveRetentionOffer: true,
+        retentionOfferUsedAt: null,
       });
     }
   }, [user, session]);
@@ -186,6 +287,9 @@ export function useSubscription() {
   }, [user, checkSubscription]);
 
   const createCheckout = async (planTier: PlanTier = "starter", currency: string = "brl", couponCode?: string) => {
+    // Clear cache before checkout (subscription might change)
+    clearSubscriptionCache();
+
     try {
       const { data, error } = await supabase.functions.invoke("create-checkout", {
         body: { planTier, currency, couponCode }
@@ -277,6 +381,42 @@ export function useSubscription() {
     return getDaysRemaining() === 0 && state.cancelAtPeriodEnd;
   };
 
+  const applyRetentionOffer = async (): Promise<{ success: boolean; error?: string }> => {
+    // Check if user can receive retention offer
+    if (!state.canReceiveRetentionOffer) {
+      return {
+        success: false,
+        error: "already_used"
+      };
+    }
+
+    try {
+      // Clear cache since subscription will change
+      clearSubscriptionCache();
+
+      const { data, error } = await supabase.functions.invoke("apply-retention-offer");
+
+      if (error) throw error;
+
+      if (data?.success) {
+        // Refresh subscription data
+        await checkSubscription(true);
+        return { success: true };
+      }
+
+      return {
+        success: false,
+        error: data?.error || "unknown_error"
+      };
+    } catch (error) {
+      console.error("Error applying retention offer:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "unknown_error"
+      };
+    }
+  };
+
   return {
     ...state,
     checkSubscription,
@@ -289,6 +429,7 @@ export function useSubscription() {
     getDaysRemaining,
     isCancelled,
     isLastDay,
+    applyRetentionOffer,
     isPro: state.plan !== "free",
     isCreator: state.plan === "creator",
   };

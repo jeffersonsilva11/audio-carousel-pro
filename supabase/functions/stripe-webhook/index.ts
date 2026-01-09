@@ -1,23 +1,89 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, stripe-signature",
 };
 
-// Plan configuration
-const PRICE_TO_PLAN: Record<number, { tier: string; dailyLimit: number }> = {
-  2990: { tier: "starter", dailyLimit: 1 },
-  9990: { tier: "creator", dailyLimit: 8 },
-  19990: { tier: "agency", dailyLimit: 20 },
-};
-
 const logStep = (step: string, details?: unknown) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
   console.log(`[STRIPE-WEBHOOK] ${step}${detailsStr}`);
 };
+
+// Plan config interface
+interface PlanConfig {
+  tier: string;
+  daily_limit: number;
+  limit_period: string;
+  has_watermark: boolean;
+  has_editor: boolean;
+  has_history: boolean;
+}
+
+// Fallback plan config (used if database lookup fails)
+const FALLBACK_PLANS: Record<string, PlanConfig> = {
+  free: { tier: "free", daily_limit: 1, limit_period: "daily", has_watermark: true, has_editor: false, has_history: false },
+  starter: { tier: "starter", daily_limit: 3, limit_period: "weekly", has_watermark: false, has_editor: true, has_history: true },
+  creator: { tier: "creator", daily_limit: 1, limit_period: "daily", has_watermark: false, has_editor: true, has_history: true },
+};
+
+// Get plan config from database by stripe_price_id or price amount
+async function getPlanConfig(
+  supabase: SupabaseClient,
+  priceId: string | null,
+  priceAmount: number
+): Promise<PlanConfig> {
+  // First try to find by stripe_price_id (most reliable)
+  if (priceId) {
+    const { data: planByPriceId } = await supabase
+      .from("plans_config")
+      .select("tier, daily_limit, limit_period, has_watermark, has_editor, has_history")
+      .or(`stripe_price_id_brl.eq.${priceId},stripe_price_id_usd.eq.${priceId},stripe_price_id_eur.eq.${priceId}`)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    if (planByPriceId) {
+      logStep("Found plan by stripe_price_id", { priceId, tier: planByPriceId.tier });
+      return planByPriceId as PlanConfig;
+    }
+  }
+
+  // Fallback: try to find by price amount (BRL)
+  if (priceAmount > 0) {
+    const { data: planByPrice } = await supabase
+      .from("plans_config")
+      .select("tier, daily_limit, limit_period, has_watermark, has_editor, has_history")
+      .eq("price_brl", priceAmount)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    if (planByPrice) {
+      logStep("Found plan by price_brl", { priceAmount, tier: planByPrice.tier });
+      return planByPrice as PlanConfig;
+    }
+  }
+
+  // Final fallback: return starter plan config
+  logStep("Plan not found in database, using fallback", { priceId, priceAmount });
+  return FALLBACK_PLANS.starter;
+}
+
+// Get free plan config from database
+async function getFreePlanConfig(supabase: SupabaseClient): Promise<PlanConfig> {
+  const { data: freePlan } = await supabase
+    .from("plans_config")
+    .select("tier, daily_limit, limit_period, has_watermark, has_editor, has_history")
+    .eq("tier", "free")
+    .maybeSingle();
+
+  if (freePlan) {
+    return freePlan as PlanConfig;
+  }
+
+  return FALLBACK_PLANS.free;
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -129,13 +195,17 @@ serve(async (req) => {
 
         const subscription = await stripe.subscriptions.retrieve(subscriptionId);
         const price = subscription.items.data[0]?.price;
+        const priceId = price?.id || null;
         const unitAmount = price?.unit_amount || 0;
-        const planConfig = PRICE_TO_PLAN[unitAmount] || { tier: "starter", dailyLimit: 1 };
 
-        logStep("Subscription details", { 
-          subscriptionId, 
-          unitAmount, 
-          plan: planConfig.tier 
+        // Get plan config from database (dynamic lookup)
+        const planConfig = await getPlanConfig(supabase, priceId, unitAmount);
+
+        logStep("Subscription details", {
+          subscriptionId,
+          priceId,
+          unitAmount,
+          plan: planConfig.tier
         });
 
         // Upsert subscription record
@@ -143,13 +213,13 @@ serve(async (req) => {
           user_id: user.id,
           stripe_customer_id: session.customer as string,
           stripe_subscription_id: subscriptionId,
-          price_id: price?.id,
+          price_id: priceId,
           plan_tier: planConfig.tier,
-          daily_limit: planConfig.dailyLimit,
+          daily_limit: planConfig.daily_limit,
           status: "active",
-          has_watermark: false,
-          has_editor: true,
-          has_history: true,
+          has_watermark: planConfig.has_watermark,
+          has_editor: planConfig.has_editor,
+          has_history: planConfig.has_history,
           current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
           current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
         }, { onConflict: "user_id" });
@@ -177,8 +247,11 @@ serve(async (req) => {
         });
 
         const price = subscription.items.data[0]?.price;
+        const priceId = price?.id || null;
         const unitAmount = price?.unit_amount || 0;
-        const planConfig = PRICE_TO_PLAN[unitAmount] || { tier: "starter", dailyLimit: 1 };
+
+        // Get plan config from database (dynamic lookup)
+        const planConfig = await getPlanConfig(supabase, priceId, unitAmount);
 
         // Get current subscription to find user
         const { data: currentSub } = await supabase.from("subscriptions")
@@ -194,7 +267,7 @@ serve(async (req) => {
           .update({
             status: subscription.status,
             plan_tier: planConfig.tier,
-            daily_limit: planConfig.dailyLimit,
+            daily_limit: planConfig.daily_limit,
             current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
             current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
             cancel_at_period_end: subscription.cancel_at_period_end,
@@ -241,21 +314,24 @@ serve(async (req) => {
           .single();
 
         if (subData) {
+          // Get free plan config from database
+          const freePlanConfig = await getFreePlanConfig(supabase);
+
           // Update subscription to cancelled/free
           await supabase.from("subscriptions")
             .update({
               status: "cancelled",
-              plan_tier: "free",
-              daily_limit: 1,
-              has_watermark: true,
-              has_editor: false,
-              has_history: false,
+              plan_tier: freePlanConfig.tier,
+              daily_limit: freePlanConfig.daily_limit,
+              has_watermark: freePlanConfig.has_watermark,
+              has_editor: freePlanConfig.has_editor,
+              has_history: freePlanConfig.has_history,
             })
             .eq("stripe_subscription_id", subscription.id);
 
           // Update profile
           await supabase.from("profiles")
-            .update({ plan_tier: "free" })
+            .update({ plan_tier: freePlanConfig.tier })
             .eq("user_id", subData.user_id);
 
           logStep("Subscription cancelled successfully", { userId: subData.user_id });
