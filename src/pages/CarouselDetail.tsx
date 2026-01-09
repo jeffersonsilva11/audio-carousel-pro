@@ -346,8 +346,13 @@ const CarouselDetail = () => {
               </Button>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="gap-2"
+                  >
                     <Trash2 className="w-4 h-4" />
+                    {t("carouselDetail", "delete")}
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>

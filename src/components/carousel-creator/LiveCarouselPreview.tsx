@@ -164,10 +164,15 @@ const LiveCarouselPreview = ({
 
   return (
     <div className={cn("space-y-4", className)}>
-      {/* Header */}
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Eye className="w-4 h-4" />
-        <span>{t("livePreview", "title", language)}</span>
+      {/* Header with warning badge */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Eye className="w-4 h-4" />
+          <span>{t("livePreview", "title", language)}</span>
+        </div>
+        <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 font-medium">
+          {t("livePreview", "onlyDesign", language)}
+        </span>
       </div>
 
       {/* Preview Card */}
@@ -306,10 +311,12 @@ const LiveCarouselPreview = ({
         ))}
       </div>
 
-      {/* Info text */}
-      <p className="text-xs text-center text-muted-foreground">
-        {t("livePreview", "description", language)}
-      </p>
+      {/* Warning text with better visibility */}
+      <div className="p-3 rounded-lg bg-amber-500/5 border border-amber-500/20">
+        <p className="text-xs text-center text-amber-700 dark:text-amber-300">
+          {t("livePreview", "description", language)}
+        </p>
+      </div>
     </div>
   );
 };

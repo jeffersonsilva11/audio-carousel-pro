@@ -188,11 +188,12 @@ export function useCarouselGeneration() {
       console.error("Generation error:", err);
       setError(errorMessage);
       setStatus("FAILED");
-      
-      await supabase.from("carousels").update({
-        status: "FAILED",
-        error_message: errorMessage
-      }).eq("id", carouselId);
+
+      // Delete the carousel record to not consume credits on failure
+      // This ensures users are only charged when generation is successful
+      await supabase.from("carousels").delete().eq("id", carouselId);
+
+      console.log("Carousel deleted due to generation failure - credits not consumed");
 
       return null;
     }
