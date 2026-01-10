@@ -38,6 +38,7 @@ import RevenueReports from "@/components/admin/RevenueReports";
 import SystemControlCard from "@/components/admin/SystemControlCard";
 import SupportSettingsCard from "@/components/admin/SupportSettingsCard";
 import EmailSettingsCard from "@/components/admin/EmailSettingsCard";
+import PromptsManager from "@/components/admin/PromptsManager";
 
 const Admin = () => {
   const { user, loading: authLoading } = useAuth();
@@ -115,6 +116,8 @@ const Admin = () => {
         return <EmailSettingsCard />;
       case "support":
         return <SupportSettingsCard />;
+      case "prompts":
+        return <PromptsManager />;
       case "settings":
         return <AppSettingsCard />;
       case "flags":
@@ -145,6 +148,7 @@ const Admin = () => {
       roles: { pt: "Permissões e Roles", en: "Permissions & Roles" },
       email: { pt: "Configurações de E-mail", en: "Email Settings" },
       support: { pt: "Configurações de Suporte", en: "Support Settings" },
+      prompts: { pt: "Prompts de IA", en: "AI Prompts" },
       settings: { pt: "Configurações Gerais", en: "General Settings" },
       flags: { pt: "Feature Flags", en: "Feature Flags" },
       api: { pt: "Uso da API", en: "API Usage" },
