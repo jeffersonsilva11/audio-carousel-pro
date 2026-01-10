@@ -174,6 +174,82 @@ export interface CarouselSlideImage {
   createdAt: string;
 }
 
+// Simplified interface for in-memory slide image state
+export interface SlideImage {
+  slideIndex: number;
+  storagePath: string | null;
+  publicUrl: string | null;
+  position: SlideImagePosition;
+}
+
+// ============================================================================
+// TEMPLATE VALIDATION HELPERS
+// ============================================================================
+
+/**
+ * Check if a template type is valid
+ */
+export function isValidCoverTemplate(value: string): value is CoverTemplateType {
+  return value in COVER_TEMPLATES;
+}
+
+export function isValidContentTemplate(value: string): value is ContentTemplateType {
+  return value in CONTENT_TEMPLATES;
+}
+
+/**
+ * Count how many slides require images based on templates
+ */
+export function countSlidesRequiringImages(
+  slideCount: number,
+  coverTemplate: CoverTemplateType,
+  contentTemplate: ContentTemplateType
+): { total: number; coverNeeds: boolean; contentNeeds: boolean } {
+  const coverNeeds = templateRequiresImage(coverTemplate);
+  const contentNeeds = templateRequiresImage(contentTemplate);
+
+  let total = 0;
+  if (coverNeeds) total += 1;
+  if (contentNeeds) total += slideCount - 1; // All content slides
+
+  return { total, coverNeeds, contentNeeds };
+}
+
+/**
+ * Validate that all required slide images are uploaded
+ */
+export function validateRequiredImages(
+  slideCount: number,
+  coverTemplate: CoverTemplateType,
+  contentTemplate: ContentTemplateType,
+  uploadedImages: SlideImage[]
+): { isValid: boolean; missingSlides: number[] } {
+  const missingSlides: number[] = [];
+
+  // Check cover slide (index 0)
+  if (templateRequiresImage(coverTemplate)) {
+    const hasCoverImage = uploadedImages.some(
+      img => img.slideIndex === 0 && img.publicUrl
+    );
+    if (!hasCoverImage) missingSlides.push(0);
+  }
+
+  // Check content slides (index 1 to slideCount - 1)
+  if (templateRequiresImage(contentTemplate)) {
+    for (let i = 1; i < slideCount; i++) {
+      const hasImage = uploadedImages.some(
+        img => img.slideIndex === i && img.publicUrl
+      );
+      if (!hasImage) missingSlides.push(i);
+    }
+  }
+
+  return {
+    isValid: missingSlides.length === 0,
+    missingSlides,
+  };
+}
+
 // ============================================================================
 // TEMPLATE SELECTION STATE
 // ============================================================================

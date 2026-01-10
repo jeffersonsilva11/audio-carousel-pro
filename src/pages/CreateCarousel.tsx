@@ -40,7 +40,15 @@ import CoverOptionsEditor from "@/components/carousel-creator/CoverOptionsEditor
 import AdvancedOptionsEditor from "@/components/carousel-creator/AdvancedOptionsEditor";
 import LayoutTemplateSelector from "@/components/carousel-creator/LayoutTemplateSelector";
 import SlideImageUploader from "@/components/carousel-creator/SlideImageUploader";
-import { CoverTemplateType, ContentTemplateType, templateRequiresImage } from "@/lib/templates";
+import {
+  CoverTemplateType,
+  ContentTemplateType,
+  SlideImage,
+  templateRequiresImage,
+  isValidCoverTemplate,
+  isValidContentTemplate,
+  validateRequiredImages,
+} from "@/lib/templates";
 import LiveCarouselPreview from "@/components/carousel-creator/LiveCarouselPreview";
 import { FontId, GradientId } from "@/lib/constants";
 import {
@@ -138,16 +146,8 @@ const CreateCarousel = () => {
   const [contentTemplate, setContentTemplate] = useState<ContentTemplateType>('content_text_only');
 
   // Per-slide images for templates (Creator+ only)
-  interface SlideImage {
-    slideIndex: number;
-    storagePath: string | null;
-    publicUrl: string | null;
-    position: 'main' | 'left' | 'right' | 'top' | 'bottom';
-  }
+  // SlideImage interface is imported from @/lib/templates
   const [perSlideImages, setPerSlideImages] = useState<SlideImage[]>([]);
-
-  // Generate a temporary carousel ID for image uploads during customize step
-  const [tempCarouselId] = useState(() => crypto.randomUUID());
 
   // Processing state
   const [isProcessing, setIsProcessing] = useState(false);
@@ -504,12 +504,12 @@ const CreateCarousel = () => {
       setSelectedStyle(carousel.style as StyleType || 'BLACK_WHITE');
       setSelectedFormat(carousel.format as FormatType || 'POST_SQUARE');
 
-      // Restore template selections (Creator+ only)
-      if (carousel.cover_template) {
-        setCoverTemplate(carousel.cover_template as CoverTemplateType);
+      // Restore template selections (Creator+ only) - with validation
+      if (carousel.cover_template && isValidCoverTemplate(carousel.cover_template)) {
+        setCoverTemplate(carousel.cover_template);
       }
-      if (carousel.content_template) {
-        setContentTemplate(carousel.content_template as ContentTemplateType);
+      if (carousel.content_template && isValidContentTemplate(carousel.content_template)) {
+        setContentTemplate(carousel.content_template);
       }
 
       // Restore template customization from template_config
@@ -625,6 +625,35 @@ const CreateCarousel = () => {
           variant: "destructive",
         });
         return;
+      }
+
+      // Check required images for Creator+ users with image-requiring templates
+      if (isCreator) {
+        const slideCount = slideCountMode === "auto" ? 6 : manualSlideCount;
+        const imageValidation = validateRequiredImages(
+          slideCount,
+          coverTemplate,
+          contentTemplate,
+          perSlideImages
+        );
+
+        if (!imageValidation.isValid) {
+          const missingCount = imageValidation.missingSlides.length;
+          const missingList = imageValidation.missingSlides
+            .map(i => i === 0 ? (siteLanguage === "pt-BR" ? "Capa" : "Cover") : `Slide ${i}`)
+            .join(", ");
+
+          toast({
+            title: siteLanguage === "pt-BR"
+              ? `${missingCount} imagem(ns) obrigatória(s) faltando`
+              : `${missingCount} required image(s) missing`,
+            description: siteLanguage === "pt-BR"
+              ? `Faça upload das imagens para: ${missingList}`
+              : `Please upload images for: ${missingList}`,
+            variant: "destructive",
+          });
+          return;
+        }
       }
 
       // Check usage limit for free users
@@ -1066,7 +1095,6 @@ const CreateCarousel = () => {
                   {isCreator && (templateRequiresImage(coverTemplate) || templateRequiresImage(contentTemplate)) && (
                     <div className="border-t border-border pt-8">
                       <SlideImageUploader
-                        carouselId={tempCarouselId}
                         userId={user?.id || ''}
                         slideCount={slideCountMode === "auto" ? 6 : manualSlideCount}
                         coverTemplate={coverTemplate}

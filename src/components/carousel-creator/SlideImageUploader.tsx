@@ -9,21 +9,12 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   CoverTemplateType,
   ContentTemplateType,
-  COVER_TEMPLATES,
-  CONTENT_TEMPLATES,
+  SlideImage,
   templateRequiresImage,
   getTemplateName,
 } from "@/lib/templates";
 
-interface SlideImage {
-  slideIndex: number;
-  storagePath: string | null;
-  publicUrl: string | null;
-  position: 'main' | 'left' | 'right' | 'top' | 'bottom';
-}
-
 interface SlideImageUploaderProps {
-  carouselId: string;
   userId: string;
   slideCount: number;
   coverTemplate: CoverTemplateType;
@@ -34,7 +25,6 @@ interface SlideImageUploaderProps {
 }
 
 const SlideImageUploader = ({
-  carouselId,
   userId,
   slideCount,
   coverTemplate,
@@ -175,9 +165,10 @@ const SlideImageUploader = ({
     setUploadingIndex(slideIndex);
 
     try {
-      // Generate unique filename
+      // Generate unique filename using userId/slides/{timestamp}-slide-{index}.{ext}
+      // This path doesn't depend on carousel ID, avoiding orphaned files
       const fileExt = file.name.split(".").pop();
-      const fileName = `${userId}/${carouselId}/slide-${slideIndex}-${Date.now()}.${fileExt}`;
+      const fileName = `${userId}/slides/${Date.now()}-slide-${slideIndex}.${fileExt}`;
 
       // Upload to Supabase Storage
       const { data, error } = await supabase.storage
