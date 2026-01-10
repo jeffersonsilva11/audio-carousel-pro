@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import {
   AVATAR_POSITIONS,
   DISPLAY_MODES,
+  CHARACTER_LIMITS,
   type AvatarPosition,
   type DisplayMode,
   getPositionLabel,
@@ -229,19 +230,24 @@ const ProfileIdentitySelector = ({ profile, setProfile, showValidation = false }
               placeholder={t("profileIdentity", "namePlaceholder", language)}
               value={profile.name}
               onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-              maxLength={50}
+              maxLength={CHARACTER_LIMITS.PROFILE_NAME}
               className={cn(showNameError && "border-destructive focus-visible:ring-destructive")}
             />
             {showNameError && (
               <AlertCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-destructive" />
             )}
           </div>
-          {showNameError && (
-            <p className="text-xs text-destructive flex items-center gap-1">
-              <AlertCircle className="w-3 h-3" />
-              {t("profileIdentity", "nameRequired", language)}
-            </p>
-          )}
+          <div className="flex justify-between items-center">
+            {showNameError ? (
+              <p className="text-xs text-destructive flex items-center gap-1">
+                <AlertCircle className="w-3 h-3" />
+                {t("profileIdentity", "nameRequired", language)}
+              </p>
+            ) : <span />}
+            <span className="text-xs text-muted-foreground">
+              {profile.name.length}/{CHARACTER_LIMITS.PROFILE_NAME}
+            </span>
+          </div>
         </div>
         <div className="space-y-2">
           <Label htmlFor="profile-username" className={cn(showUsernameError && "text-destructive")}>
@@ -261,18 +267,23 @@ const ProfileIdentitySelector = ({ profile, setProfile, showValidation = false }
                 username: e.target.value.replace('@', '').replace(/\s/g, '')
               })}
               className={cn("pl-10", showUsernameError && "border-destructive focus-visible:ring-destructive")}
-              maxLength={30}
+              maxLength={CHARACTER_LIMITS.PROFILE_USERNAME}
             />
             {showUsernameError && (
               <AlertCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-destructive" />
             )}
           </div>
-          {showUsernameError && (
-            <p className="text-xs text-destructive flex items-center gap-1">
-              <AlertCircle className="w-3 h-3" />
-              {t("profileIdentity", "usernameRequired", language)}
-            </p>
-          )}
+          <div className="flex justify-between items-center">
+            {showUsernameError ? (
+              <p className="text-xs text-destructive flex items-center gap-1">
+                <AlertCircle className="w-3 h-3" />
+                {t("profileIdentity", "usernameRequired", language)}
+              </p>
+            ) : <span />}
+            <span className="text-xs text-muted-foreground">
+              {profile.username.length}/{CHARACTER_LIMITS.PROFILE_USERNAME}
+            </span>
+          </div>
         </div>
       </div>
 

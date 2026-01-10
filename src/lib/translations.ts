@@ -28,6 +28,11 @@ export const translations = {
       en: "Processing error. Please try again.",
       es: "Error al procesar. Inténtalo de nuevo.",
     },
+    optional: {
+      "pt-BR": "opcional",
+      en: "optional",
+      es: "opcional",
+    },
     errorConnection: {
       "pt-BR": "Erro de conexão. Verifique sua internet.",
       en: "Connection error. Check your internet.",
@@ -795,6 +800,115 @@ export const translations = {
     },
   },
 
+  // Email Verification
+  verifyEmail: {
+    incompleteCode: {
+      "pt-BR": "Código incompleto",
+      en: "Incomplete code",
+      es: "Código incompleto",
+    },
+    enterSixDigitCode: {
+      "pt-BR": "Por favor, insira o código de 6 dígitos.",
+      en: "Please enter the 6-digit code.",
+      es: "Por favor, ingresa el código de 6 dígitos.",
+    },
+    invalidCode: {
+      "pt-BR": "Código inválido",
+      en: "Invalid code",
+      es: "Código inválido",
+    },
+    emailVerified: {
+      "pt-BR": "Email verificado!",
+      en: "Email verified!",
+      es: "¡Email verificado!",
+    },
+    accountActivated: {
+      "pt-BR": "Sua conta foi ativada com sucesso.",
+      en: "Your account has been activated successfully.",
+      es: "Tu cuenta ha sido activada con éxito.",
+    },
+    verificationError: {
+      "pt-BR": "Ocorreu um erro ao verificar o código. Tente novamente.",
+      en: "An error occurred while verifying the code. Please try again.",
+      es: "Ocurrió un error al verificar el código. Inténtalo de nuevo.",
+    },
+    resendError: {
+      "pt-BR": "Erro ao reenviar",
+      en: "Resend error",
+      es: "Error al reenviar",
+    },
+    userNotFound: {
+      "pt-BR": "Usuário não encontrado. Tente fazer login novamente.",
+      en: "User not found. Please try logging in again.",
+      es: "Usuario no encontrado. Intenta iniciar sesión de nuevo.",
+    },
+    codeResent: {
+      "pt-BR": "Código reenviado!",
+      en: "Code resent!",
+      es: "¡Código reenviado!",
+    },
+    checkInbox: {
+      "pt-BR": "Verifique sua caixa de entrada.",
+      en: "Check your inbox.",
+      es: "Revisa tu bandeja de entrada.",
+    },
+    resendCodeError: {
+      "pt-BR": "Ocorreu um erro ao reenviar o código.",
+      en: "An error occurred while resending the code.",
+      es: "Ocurrió un error al reenviar el código.",
+    },
+    redirecting: {
+      "pt-BR": "Sua conta foi ativada com sucesso. Redirecionando...",
+      en: "Your account has been activated successfully. Redirecting...",
+      es: "Tu cuenta ha sido activada con éxito. Redirigiendo...",
+    },
+    backToLogin: {
+      "pt-BR": "Voltar para login",
+      en: "Back to login",
+      es: "Volver al inicio de sesión",
+    },
+    verifyYourEmail: {
+      "pt-BR": "Verifique seu email",
+      en: "Verify your email",
+      es: "Verifica tu email",
+    },
+    sentVerificationCode: {
+      "pt-BR": "Enviamos um código de verificação para:",
+      en: "We sent a verification code to:",
+      es: "Enviamos un código de verificación a:",
+    },
+    verifying: {
+      "pt-BR": "Verificando...",
+      en: "Verifying...",
+      es: "Verificando...",
+    },
+    verifyEmailButton: {
+      "pt-BR": "Verificar Email",
+      en: "Verify Email",
+      es: "Verificar Email",
+    },
+    didNotReceiveCode: {
+      "pt-BR": "Não recebeu o código?",
+      en: "Didn't receive the code?",
+      es: "¿No recibiste el código?",
+    },
+    resendIn: {
+      "pt-BR": "Reenviar em {seconds}s",
+      en: "Resend in {seconds}s",
+      es: "Reenviar en {seconds}s",
+    },
+    resendCode: {
+      "pt-BR": "Reenviar código",
+      en: "Resend code",
+      es: "Reenviar código",
+    },
+    spamHint: {
+      "pt-BR": "Verifique também a pasta de spam. O código expira em 24 horas.",
+      en: "Also check your spam folder. The code expires in 24 hours.",
+      es: "Revisa también la carpeta de spam. El código expira en 24 horas.",
+    },
+  },
+
   // Dashboard
   dashboard: {
     hello: {
@@ -1176,6 +1290,126 @@ export const translations = {
       en: "View in Dashboard",
       es: "Ver en Dashboard",
     },
+    carouselFinalized: {
+      "pt-BR": "Carrossel finalizado!",
+      en: "Carousel finalized!",
+      es: "¡Carrusel finalizado!",
+    },
+    nowYouCanDownload: {
+      "pt-BR": "Agora você pode baixar seus slides.",
+      en: "Now you can download your slides.",
+      es: "Ahora puedes descargar tus slides.",
+    },
+    errorFinalizing: {
+      "pt-BR": "Erro ao finalizar",
+      en: "Error finalizing",
+      es: "Error al finalizar",
+    },
+    audioRestored: {
+      "pt-BR": "Áudio restaurado",
+      en: "Audio restored",
+      es: "Audio restaurado",
+    },
+    previousAudioRecovered: {
+      "pt-BR": "Seu áudio anterior foi recuperado.",
+      en: "Your previous audio has been recovered.",
+      es: "Tu audio anterior ha sido recuperado.",
+    },
+    carouselNotFound: {
+      "pt-BR": "Carrossel não encontrado ou você não tem permissão.",
+      en: "Carousel not found or you don't have permission.",
+      es: "Carrusel no encontrado o no tienes permiso.",
+    },
+    warning: {
+      "pt-BR": "Aviso",
+      en: "Warning",
+      es: "Aviso",
+    },
+    notInFailedState: {
+      "pt-BR": "Este carrossel não está em estado de falha.",
+      en: "This carousel is not in a failed state.",
+      es: "Este carrusel no está en estado de error.",
+    },
+    carouselLoaded: {
+      "pt-BR": "Carrossel carregado",
+      en: "Carousel loaded",
+      es: "Carrusel cargado",
+    },
+    continueWhereYouLeft: {
+      "pt-BR": "Continue de onde parou.",
+      en: "Continue where you left off.",
+      es: "Continúa donde lo dejaste.",
+    },
+    couldNotLoadCarousel: {
+      "pt-BR": "Não foi possível carregar o carrossel.",
+      en: "Could not load carousel.",
+      es: "No se pudo cargar el carrusel.",
+    },
+    cover: {
+      "pt-BR": "Capa",
+      en: "Cover",
+      es: "Portada",
+    },
+    requiredImagesMissing: {
+      "pt-BR": "{count} imagem(ns) obrigatória(s) faltando",
+      en: "{count} required image(s) missing",
+      es: "{count} imagen(es) obligatoria(s) faltante(s)",
+    },
+    uploadImagesFor: {
+      "pt-BR": "Faça upload das imagens para: {list}",
+      en: "Upload images for: {list}",
+      es: "Sube las imágenes para: {list}",
+    },
+    checkoutError: {
+      "pt-BR": "Erro ao iniciar checkout",
+      en: "Error starting checkout",
+      es: "Error al iniciar checkout",
+    },
+    generatingCarousel: {
+      "pt-BR": "Gerando seu carrossel",
+      en: "Generating your carousel",
+      es: "Generando tu carrusel",
+    },
+    aiWorkingOnContent: {
+      "pt-BR": "Nossa IA está trabalhando no seu conteúdo",
+      en: "Our AI is working on your content",
+      es: "Nuestra IA está trabajando en tu contenido",
+    },
+    readyToDownloadEmoji: {
+      "pt-BR": "Pronto para baixar! 🎉",
+      en: "Ready to download! 🎉",
+      es: "¡Listo para descargar! 🎉",
+    },
+    reviewCarousel: {
+      "pt-BR": "Revise seu carrossel",
+      en: "Review your carousel",
+      es: "Revisa tu carrusel",
+    },
+    chooseFormatAndDownload: {
+      "pt-BR": "Escolha o formato e baixe seus slides",
+      en: "Choose format and download your slides",
+      es: "Elige el formato y descarga tus slides",
+    },
+    editTextsIfNeeded: {
+      "pt-BR": "Edite os textos se necessário e finalize",
+      en: "Edit texts if needed and finalize",
+      es: "Edita los textos si es necesario y finaliza",
+    },
+    back: {
+      "pt-BR": "Voltar",
+      en: "Back",
+      es: "Volver",
+    },
+    processing: {
+      "pt-BR": "Processando...",
+      en: "Processing...",
+      es: "Procesando...",
+    },
+    continue: {
+      "pt-BR": "Continuar",
+      en: "Continue",
+      es: "Continuar",
+    },
   },
 
   // Plans
@@ -1343,6 +1577,123 @@ export const translations = {
       "pt-BR": "Cancelar gravação",
       en: "Cancel recording",
       es: "Cancelar grabación",
+    },
+  },
+
+  // Slide Count Selector
+  slideCount: {
+    title: {
+      "pt-BR": "Quantidade de Slides",
+      en: "Number of Slides",
+      es: "Cantidad de Slides",
+    },
+    subtitle: {
+      "pt-BR": "Defina quantos slides seu carrossel terá",
+      en: "Define how many slides your carousel will have",
+      es: "Define cuántos slides tendrá tu carrusel",
+    },
+    numberOfSlides: {
+      "pt-BR": "Número de slides",
+      en: "Number of slides",
+      es: "Número de slides",
+    },
+    slides: {
+      "pt-BR": "slides",
+      en: "slides",
+      es: "slides",
+    },
+    autoHint: {
+      "pt-BR": "A IA analisará seu conteúdo e criará o número ideal de slides para melhor engajamento.",
+      en: "AI will analyze your content and create the ideal number of slides for best engagement.",
+      es: "La IA analizará tu contenido y creará el número ideal de slides para mejor engagement.",
+    },
+    manualHint: {
+      "pt-BR": "Seu carrossel terá exatamente {count} slides. A IA adaptará o conteúdo para caber.",
+      en: "Your carousel will have exactly {count} slides. AI will adapt the content to fit.",
+      es: "Tu carrusel tendrá exactamente {count} slides. La IA adaptará el contenido para caber.",
+    },
+  },
+
+  // Text Mode Selector
+  textMode: {
+    title: {
+      "pt-BR": "Modo de Texto",
+      en: "Text Mode",
+      es: "Modo de Texto",
+    },
+    subtitle: {
+      "pt-BR": "Como a IA deve processar seu conteúdo",
+      en: "How AI should process your content",
+      es: "Cómo la IA debe procesar tu contenido",
+    },
+    singleModeHint: {
+      "pt-BR": "O modo Texto Único gera uma imagem com texto mais longo, ideal para threads ou conteúdo educativo denso.",
+      en: "Single Text mode generates an image with longer text, ideal for threads or dense educational content.",
+      es: "El modo Texto Único genera una imagen con texto más largo, ideal para hilos o contenido educativo denso.",
+    },
+    textCustomization: {
+      "pt-BR": "Personalização do Texto",
+      en: "Text Customization",
+      es: "Personalización del Texto",
+    },
+    textAlignment: {
+      "pt-BR": "Alinhamento do Texto",
+      en: "Text Alignment",
+      es: "Alineación del Texto",
+    },
+    left: {
+      "pt-BR": "Esquerda",
+      en: "Left",
+      es: "Izquierda",
+    },
+    center: {
+      "pt-BR": "Centro",
+      en: "Center",
+      es: "Centro",
+    },
+    right: {
+      "pt-BR": "Direita",
+      en: "Right",
+      es: "Derecha",
+    },
+    font: {
+      "pt-BR": "Fonte",
+      en: "Font",
+      es: "Fuente",
+    },
+    fontAndAlignment: {
+      "pt-BR": "Fonte e Alinhamento",
+      en: "Font and Alignment",
+      es: "Fuente y Alineación",
+    },
+    customizeFontAndAlignment: {
+      "pt-BR": "Personalize a fonte e o alinhamento do texto",
+      en: "Customize the font and text alignment",
+      es: "Personaliza la fuente y la alineación del texto",
+    },
+    exclusiveFonts: {
+      "pt-BR": "12 fontes exclusivas",
+      en: "12 exclusive fonts",
+      es: "12 fuentes exclusivas",
+    },
+    customAlignment: {
+      "pt-BR": "Alinhamento personalizado",
+      en: "Custom alignment",
+      es: "Alineación personalizada",
+    },
+    realtimePreview: {
+      "pt-BR": "Preview em tempo real",
+      en: "Real-time preview",
+      es: "Vista previa en tiempo real",
+    },
+  },
+
+  // Language Selector
+  languageSelector: {
+    carouselLanguage: {
+      "pt-BR": "Idioma do Carrossel",
+      en: "Carousel Language",
+      es: "Idioma del Carrusel",
     },
   },
 
@@ -3315,6 +3666,16 @@ export const translations = {
       "pt-BR": "Apenas visualização de estilo",
       en: "Style preview only",
       es: "Solo vista previa de estilo",
+    },
+    slideNavigation: {
+      "pt-BR": "Navegação de slides",
+      en: "Slide navigation",
+      es: "Navegación de slides",
+    },
+    goToSlide: {
+      "pt-BR": "Ir para slide",
+      en: "Go to slide",
+      es: "Ir al slide",
     },
   },
 

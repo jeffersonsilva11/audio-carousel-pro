@@ -576,17 +576,17 @@ const CarouselDetail = () => {
                         <DropdownMenuItem onClick={() => setExportFormat("png")} className="cursor-pointer">
                           <ImageIcon className="w-4 h-4 mr-2" />
                           PNG
-                          <span className="ml-2 text-xs text-muted-foreground">(Recomendado)</span>
+                          <span className="ml-2 text-xs text-muted-foreground">{t("carouselPreview", "formatRecommended")}</span>
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => setExportFormat("jpg")} className="cursor-pointer">
                           <ImageIcon className="w-4 h-4 mr-2" />
                           JPG
-                          <span className="ml-2 text-xs text-muted-foreground">(Menor tamanho)</span>
+                          <span className="ml-2 text-xs text-muted-foreground">{t("carouselPreview", "formatSmaller")}</span>
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => setExportFormat("svg")} className="cursor-pointer">
                           <FileImage className="w-4 h-4 mr-2" />
                           SVG
-                          <span className="ml-2 text-xs text-muted-foreground">(Vetorial)</span>
+                          <span className="ml-2 text-xs text-muted-foreground">{t("carouselPreview", "formatVector")}</span>
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>

@@ -172,7 +172,7 @@ export function useCarouselGeneration() {
 
       // Step 4: Update carousel in database
       setStatus("COMPLETED");
-      await supabase.from("carousels").update({
+      const { error: updateError } = await supabase.from("carousels").update({
         status: "COMPLETED",
         transcription,
         script,
@@ -192,6 +192,10 @@ export function useCarouselGeneration() {
           contentTemplate: customization.contentTemplate,
         } : null,
       }).eq("id", carouselId);
+
+      if (updateError) {
+        throw new Error("Failed to save carousel: " + updateError.message);
+      }
 
       const generationResult: GenerationResult = {
         transcription,
@@ -216,7 +220,10 @@ export function useCarouselGeneration() {
   };
 
   const updateCarouselStatus = async (carouselId: string, status: ProcessingStatus) => {
-    await supabase.from("carousels").update({ status }).eq("id", carouselId);
+    const { error } = await supabase.from("carousels").update({ status }).eq("id", carouselId);
+    if (error) {
+      console.error("Error updating carousel status:", error);
+    }
   };
 
   const fileToBase64 = (file: File): Promise<string> => {

@@ -413,18 +413,30 @@ const LiveCarouselPreview = ({
       </div>
 
       {/* Slide dots */}
-      <div className="flex justify-center gap-1.5">
+      <div className="flex justify-center gap-1.5" role="tablist" aria-label={t("livePreview", "slideNavigation", language)}>
         {visibleSlides.map((_, index) => (
           <button
             key={index}
+            type="button"
+            role="tab"
             onClick={() => setCurrentSlide(index)}
+            aria-label={`${t("livePreview", "goToSlide", language)} ${index + 1}`}
+            aria-selected={index === currentSlide}
+            aria-current={index === currentSlide ? "true" : undefined}
             className={cn(
-              "w-1.5 h-1.5 rounded-full transition-all",
+              "w-6 h-6 rounded-full transition-all flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2",
               index === currentSlide
-                ? "bg-accent w-4"
-                : "bg-muted-foreground/30 hover:bg-muted-foreground/50"
+                ? "bg-accent"
+                : "bg-transparent hover:bg-muted-foreground/20"
             )}
-          />
+          >
+            <span className={cn(
+              "rounded-full transition-all",
+              index === currentSlide
+                ? "w-4 h-1.5 bg-accent-foreground"
+                : "w-1.5 h-1.5 bg-muted-foreground/50"
+            )} />
+          </button>
         ))}
       </div>
 

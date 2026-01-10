@@ -692,7 +692,7 @@ const History = () => {
                       <span className="font-semibold text-sm">{group.label}</span>
                     </div>
                     <span className="text-xs text-muted-foreground">
-                      {group.count} {group.count === 1 ? 'carrossel' : 'carrosséis'}
+                      {group.count} {group.count === 1 ? t("dashboard", "carouselCount", language) : t("dashboard", "carouselsCount", language)}
                     </span>
                     <div className="flex-1 h-px bg-border" />
                   </div>

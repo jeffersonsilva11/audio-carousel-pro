@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { SupportedLanguage } from "./useLanguage";
+import { EXCHANGE_RATES } from "@/lib/localization";
 
 export interface PlanConfigData {
   id: string;
@@ -125,9 +126,9 @@ export function usePlansConfig(): UsePlansConfigReturn {
           case "pt-BR":
             return plan.price_brl;
           case "en":
-            return plan.price_usd || Math.round(plan.price_brl * 0.17);
+            return plan.price_usd || Math.round(plan.price_brl * EXCHANGE_RATES.USD);
           case "es":
-            return plan.price_eur || Math.round(plan.price_brl * 0.16);
+            return plan.price_eur || Math.round(plan.price_brl * EXCHANGE_RATES.EUR);
         }
       }
 

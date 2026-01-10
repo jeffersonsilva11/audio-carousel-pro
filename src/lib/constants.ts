@@ -222,3 +222,10 @@ export function getSlideCountLabel(labelKey: string, language: SupportedLanguage
 }
 
 export type SlideCountMode = 'auto' | 'manual';
+
+// Character limits for form fields
+export const CHARACTER_LIMITS = {
+  PROFILE_NAME: 50,
+  PROFILE_USERNAME: 30,
+  HEX_COLOR: 7,
+} as const;

@@ -11,6 +11,7 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { t } from "@/lib/translations";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { CHARACTER_LIMITS } from "@/lib/constants";
 import { LottieAnimation } from "@/components/animations/LottieAnimations";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -406,22 +407,28 @@ const OnboardingModal = ({ open, onComplete }: OnboardingModalProps) => {
                       placeholder={t("onboarding", "namePlaceholder", language)}
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      maxLength={50}
+                      maxLength={CHARACTER_LIMITS.PROFILE_NAME}
                     />
+                    <span className="text-xs text-muted-foreground">
+                      {name.length}/{CHARACTER_LIMITS.PROFILE_NAME}
+                    </span>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="username">Instagram (opcional)</Label>
+                    <Label htmlFor="username">Instagram ({t("common", "optional", language)})</Label>
                     <div className="relative">
                       <Instagram className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                       <Input
                         id="username"
-                        placeholder="seuusername"
+                        placeholder={t("profileIdentity", "usernamePlaceholder", language)}
                         value={username}
                         onChange={(e) => setUsername(e.target.value.replace('@', '').replace(/\s/g, ''))}
                         className="pl-10"
-                        maxLength={30}
+                        maxLength={CHARACTER_LIMITS.PROFILE_USERNAME}
                       />
                     </div>
+                    <span className="text-xs text-muted-foreground">
+                      {username.length}/{CHARACTER_LIMITS.PROFILE_USERNAME}
+                    </span>
                   </div>
                 </div>
               </motion.div>

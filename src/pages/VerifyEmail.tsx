@@ -88,8 +88,8 @@ const VerifyEmail = () => {
 
     if (otpCode.length !== 6) {
       toast({
-        title: "Código incompleto",
-        description: "Por favor, insira o código de 6 dígitos.",
+        title: t("verifyEmail", "incompleteCode", language),
+        description: t("verifyEmail", "enterSixDigitCode", language),
         variant: "destructive",
       });
       return;
@@ -107,9 +107,9 @@ const VerifyEmail = () => {
       });
 
       if (response.error || response.data?.error) {
-        const errorMessage = response.data?.error || response.error?.message || "Código inválido";
+        const errorMessage = response.data?.error || response.error?.message || t("verifyEmail", "invalidCode", language);
         toast({
-          title: "Código inválido",
+          title: t("verifyEmail", "invalidCode", language),
           description: errorMessage,
           variant: "destructive",
         });
@@ -118,8 +118,8 @@ const VerifyEmail = () => {
       } else {
         setIsVerified(true);
         toast({
-          title: "Email verificado!",
-          description: "Sua conta foi ativada com sucesso.",
+          title: t("verifyEmail", "emailVerified", language),
+          description: t("verifyEmail", "accountActivated", language),
         });
 
         // Refresh session to update email_confirmed_at
@@ -130,10 +130,10 @@ const VerifyEmail = () => {
           navigate("/dashboard");
         }, 1500);
       }
-    } catch (err) {
+    } catch {
       toast({
-        title: "Erro",
-        description: "Ocorreu um erro ao verificar o código. Tente novamente.",
+        title: t("errors", "error", language),
+        description: t("verifyEmail", "verificationError", language),
         variant: "destructive",
       });
     } finally {
@@ -152,8 +152,8 @@ const VerifyEmail = () => {
 
       if (!user) {
         toast({
-          title: "Erro ao reenviar",
-          description: "Usuário não encontrado. Tente fazer login novamente.",
+          title: t("verifyEmail", "resendError", language),
+          description: t("verifyEmail", "userNotFound", language),
           variant: "destructive",
         });
         return;
@@ -168,23 +168,23 @@ const VerifyEmail = () => {
       });
 
       if (response.error || response.data?.error) {
-        const errorMessage = response.data?.error || response.error?.message || "Erro ao reenviar";
+        const errorMessage = response.data?.error || response.error?.message || t("verifyEmail", "resendError", language);
         toast({
-          title: "Erro ao reenviar",
+          title: t("verifyEmail", "resendError", language),
           description: errorMessage,
           variant: "destructive",
         });
       } else {
         toast({
-          title: "Código reenviado!",
-          description: "Verifique sua caixa de entrada.",
+          title: t("verifyEmail", "codeResent", language),
+          description: t("verifyEmail", "checkInbox", language),
         });
         setResendCooldown(60); // 60 seconds cooldown
       }
-    } catch (err) {
+    } catch {
       toast({
-        title: "Erro",
-        description: "Ocorreu um erro ao reenviar o código.",
+        title: t("errors", "error", language),
+        description: t("verifyEmail", "resendCodeError", language),
         variant: "destructive",
       });
     } finally {
@@ -201,9 +201,9 @@ const VerifyEmail = () => {
               <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
                 <CheckCircle2 className="w-10 h-10 text-green-600 dark:text-green-400" />
               </div>
-              <h2 className="text-2xl font-bold mb-2">Email Verificado!</h2>
+              <h2 className="text-2xl font-bold mb-2">{t("verifyEmail", "emailVerified", language)}</h2>
               <p className="text-muted-foreground mb-6">
-                Sua conta foi ativada com sucesso. Redirecionando...
+                {t("verifyEmail", "redirecting", language)}
               </p>
               <Loader2 className="w-6 h-6 animate-spin mx-auto text-accent" />
             </CardContent>
@@ -228,7 +228,7 @@ const VerifyEmail = () => {
           className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-8"
         >
           <ArrowLeft className="w-4 h-4" />
-          Voltar para login
+          {t("verifyEmail", "backToLogin", language)}
         </button>
 
         <Card className="border-border/50 shadow-2xl">
@@ -246,10 +246,10 @@ const VerifyEmail = () => {
             </div>
 
             <CardTitle className="text-2xl font-bold">
-              Verifique seu email
+              {t("verifyEmail", "verifyYourEmail", language)}
             </CardTitle>
             <CardDescription className="space-y-2">
-              <p>Enviamos um código de verificação para:</p>
+              <p>{t("verifyEmail", "sentVerificationCode", language)}</p>
               <p className="font-medium text-foreground">{email}</p>
             </CardDescription>
           </CardHeader>
@@ -287,17 +287,17 @@ const VerifyEmail = () => {
               {isLoading ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Verificando...
+                  {t("verifyEmail", "verifying", language)}
                 </>
               ) : (
-                "Verificar Email"
+                t("verifyEmail", "verifyEmailButton", language)
               )}
             </Button>
 
             {/* Resend code */}
             <div className="mt-6 text-center">
               <p className="text-sm text-muted-foreground mb-2">
-                Não recebeu o código?
+                {t("verifyEmail", "didNotReceiveCode", language)}
               </p>
               <Button
                 variant="ghost"
@@ -312,8 +312,8 @@ const VerifyEmail = () => {
                   <RefreshCw className="w-4 h-4" />
                 )}
                 {resendCooldown > 0
-                  ? `Reenviar em ${resendCooldown}s`
-                  : "Reenviar código"
+                  ? t("verifyEmail", "resendIn", language).replace("{seconds}", String(resendCooldown))
+                  : t("verifyEmail", "resendCode", language)
                 }
               </Button>
             </div>
@@ -321,7 +321,7 @@ const VerifyEmail = () => {
             {/* Help text */}
             <div className="mt-6 p-4 bg-muted/50 rounded-lg">
               <p className="text-xs text-muted-foreground text-center">
-                💡 Verifique também a pasta de spam. O código expira em 24 horas.
+                💡 {t("verifyEmail", "spamHint", language)}
               </p>
             </div>
           </CardContent>

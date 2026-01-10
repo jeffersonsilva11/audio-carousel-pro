@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import { SLIDE_COUNT_OPTIONS, SlideCountMode, getSlideCountLabel } from "@/lib/constants";
 import { Slider } from "@/components/ui/slider";
 import { useLanguage } from "@/hooks/useLanguage";
+import { t } from "@/lib/translations";
 
 interface SlideCountSelectorProps {
   mode: SlideCountMode;
@@ -26,9 +27,9 @@ const SlideCountSelector = ({
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-lg font-semibold mb-1">Quantidade de Slides</h3>
+        <h3 className="text-lg font-semibold mb-1">{t("slideCount", "title", language)}</h3>
         <p className="text-sm text-muted-foreground">
-          Defina quantos slides seu carrossel terá
+          {t("slideCount", "subtitle", language)}
         </p>
       </div>
 
@@ -100,10 +101,10 @@ const SlideCountSelector = ({
       {mode === "manual" && (
         <div className="p-4 bg-muted/50 rounded-lg border border-border space-y-4">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium">Número de slides</span>
+            <span className="text-sm font-medium">{t("slideCount", "numberOfSlides", language)}</span>
             <span className="text-2xl font-bold text-accent">{manualCount}</span>
           </div>
-          
+
           <Slider
             value={[manualCount]}
             onValueChange={(value) => setManualCount(value[0])}
@@ -112,10 +113,10 @@ const SlideCountSelector = ({
             step={1}
             className="w-full"
           />
-          
+
           <div className="flex justify-between text-xs text-muted-foreground">
-            <span>3 slides</span>
-            <span>10 slides</span>
+            <span>3 {t("slideCount", "slides", language)}</span>
+            <span>10 {t("slideCount", "slides", language)}</span>
           </div>
 
           {/* Visual preview of slide count */}
@@ -137,9 +138,9 @@ const SlideCountSelector = ({
 
       {/* Helper text */}
       <p className="text-xs text-muted-foreground">
-        {mode === "auto" 
-          ? "💡 A IA analisará seu conteúdo e criará o número ideal de slides para melhor engajamento."
-          : `💡 Seu carrossel terá exatamente ${manualCount} slides. A IA adaptará o conteúdo para caber.`
+        {mode === "auto"
+          ? `💡 ${t("slideCount", "autoHint", language)}`
+          : `💡 ${t("slideCount", "manualHint", language).replace("{count}", String(manualCount))}`
         }
       </p>
     </div>

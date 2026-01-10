@@ -197,10 +197,14 @@ const CreateCarousel = () => {
 
     try {
       // Update script in database first
-      await supabase
+      const { error: scriptError } = await supabase
         .from('carousels')
         .update({ script: { slides: editedSlides } })
         .eq('id', currentCarouselId);
+
+      if (scriptError) {
+        throw new Error("Failed to save script: " + scriptError.message);
+      }
 
       // If there are changed slides, regenerate them
       if (changedIndices.length > 0) {
@@ -263,25 +267,24 @@ const CreateCarousel = () => {
       }
 
       // Mark as finalized
-      await supabase
+      const { error: finalizeError } = await supabase
         .from('carousels')
         .update({ exported_at: new Date().toISOString() })
         .eq('id', currentCarouselId);
 
+      if (finalizeError) {
+        throw new Error("Failed to finalize carousel: " + finalizeError.message);
+      }
+
       setIsCarouselLocked(true);
       toast({
-        title: siteLanguage === "pt-BR" ? "Carrossel finalizado!" : siteLanguage === "es" ? "¡Carrusel finalizado!" : "Carousel finalized!",
-        description: siteLanguage === "pt-BR"
-          ? "Agora você pode baixar seus slides."
-          : siteLanguage === "es"
-          ? "Ahora puedes descargar tus slides."
-          : "Now you can download your slides.",
+        title: t("create", "carouselFinalized", siteLanguage),
+        description: t("create", "nowYouCanDownload", siteLanguage),
       });
-    } catch (err) {
-      console.error('Error finalizing carousel:', err);
+    } catch {
       toast({
-        title: siteLanguage === "pt-BR" ? "Erro ao finalizar" : "Error finalizing",
-        description: siteLanguage === "pt-BR" ? "Tente novamente." : "Please try again.",
+        title: t("create", "errorFinalizing", siteLanguage),
+        description: t("create", "tryAgain", siteLanguage),
         variant: "destructive",
       });
     } finally {
@@ -374,15 +377,10 @@ const CreateCarousel = () => {
         }
 
         toast({
-          title: siteLanguage === "pt-BR" ? "Áudio restaurado" : siteLanguage === "es" ? "Audio restaurado" : "Audio restored",
-          description: siteLanguage === "pt-BR"
-            ? "Seu áudio anterior foi recuperado."
-            : siteLanguage === "es"
-            ? "Tu audio anterior fue recuperado."
-            : "Your previous audio was recovered.",
+          title: t("create", "audioRestored", siteLanguage),
+          description: t("create", "previousAudioRecovered", siteLanguage),
         });
-      } catch (err) {
-        console.error('Error restoring audio from storage:', err);
+      } catch {
         // Clear corrupted data
         sessionStorage.removeItem('carousel_audio_data');
         sessionStorage.removeItem('carousel_audio_duration');
@@ -473,8 +471,8 @@ const CreateCarousel = () => {
 
       if (error || !carousel) {
         toast({
-          title: "Erro",
-          description: "Carrossel não encontrado ou você não tem permissão.",
+          title: t("errors", "error", siteLanguage),
+          description: t("create", "carouselNotFound", siteLanguage),
           variant: "destructive",
         });
         return;
@@ -482,8 +480,8 @@ const CreateCarousel = () => {
 
       if (carousel.status !== 'FAILED') {
         toast({
-          title: "Aviso",
-          description: "Este carrossel não está em estado de falha.",
+          title: t("create", "warning", siteLanguage),
+          description: t("create", "notInFailedState", siteLanguage),
           variant: "destructive",
         });
         return;
@@ -529,14 +527,13 @@ const CreateCarousel = () => {
       setCurrentStep('customize');
 
       toast({
-        title: "Carrossel carregado",
-        description: "Continue de onde parou.",
+        title: t("create", "carouselLoaded", siteLanguage),
+        description: t("create", "continueWhereYouLeft", siteLanguage),
       });
-    } catch (err) {
-      console.error('Error loading failed carousel:', err);
+    } catch {
       toast({
-        title: "Erro",
-        description: "Não foi possível carregar o carrossel.",
+        title: t("errors", "error", siteLanguage),
+        description: t("create", "couldNotLoadCarousel", siteLanguage),
         variant: "destructive",
       });
     }
@@ -640,16 +637,12 @@ const CreateCarousel = () => {
         if (!imageValidation.isValid) {
           const missingCount = imageValidation.missingSlides.length;
           const missingList = imageValidation.missingSlides
-            .map(i => i === 0 ? (siteLanguage === "pt-BR" ? "Capa" : "Cover") : `Slide ${i}`)
+            .map(i => i === 0 ? t("create", "cover", siteLanguage) : `Slide ${i}`)
             .join(", ");
 
           toast({
-            title: siteLanguage === "pt-BR"
-              ? `${missingCount} imagem(ns) obrigatória(s) faltando`
-              : `${missingCount} required image(s) missing`,
-            description: siteLanguage === "pt-BR"
-              ? `Faça upload das imagens para: ${missingList}`
-              : `Please upload images for: ${missingList}`,
+            title: t("create", "requiredImagesMissing", siteLanguage).replace("{count}", String(missingCount)),
+            description: t("create", "uploadImagesFor", siteLanguage).replace("{list}", missingList),
             variant: "destructive",
           });
           return;
@@ -738,10 +731,9 @@ const CreateCarousel = () => {
       });
 
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : "Tente novamente mais tarde.";
-      console.error("Error starting generation:", err);
+      const errorMessage = err instanceof Error ? err.message : t("create", "tryAgain", siteLanguage);
       toast({
-        title: "Erro ao gerar carrossel",
+        title: t("create", "generationError", siteLanguage),
         description: errorMessage,
         variant: "destructive",
       });
@@ -755,10 +747,10 @@ const CreateCarousel = () => {
     try {
       await createCheckout();
       setShowUpgradeDialog(false);
-    } catch (error) {
+    } catch {
       toast({
-        title: "Erro ao iniciar checkout",
-        description: "Tente novamente.",
+        title: t("create", "checkoutError", siteLanguage),
+        description: t("create", "tryAgain", siteLanguage),
         variant: "destructive",
       });
     } finally {
@@ -795,13 +787,13 @@ const CreateCarousel = () => {
       }
 
       toast({
-        title: "Download concluído",
-        description: `${downloadCount} slides baixados com sucesso.`,
+        title: t("create", "downloadComplete", siteLanguage),
+        description: `${downloadCount} ${t("create", "slidesDownloaded", siteLanguage)}`,
       });
-    } catch (err) {
+    } catch {
       toast({
-        title: "Erro no download",
-        description: "Não foi possível baixar os slides.",
+        title: t("create", "downloadError", siteLanguage),
+        description: t("create", "couldNotDownload", siteLanguage),
         variant: "destructive",
       });
     }
@@ -999,9 +991,9 @@ const CreateCarousel = () => {
           {currentStep === "customize" && (
             <>
               <div className="text-center mb-8">
-                <h1 className="text-2xl font-bold mb-2">Personalize seu carrossel</h1>
+                <h1 className="text-2xl font-bold mb-2">{t("create", "customizeCarousel", siteLanguage)}</h1>
                 <p className="text-muted-foreground">
-                  Escolha como a IA vai criar seu conteúdo
+                  {t("create", "customizeSubtitle", siteLanguage)}
                 </p>
               </div>
               
@@ -1172,12 +1164,12 @@ const CreateCarousel = () => {
           {currentStep === "processing" && (
             <>
               <div className="text-center mb-8">
-                <h1 className="text-2xl font-bold mb-2">Gerando seu carrossel</h1>
+                <h1 className="text-2xl font-bold mb-2">{t("create", "generatingCarousel", siteLanguage)}</h1>
                 <p className="text-muted-foreground">
-                  Nossa IA está trabalhando no seu conteúdo
+                  {t("create", "aiWorkingOnContent", siteLanguage)}
                 </p>
               </div>
-              
+
               <ProcessingStatus status={status} />
             </>
           )}
@@ -1187,16 +1179,16 @@ const CreateCarousel = () => {
               <div className="text-center mb-8">
                 <h1 className="text-2xl font-bold mb-2">
                   {isCarouselLocked
-                    ? (siteLanguage === "pt-BR" ? "Pronto para baixar! 🎉" : siteLanguage === "es" ? "¡Listo para descargar! 🎉" : "Ready to download! 🎉")
+                    ? t("create", "readyToDownloadEmoji", siteLanguage)
                     : (isPro
-                      ? (siteLanguage === "pt-BR" ? "Revise seu carrossel" : siteLanguage === "es" ? "Revisa tu carrusel" : "Review your carousel")
+                      ? t("create", "reviewCarousel", siteLanguage)
                       : t("create", "carouselReady", siteLanguage) + " 🎉")}
                 </h1>
                 <p className="text-muted-foreground">
                   {isCarouselLocked
-                    ? (siteLanguage === "pt-BR" ? "Escolha o formato e baixe seus slides" : siteLanguage === "es" ? "Elige el formato y descarga tus slides" : "Choose the format and download your slides")
+                    ? t("create", "chooseFormatAndDownload", siteLanguage)
                     : (isPro
-                      ? (siteLanguage === "pt-BR" ? "Edite os textos se necessário e finalize" : siteLanguage === "es" ? "Edita los textos si es necesario y finaliza" : "Edit the texts if needed and finalize")
+                      ? t("create", "editTextsIfNeeded", siteLanguage)
                       : t("create", "generatedSuccess", siteLanguage))}
                   {" "}• {generatedSlides.length} slides
                 </p>
@@ -1270,7 +1262,7 @@ const CreateCarousel = () => {
               className={cn(currentStep === "upload" && "invisible")}
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Voltar
+              {t("create", "back", siteLanguage)}
             </Button>
 
             <Button
@@ -1281,16 +1273,16 @@ const CreateCarousel = () => {
               {isProcessing ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Processando...
+                  {t("create", "processing", siteLanguage)}
                 </>
               ) : currentStep === "customize" ? (
                 <>
-                  Gerar Carrossel
+                  {t("create", "generateCarousel", siteLanguage)}
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </>
               ) : (
                 <>
-                  Continuar
+                  {t("create", "continue", siteLanguage)}
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </>
               )}
