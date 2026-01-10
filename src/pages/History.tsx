@@ -112,7 +112,7 @@ const History = () => {
       setCarousels(data || []);
     } catch (error) {
       console.error("Error fetching carousels:", error);
-      toast.error(t("common", "error", language));
+      toast.error(t("common", "errorLoadingData", language));
     } finally {
       setLoadingCarousels(false);
     }
@@ -132,7 +132,7 @@ const History = () => {
       });
 
       if (error || data?.error) {
-        throw new Error(data?.error || error?.message || "Error");
+        throw new Error(data?.error || error?.message || t("common", "errorUnexpected", language));
       }
 
       toast.success(t("dashboard", "watermarkRemoved", language));

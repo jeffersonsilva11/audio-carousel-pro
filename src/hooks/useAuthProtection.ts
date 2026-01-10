@@ -6,11 +6,9 @@ const MAX_FAILED_ATTEMPTS = 3;
 const LOCKOUT_DURATION = 15 * 60 * 1000; // 15 minutes in ms
 const STORAGE_KEY = 'auth_attempts';
 
-// Check if running in development (localhost)
-const isDevelopment = () => {
-  const hostname = window.location.hostname;
-  return hostname === 'localhost' || hostname === '127.0.0.1' || hostname.startsWith('192.168.');
-};
+// Check if running in development mode using Vite's environment variable
+// This is safe because import.meta.env.DEV is replaced at build time (false in production)
+const isDevelopment = import.meta.env.DEV;
 
 interface AttemptData {
   count: number;
@@ -140,7 +138,7 @@ export function useAuthProtection() {
 
   return {
     failedAttempts,
-    isLocked: isDevelopment() ? false : isLocked,
+    isLocked: isDevelopment ? false : isLocked,
     // Interactive captcha (v2) disabled - using only invisible reCAPTCHA v3
     requiresInteractiveCaptcha: false,
     recordFailedAttempt,

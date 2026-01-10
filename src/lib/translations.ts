@@ -13,6 +13,31 @@ export const translations = {
       en: "Error",
       es: "Error",
     },
+    errorLoadingData: {
+      "pt-BR": "Não foi possível carregar os dados. Tente novamente.",
+      en: "Could not load data. Please try again.",
+      es: "No se pudieron cargar los datos. Inténtalo de nuevo.",
+    },
+    errorSavingData: {
+      "pt-BR": "Não foi possível salvar. Tente novamente.",
+      en: "Could not save. Please try again.",
+      es: "No se pudo guardar. Inténtalo de nuevo.",
+    },
+    errorProcessing: {
+      "pt-BR": "Erro ao processar. Tente novamente.",
+      en: "Processing error. Please try again.",
+      es: "Error al procesar. Inténtalo de nuevo.",
+    },
+    errorConnection: {
+      "pt-BR": "Erro de conexão. Verifique sua internet.",
+      en: "Connection error. Check your internet.",
+      es: "Error de conexión. Verifica tu internet.",
+    },
+    errorUnexpected: {
+      "pt-BR": "Ocorreu um erro inesperado.",
+      en: "An unexpected error occurred.",
+      es: "Ocurrió un error inesperado.",
+    },
     success: {
       "pt-BR": "Sucesso",
       en: "Success",

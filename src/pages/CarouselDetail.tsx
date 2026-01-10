@@ -161,7 +161,7 @@ const CarouselDetail = () => {
       });
 
       if (error || data?.error) {
-        throw new Error(data?.error || error?.message || "Error");
+        throw new Error(data?.error || error?.message || t("common", "errorUnexpected"));
       }
 
       toast.success(t("carouselDetail", "watermarkRemoved"));

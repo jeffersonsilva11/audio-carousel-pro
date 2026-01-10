@@ -37,6 +37,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import SignOutConfirmDialog from "@/components/SignOutConfirmDialog";
 
 interface Carousel {
   id: string;
@@ -190,7 +191,7 @@ const Dashboard = () => {
     try {
       await createCheckout();
     } catch (error) {
-      toast.error(t("common", "error", language));
+      toast.error(t("common", "errorProcessing", language));
     } finally {
       setCheckoutLoading(false);
     }
@@ -209,7 +210,7 @@ const Dashboard = () => {
       });
 
       if (error || data?.error) {
-        throw new Error(data?.error || error?.message || "Error");
+        throw new Error(data?.error || error?.message || t("common", "errorUnexpected", language));
       }
 
       toast.success(t("dashboard", "watermarkRemoved", language));
@@ -321,10 +322,7 @@ const Dashboard = () => {
                 <Button variant="ghost" size="icon" onClick={() => navigate("/settings/profile")} title={t("settings", "profile", language)}>
                   <User className="w-4 h-4" />
                 </Button>
-                <Button variant="ghost" size="sm" onClick={handleSignOut}>
-                  <LogOut className="w-4 h-4 mr-2" />
-                  {t("nav", "logout", language)}
-                </Button>
+                <SignOutConfirmDialog onSignOut={handleSignOut} />
               </div>
 
               {/* Mobile: Notification + Support + Menu */}
@@ -354,10 +352,15 @@ const Dashboard = () => {
                       {t("settings", "profile", language)}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive">
-                      <LogOut className="w-4 h-4 mr-2" />
-                      {t("nav", "logout", language)}
-                    </DropdownMenuItem>
+                    <SignOutConfirmDialog
+                      onSignOut={handleSignOut}
+                      trigger={
+                        <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive cursor-pointer">
+                          <LogOut className="w-4 h-4 mr-2" />
+                          {t("nav", "logout", language)}
+                        </DropdownMenuItem>
+                      }
+                    />
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
