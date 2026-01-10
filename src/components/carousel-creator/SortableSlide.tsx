@@ -71,12 +71,14 @@ export function SortableSlide({
             alt={`Thumbnail ${index + 1}`}
             className="w-full h-full object-contain"
             draggable={false}
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+            }}
           />
-        ) : (
-          <div className="w-full h-full bg-muted flex items-center justify-center text-xs text-muted-foreground">
-            {index + 1}
-          </div>
-        )}
+        ) : null}
+        <div className={`w-full h-full bg-muted flex items-center justify-center text-xs text-muted-foreground ${slide.imageUrl ? 'absolute inset-0' : ''}`}>
+          {index + 1}
+        </div>
         {isActive && !isDragging && (
           <div className="absolute inset-0 bg-accent/10" />
         )}

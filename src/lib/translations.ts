@@ -2005,6 +2005,21 @@ export const translations = {
       en: "(Vector)",
       es: "(Vectorial)",
     },
+    formatPNG: {
+      "pt-BR": "PNG",
+      en: "PNG",
+      es: "PNG",
+    },
+    formatJPG: {
+      "pt-BR": "JPG",
+      en: "JPG",
+      es: "JPG",
+    },
+    formatSVG: {
+      "pt-BR": "SVG",
+      en: "SVG",
+      es: "SVG",
+    },
     downloadCurrent: {
       "pt-BR": "Baixar slide atual",
       en: "Download current slide",
@@ -3696,6 +3711,84 @@ export const translations = {
       "pt-BR": "Ir para slide",
       en: "Go to slide",
       es: "Ir al slide",
+    },
+    // Sample content for preview - Emotional tone
+    sampleEmotionalHook: {
+      "pt-BR": "Você não está sozinho nessa jornada...",
+      en: "You are not alone in this journey...",
+      es: "No estás solo en este viaje...",
+    },
+    sampleEmotionalSetup: {
+      "pt-BR": "Eu também passei por isso há 3 anos",
+      en: "I also went through this 3 years ago",
+      es: "Yo también pasé por esto hace 3 años",
+    },
+    sampleEmotionalConflict: {
+      "pt-BR": "O ponto de virada veio quando...",
+      en: "The turning point came when...",
+      es: "El punto de inflexión llegó cuando...",
+    },
+    sampleEmotionalResolution: {
+      "pt-BR": "Hoje eu entendo que a dor foi necessária",
+      en: "Today I understand that the pain was necessary",
+      es: "Hoy entiendo que el dolor fue necesario",
+    },
+    sampleEmotionalCTA: {
+      "pt-BR": "E você, qual foi seu momento de virada?",
+      en: "And you, what was your turning point?",
+      es: "¿Y tú, cuál fue tu momento de cambio?",
+    },
+    // Sample content for preview - Professional tone
+    sampleProfessionalHook: {
+      "pt-BR": "87% das empresas cometem esse erro",
+      en: "87% of companies make this mistake",
+      es: "El 87% de las empresas cometen este error",
+    },
+    sampleProfessionalWhy: {
+      "pt-BR": "O motivo é simples: falta de estratégia",
+      en: "The reason is simple: lack of strategy",
+      es: "La razón es simple: falta de estrategia",
+    },
+    sampleProfessionalHow: {
+      "pt-BR": "O framework que usamos é em 3 passos",
+      en: "The framework we use is in 3 steps",
+      es: "El framework que usamos es de 3 pasos",
+    },
+    sampleProfessionalWhat: {
+      "pt-BR": "Implemente hoje e veja resultados em 7 dias",
+      en: "Implement today and see results in 7 days",
+      es: "Implementa hoy y ve resultados en 7 días",
+    },
+    sampleProfessionalCTA: {
+      "pt-BR": "Quer o guia completo? Comente 'EU QUERO'",
+      en: "Want the complete guide? Comment 'I WANT IT'",
+      es: "¿Quieres la guía completa? Comenta 'LO QUIERO'",
+    },
+    // Sample content for preview - Provocative tone
+    sampleProvocativeHook: {
+      "pt-BR": "Você não é produtivo. Você é ansioso.",
+      en: "You are not productive. You are anxious.",
+      es: "No eres productivo. Eres ansioso.",
+    },
+    sampleProvocativePatternBreak: {
+      "pt-BR": "Acordar às 5h não te faz melhor",
+      en: "Waking up at 5am doesn't make you better",
+      es: "Despertar a las 5am no te hace mejor",
+    },
+    sampleProvocativeUncomfortableTruth: {
+      "pt-BR": "Você confunde movimento com progresso",
+      en: "You confuse movement with progress",
+      es: "Confundes movimiento con progreso",
+    },
+    sampleProvocativeReframe: {
+      "pt-BR": "Menos horas, mais foco, melhores resultados",
+      en: "Less hours, more focus, better results",
+      es: "Menos horas, más enfoque, mejores resultados",
+    },
+    sampleProvocativeCTA: {
+      "pt-BR": "Quando você vai parar de se enganar?",
+      en: "When are you going to stop fooling yourself?",
+      es: "¿Cuándo vas a dejar de engañarte?",
     },
   },
 

@@ -70,12 +70,15 @@ const SlideEditOverlay = ({
           src={imageUrl}
           alt={`Slide ${slideNumber}`}
           className="w-full h-full object-contain"
+          onError={(e) => {
+            e.currentTarget.style.display = 'none';
+            e.currentTarget.parentElement?.querySelector('.slide-fallback')?.classList.remove('hidden');
+          }}
         />
-      ) : (
-        <div className="w-full h-full flex items-center justify-center bg-muted text-muted-foreground">
-          {language === "pt-BR" ? "Carregando..." : "Loading..."}
-        </div>
-      )}
+      ) : null}
+      <div className={`w-full h-full flex items-center justify-center bg-muted text-muted-foreground slide-fallback ${imageUrl ? 'hidden absolute inset-0' : ''}`}>
+        {language === "pt-BR" ? "Carregando..." : "Loading..."}
+      </div>
 
       {/* Watermark Overlay - Only in edit mode and not locked */}
       {showWatermark && !isLocked && (

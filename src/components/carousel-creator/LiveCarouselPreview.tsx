@@ -30,33 +30,33 @@ interface LiveCarouselPreviewProps {
   contentTemplate?: ContentTemplateType;
 }
 
-// Sample content for different tones (simulated preview)
-const SAMPLE_CONTENT = {
+// Sample content for different tones (simulated preview) - using translations
+const getSampleContent = (language: string) => ({
   EMOTIONAL: [
-    { type: "HOOK", text: "Você não está sozinho nessa jornada..." },
-    { type: "SETUP", text: "Eu também passei por isso há 3 anos" },
-    { type: "CONFLICT", text: "O ponto de virada veio quando..." },
-    { type: "RESOLUTION", text: "Hoje eu entendo que a dor foi necessária" },
-    { type: "CTA", text: "E você, qual foi seu momento de virada?" },
+    { type: "HOOK", text: t("livePreview", "sampleEmotionalHook", language) },
+    { type: "SETUP", text: t("livePreview", "sampleEmotionalSetup", language) },
+    { type: "CONFLICT", text: t("livePreview", "sampleEmotionalConflict", language) },
+    { type: "RESOLUTION", text: t("livePreview", "sampleEmotionalResolution", language) },
+    { type: "CTA", text: t("livePreview", "sampleEmotionalCTA", language) },
     { type: "SIGNATURE", text: "" },
   ],
   PROFESSIONAL: [
-    { type: "HOOK", text: "87% das empresas cometem esse erro" },
-    { type: "WHY", text: "O motivo é simples: falta de estratégia" },
-    { type: "HOW", text: "O framework que usamos é em 3 passos" },
-    { type: "WHAT", text: "Implemente hoje e veja resultados em 7 dias" },
-    { type: "CTA", text: "Quer o guia completo? Comente 'EU QUERO'" },
+    { type: "HOOK", text: t("livePreview", "sampleProfessionalHook", language) },
+    { type: "WHY", text: t("livePreview", "sampleProfessionalWhy", language) },
+    { type: "HOW", text: t("livePreview", "sampleProfessionalHow", language) },
+    { type: "WHAT", text: t("livePreview", "sampleProfessionalWhat", language) },
+    { type: "CTA", text: t("livePreview", "sampleProfessionalCTA", language) },
     { type: "SIGNATURE", text: "" },
   ],
   PROVOCATIVE: [
-    { type: "HOOK", text: "Você não é produtivo. Você é ansioso." },
-    { type: "PATTERN_BREAK", text: "Acordar às 5h não te faz melhor" },
-    { type: "UNCOMFORTABLE_TRUTH", text: "Você confunde movimento com progresso" },
-    { type: "REFRAME", text: "Menos horas, mais foco, melhores resultados" },
-    { type: "CTA", text: "Quando você vai parar de se enganar?" },
+    { type: "HOOK", text: t("livePreview", "sampleProvocativeHook", language) },
+    { type: "PATTERN_BREAK", text: t("livePreview", "sampleProvocativePatternBreak", language) },
+    { type: "UNCOMFORTABLE_TRUTH", text: t("livePreview", "sampleProvocativeUncomfortableTruth", language) },
+    { type: "REFRAME", text: t("livePreview", "sampleProvocativeReframe", language) },
+    { type: "CTA", text: t("livePreview", "sampleProvocativeCTA", language) },
     { type: "SIGNATURE", text: "" },
   ],
-};
+});
 
 const LiveCarouselPreview = ({
   profile,
@@ -133,8 +133,9 @@ const LiveCarouselPreview = ({
     }
   };
 
-  // Get sample content based on tone
-  const sampleSlides = SAMPLE_CONTENT[tone as keyof typeof SAMPLE_CONTENT] || SAMPLE_CONTENT.PROFESSIONAL;
+  // Get sample content based on tone (with translations)
+  const sampleContent = getSampleContent(language);
+  const sampleSlides = sampleContent[tone as keyof typeof sampleContent] || sampleContent.PROFESSIONAL;
   const visibleSlides = sampleSlides.slice(0, Math.min(slideCount, sampleSlides.length));
 
   const getInitials = (name: string) => {

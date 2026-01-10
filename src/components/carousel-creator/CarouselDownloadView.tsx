@@ -241,18 +241,18 @@ const CarouselDownloadView = ({ slides, isPro = false }: CarouselDownloadViewPro
           </DropdownMenuTrigger>
           <DropdownMenuContent align="center">
             <DropdownMenuItem onClick={() => setExportFormat("png")} className="cursor-pointer">
-              <Image className="w-4 h-4 mr-2" />
-              PNG
+              <Image className="size-4 mr-2" />
+              {t("carouselPreview", "formatPNG")}
               <span className="ml-2 text-xs text-muted-foreground">{t("carouselPreview", "formatRecommended")}</span>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setExportFormat("jpg")} className="cursor-pointer">
-              <Image className="w-4 h-4 mr-2" />
-              JPG
+              <Image className="size-4 mr-2" />
+              {t("carouselPreview", "formatJPG")}
               <span className="ml-2 text-xs text-muted-foreground">{t("carouselPreview", "formatSmaller")}</span>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setExportFormat("svg")} className="cursor-pointer">
-              <FileImage className="w-4 h-4 mr-2" />
-              SVG
+              <FileImage className="size-4 mr-2" />
+              {t("carouselPreview", "formatSVG")}
               <span className="ml-2 text-xs text-muted-foreground">{t("carouselPreview", "formatVector")}</span>
             </DropdownMenuItem>
           </DropdownMenuContent>

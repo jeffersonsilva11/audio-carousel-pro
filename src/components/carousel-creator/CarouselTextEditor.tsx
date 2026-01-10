@@ -480,12 +480,14 @@ const CarouselTextEditor = ({
                 src={currentSlideData.imageUrl}
                 alt={`${t("carouselPreview", "slide")} ${currentSlide + 1}`}
                 className="w-full h-full object-contain"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
               />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                {t("carouselPreview", "loading")}
-              </div>
-            )}
+            ) : null}
+            <div className={`w-full h-full flex items-center justify-center text-muted-foreground ${currentSlideData?.imageUrl ? 'absolute inset-0' : ''}`}>
+              {t("carouselPreview", "loading")}
+            </div>
 
             {/* Watermark Overlay - Only in edit mode and not locked */}
             {isPro && !isLocked && (
