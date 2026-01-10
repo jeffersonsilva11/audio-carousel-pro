@@ -1,5 +1,5 @@
 // Plan configuration for Audisell
-export type PlanTier = 'free' | 'starter' | 'creator';
+export type PlanTier = 'free' | 'starter' | 'creator' | 'agency';
 
 // Stripe Price IDs - Atualize com os IDs do Stripe Dashboard
 // Produtos criados:
@@ -131,9 +131,43 @@ export const PLANS: Record<PlanTier, PlanConfig> = {
     ],
     limitations: [],
   },
+  agency: {
+    id: 'agency',
+    name: 'Agency',
+    description: 'Para agências e equipes',
+    price: 29990, // R$ 299,90
+    priceDisplay: 'R$ 299,90',
+    dailyLimit: 5, // 5 per day
+    monthlyLimit: null, // unlimited fair usage
+    hasWatermark: false,
+    hasEditor: true,
+    hasHistory: true,
+    hasZipDownload: true,
+    hasCustomFonts: true,
+    hasGradients: true,
+    hasSlideImages: true,
+    hasCoverTemplates: true,
+    hasContentTemplates: true,
+    hasCustomColors: true,
+    hasImageUpload: true,
+    maxTemplatesSaved: 50,
+    templates: ['solid', 'gradient', 'image_top'],
+    features: [
+      '5 carrosséis por dia',
+      'Sem marca d\'água',
+      'Editor visual completo',
+      'Todas as customizações',
+      'Todos os templates',
+      'Upload de imagens por slide',
+      'Templates ilimitados salvos',
+      'Processamento prioritário',
+      'Suporte prioritário',
+    ],
+    limitations: [],
+  },
 };
 
-export const PLAN_ORDER: PlanTier[] = ['free', 'starter', 'creator'];
+export const PLAN_ORDER: PlanTier[] = ['free', 'starter', 'creator', 'agency'];
 
 export function getPlanByPriceId(priceId: string): PlanTier | null {
   const priceIdMap: Record<string, PlanTier> = {

@@ -492,20 +492,46 @@ const CreateCarousel = () => {
       // Load the carousel data
       setCurrentCarouselId(carouselId);
 
-      // If there's a transcription, skip to customize step
-      if (carousel.transcription) {
-        setTranscription(carousel.transcription);
-        setAudioUrl(carousel.audio_url || null);
-        setSelectedTone(carousel.tone as ToneType || 'PROFESSIONAL');
-        setSelectedStyle(carousel.style as StyleType || 'BLACK_WHITE');
-        setSelectedFormat(carousel.format as FormatType || 'POST_SQUARE');
-        setCurrentStep('customize');
+      // Restore style, format and tone
+      if (carousel.tone) {
+        const toneMap: Record<string, CreativeTone> = {
+          EMOTIONAL: "emotional",
+          PROFESSIONAL: "professional",
+          PROVOCATIVE: "provocative"
+        };
+        setCreativeTone(toneMap[carousel.tone] || "professional");
+      }
+      setSelectedStyle(carousel.style as StyleType || 'BLACK_WHITE');
+      setSelectedFormat(carousel.format as FormatType || 'POST_SQUARE');
 
-        toast({
-          title: "Carrossel carregado",
-          description: "Continue de onde parou. O áudio original será usado.",
+      // Restore template selections (Creator+ only)
+      if (carousel.cover_template) {
+        setCoverTemplate(carousel.cover_template as CoverTemplateType);
+      }
+      if (carousel.content_template) {
+        setContentTemplate(carousel.content_template as ContentTemplateType);
+      }
+
+      // Restore template customization from template_config
+      if (carousel.template_config && typeof carousel.template_config === 'object') {
+        const config = carousel.template_config as Record<string, unknown>;
+        setTemplateCustomization({
+          fontId: (config.fontId as FontId) || 'inter',
+          gradientId: (config.gradientId as GradientId) || 'none',
+          customGradientColors: config.customGradientColors as string[] | undefined,
+          slideImages: config.slideImages as (string | null)[] | undefined,
+          textAlignment: (config.textAlignment as 'left' | 'center' | 'right') || 'center',
+          showNavigationDots: config.showNavigationDots !== false,
+          showNavigationArrow: config.showNavigationArrow !== false,
         });
       }
+
+      setCurrentStep('customize');
+
+      toast({
+        title: "Carrossel carregado",
+        description: "Continue de onde parou.",
+      });
     } catch (err) {
       console.error('Error loading failed carousel:', err);
       toast({

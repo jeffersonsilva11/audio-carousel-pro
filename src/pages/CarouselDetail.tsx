@@ -93,6 +93,10 @@ interface CarouselData {
   script: CarouselScript | null;
   language: string | null;
   images_cleaned_at: string | null;
+  // Template fields (Creator+ only)
+  cover_template: string | null;
+  content_template: string | null;
+  template_config: Record<string, unknown> | null;
 }
 
 const CarouselDetail = () => {
