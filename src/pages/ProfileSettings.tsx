@@ -37,7 +37,21 @@ import {
   AlertTriangle,
   ExternalLink,
   KeyRound,
+  Shield,
+  Download,
+  Trash2,
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import {
@@ -82,6 +96,12 @@ const ProfileSettings = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
   const [passwordErrors, setPasswordErrors] = useState<{ current?: string; new?: string; confirm?: string }>({});
+
+  // Privacy/LGPD state
+  const [exportingData, setExportingData] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const passwordSchema = z.string()
     .min(8, "A senha deve ter no mínimo 8 caracteres")
@@ -284,6 +304,103 @@ const ProfileSettings = () => {
     }
   };
 
+  // LGPD: Export user data
+  const handleExportData = async () => {
+    setExportingData(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        throw new Error("Not authenticated");
+      }
+
+      const response = await supabase.functions.invoke("export-user-data", {
+        headers: {
+          Authorization: `Bearer ${sessionData.session.access_token}`,
+        },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+
+      // Download as JSON file
+      const blob = new Blob([JSON.stringify(response.data.data, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `audisell-data-export-${new Date().toISOString().split("T")[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: t("privacy", "exportSuccess", language) || "Dados exportados!",
+        description: t("privacy", "exportSuccessDesc", language) || "Seus dados foram baixados com sucesso.",
+      });
+    } catch (err) {
+      toast({
+        title: t("privacy", "exportError", language) || "Erro ao exportar",
+        description: err instanceof Error ? err.message : "Erro desconhecido",
+        variant: "destructive",
+      });
+    } finally {
+      setExportingData(false);
+    }
+  };
+
+  // LGPD: Delete account and all data
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmation !== user?.email) {
+      toast({
+        title: t("privacy", "confirmationError", language) || "Confirmação incorreta",
+        description: t("privacy", "confirmationErrorDesc", language) || "Digite seu email corretamente para confirmar.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setDeletingAccount(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        throw new Error("Not authenticated");
+      }
+
+      const response = await supabase.functions.invoke("delete-account", {
+        body: { confirmation: deleteConfirmation },
+        headers: {
+          Authorization: `Bearer ${sessionData.session.access_token}`,
+        },
+      });
+
+      if (response.error || !response.data.success) {
+        throw new Error(response.error?.message || response.data?.error || "Failed to delete account");
+      }
+
+      toast({
+        title: t("privacy", "deleteSuccess", language) || "Conta excluída",
+        description: t("privacy", "deleteSuccessDesc", language) || "Sua conta e todos os dados foram removidos.",
+      });
+
+      // Sign out and redirect
+      await supabase.auth.signOut();
+      navigate("/");
+    } catch (err) {
+      toast({
+        title: t("privacy", "deleteError", language) || "Erro ao excluir conta",
+        description: err instanceof Error ? err.message : "Erro desconhecido",
+        variant: "destructive",
+      });
+    } finally {
+      setDeletingAccount(false);
+      setShowDeleteDialog(false);
+      setDeleteConfirmation("");
+    }
+  };
+
   if (authLoading || prefsLoading || subLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -303,8 +420,9 @@ const ProfileSettings = () => {
                 variant="ghost"
                 size="icon"
                 onClick={() => navigate("/dashboard")}
+                aria-label={t("nav", "backToDashboard", language) || "Voltar ao painel"}
               >
-                <ChevronLeft className="w-5 h-5" />
+                <ChevronLeft className="w-5 h-5" aria-hidden="true" />
               </Button>
               <h1 className="font-semibold">Minha Conta</h1>
             </div>
@@ -315,18 +433,22 @@ const ProfileSettings = () => {
       {/* Main content */}
       <main className="container mx-auto px-4 py-8 max-w-4xl">
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="profile" className="gap-2">
-              <User className="w-4 h-4" />
+              <User className="w-4 h-4" aria-hidden="true" />
               <span className="hidden sm:inline">Perfil</span>
             </TabsTrigger>
             <TabsTrigger value="subscription" className="gap-2">
-              <Crown className="w-4 h-4" />
+              <Crown className="w-4 h-4" aria-hidden="true" />
               <span className="hidden sm:inline">Assinatura</span>
             </TabsTrigger>
             <TabsTrigger value="security" className="gap-2">
-              <Lock className="w-4 h-4" />
+              <Lock className="w-4 h-4" aria-hidden="true" />
               <span className="hidden sm:inline">Segurança</span>
+            </TabsTrigger>
+            <TabsTrigger value="privacy" className="gap-2">
+              <Shield className="w-4 h-4" aria-hidden="true" />
+              <span className="hidden sm:inline">Privacidade</span>
             </TabsTrigger>
           </TabsList>
 
@@ -931,6 +1053,168 @@ const ProfileSettings = () => {
                     </>
                   )}
                 </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Privacy Tab - LGPD/GDPR */}
+          <TabsContent value="privacy" className="space-y-6">
+            {/* Export Data Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Download className="w-5 h-5 text-accent" aria-hidden="true" />
+                  {t("privacy", "exportTitle", language) || "Exportar Meus Dados"}
+                </CardTitle>
+                <CardDescription>
+                  {t("privacy", "exportDescription", language) ||
+                    "Baixe uma cópia de todos os seus dados armazenados na plataforma (LGPD Art. 18)."}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button
+                  onClick={handleExportData}
+                  disabled={exportingData}
+                  className="w-full sm:w-auto"
+                  aria-label={t("privacy", "exportButton", language) || "Exportar dados"}
+                >
+                  {exportingData ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" aria-hidden="true" />
+                      {t("privacy", "exporting", language) || "Exportando..."}
+                    </>
+                  ) : (
+                    <>
+                      <Download className="w-4 h-4 mr-2" aria-hidden="true" />
+                      {t("privacy", "exportButton", language) || "Baixar Meus Dados"}
+                    </>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Delete Account Card */}
+            <Card className="border-destructive/50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-destructive">
+                  <Trash2 className="w-5 h-5" aria-hidden="true" />
+                  {t("privacy", "deleteTitle", language) || "Excluir Minha Conta"}
+                </CardTitle>
+                <CardDescription>
+                  {t("privacy", "deleteDescription", language) ||
+                    "Exclua permanentemente sua conta e todos os dados associados. Esta ação não pode ser desfeita."}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="p-4 bg-destructive/10 rounded-lg border border-destructive/20">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" aria-hidden="true" />
+                    <div className="text-sm text-muted-foreground">
+                      <p className="font-medium text-destructive mb-1">
+                        {t("privacy", "deleteWarningTitle", language) || "Atenção: Esta ação é irreversível!"}
+                      </p>
+                      <ul className="list-disc list-inside space-y-1">
+                        <li>{t("privacy", "deleteWarning1", language) || "Todos os seus carrosséis serão excluídos"}</li>
+                        <li>{t("privacy", "deleteWarning2", language) || "Seu histórico e estatísticas serão removidos"}</li>
+                        <li>{t("privacy", "deleteWarning3", language) || "Sua assinatura será cancelada sem reembolso"}</li>
+                        <li>{t("privacy", "deleteWarning4", language) || "Você não poderá recuperar nenhum dado"}</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="destructive"
+                      className="w-full sm:w-auto"
+                      aria-label={t("privacy", "deleteButton", language) || "Excluir conta"}
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" aria-hidden="true" />
+                      {t("privacy", "deleteButton", language) || "Excluir Minha Conta"}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+                        <AlertTriangle className="w-5 h-5" aria-hidden="true" />
+                        {t("privacy", "deleteConfirmTitle", language) || "Confirmar Exclusão"}
+                      </AlertDialogTitle>
+                      <AlertDialogDescription asChild>
+                        <div className="space-y-4">
+                          <p>
+                            {t("privacy", "deleteConfirmDescription", language) ||
+                              "Para confirmar a exclusão permanente da sua conta, digite seu email abaixo:"}
+                          </p>
+                          <div className="space-y-2">
+                            <Label htmlFor="delete-confirmation">
+                              {t("privacy", "typeEmail", language) || "Digite"}: <strong>{user?.email}</strong>
+                            </Label>
+                            <Input
+                              id="delete-confirmation"
+                              type="email"
+                              placeholder={user?.email || "seu@email.com"}
+                              value={deleteConfirmation}
+                              onChange={(e) => setDeleteConfirmation(e.target.value)}
+                              className="font-mono"
+                              aria-describedby="delete-confirmation-hint"
+                            />
+                            <p id="delete-confirmation-hint" className="text-xs text-muted-foreground">
+                              {t("privacy", "typeEmailHint", language) ||
+                                "Digite exatamente como mostrado acima para confirmar."}
+                            </p>
+                          </div>
+                        </div>
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel
+                        onClick={() => setDeleteConfirmation("")}
+                        aria-label={t("privacy", "cancel", language) || "Cancelar"}
+                      >
+                        {t("privacy", "cancel", language) || "Cancelar"}
+                      </AlertDialogCancel>
+                      <Button
+                        variant="destructive"
+                        onClick={handleDeleteAccount}
+                        disabled={deletingAccount || deleteConfirmation !== user?.email}
+                        aria-label={t("privacy", "confirmDelete", language) || "Confirmar exclusão"}
+                      >
+                        {deletingAccount ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" aria-hidden="true" />
+                            {t("privacy", "deleting", language) || "Excluindo..."}
+                          </>
+                        ) : (
+                          <>
+                            <Trash2 className="w-4 h-4 mr-2" aria-hidden="true" />
+                            {t("privacy", "confirmDelete", language) || "Excluir Permanentemente"}
+                          </>
+                        )}
+                      </Button>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </CardContent>
+            </Card>
+
+            {/* Privacy Policy Link */}
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-medium">{t("privacy", "policyTitle", language) || "Política de Privacidade"}</h4>
+                    <p className="text-sm text-muted-foreground">
+                      {t("privacy", "policyDescription", language) || "Saiba como tratamos seus dados"}
+                    </p>
+                  </div>
+                  <Button variant="outline" asChild aria-label={t("privacy", "viewPolicy", language) || "Ver política de privacidade"}>
+                    <a href="/privacy" target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="w-4 h-4 mr-2" aria-hidden="true" />
+                      {t("privacy", "viewPolicy", language) || "Ver Política"}
+                    </a>
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>

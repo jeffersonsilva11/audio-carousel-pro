@@ -4,6 +4,8 @@ import { X, Cookie } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
 import { t } from "@/lib/translations";
 import { cn } from "@/lib/utils";
+import { initGA } from "@/hooks/useAnalytics";
+import { initSentry } from "@/lib/sentry";
 
 const COOKIE_CONSENT_KEY = "cookie_consent";
 
@@ -23,6 +25,10 @@ export const CookieConsent = () => {
         setIsAnimating(true);
       }, 1500);
       return () => clearTimeout(timer);
+    } else if (consent === "accepted") {
+      // User has previously consented - initialize analytics
+      initGA();
+      initSentry();
     }
   }, []);
 
@@ -30,6 +36,12 @@ export const CookieConsent = () => {
     localStorage.setItem(COOKIE_CONSENT_KEY, status || "rejected");
     setIsAnimating(false);
     setTimeout(() => setIsVisible(false), 300);
+
+    // Initialize analytics services if user accepted
+    if (status === "accepted") {
+      initGA();
+      initSentry();
+    }
   };
 
   if (!isVisible) return null;
@@ -87,8 +99,9 @@ export const CookieConsent = () => {
                 size="icon"
                 onClick={() => handleConsent("rejected")}
                 className="hidden md:flex"
+                aria-label={t("cookies", "reject", language) || "Rejeitar cookies"}
               >
-                <X className="w-4 h-4" />
+                <X className="w-4 h-4" aria-hidden="true" />
               </Button>
             </div>
           </div>

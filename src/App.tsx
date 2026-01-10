@@ -8,7 +8,7 @@ import { LanguageProvider } from "@/hooks/useLanguage";
 import { NotificationsProvider } from "@/hooks/useNotifications";
 import CookieConsent from "@/components/CookieConsent";
 import ErrorBoundary from "@/components/ErrorBoundary";
-import { initSentry, setUser } from "@/lib/sentry";
+import { setUser } from "@/lib/sentry";
 import { useEffect } from "react";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -34,8 +34,8 @@ import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
-// Initialize Sentry error monitoring
-initSentry();
+// Note: Sentry and GA are initialized by CookieConsent component
+// only after user gives consent (LGPD/GDPR compliance)
 
 const App = () => {
   useEffect(() => {

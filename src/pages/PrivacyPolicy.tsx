@@ -217,8 +217,8 @@ const PrivacyPolicy = () => {
         <div className="container mx-auto px-4">
           <nav className="flex items-center justify-between h-16">
             <div className="flex items-center gap-4">
-              <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-                <ArrowLeft className="w-5 h-5" />
+              <Button variant="ghost" size="icon" onClick={() => navigate(-1)} aria-label={t("nav", "goBack", language) || "Voltar"}>
+                <ArrowLeft className="w-5 h-5" aria-hidden="true" />
               </Button>
               <a href="/" className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center">

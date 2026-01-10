@@ -169,8 +169,13 @@ const Header = () => {
             )}
           </div>
 
-          <button className="md:hidden p-2 rounded-lg hover:bg-secondary transition-colors" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-            {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          <button
+            className="md:hidden p-2 rounded-lg hover:bg-secondary transition-colors"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            aria-label={isMenuOpen ? (language === "pt-BR" ? "Fechar menu" : language === "es" ? "Cerrar menú" : "Close menu") : (language === "pt-BR" ? "Abrir menu" : language === "es" ? "Abrir menú" : "Open menu")}
+            aria-expanded={isMenuOpen}
+          >
+            {isMenuOpen ? <X className="w-5 h-5" aria-hidden="true" /> : <Menu className="w-5 h-5" aria-hidden="true" />}
           </button>
         </nav>
 

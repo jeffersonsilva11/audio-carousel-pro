@@ -9,11 +9,25 @@ declare global {
 }
 
 const GA_MEASUREMENT_ID = import.meta.env.VITE_GA_ID || "G-8RGJS3QZN8";
+const COOKIE_CONSENT_KEY = "cookie_consent";
 
-// Initialize GA script
+// Check if user has given analytics consent (LGPD/GDPR compliance)
+export const hasAnalyticsConsent = (): boolean => {
+  if (typeof window === "undefined") return false;
+  const consent = localStorage.getItem(COOKIE_CONSENT_KEY);
+  return consent === "accepted";
+};
+
+// Initialize GA script - ONLY if user has consented
 export const initGA = () => {
   if (typeof window === "undefined") return;
-  
+
+  // LGPD/GDPR: Check for consent before initializing
+  if (!hasAnalyticsConsent()) {
+    console.log("[GA] Skipping initialization - user has not consented to analytics");
+    return;
+  }
+
   // Check if already initialized
   if (window.gtag) return;
 
@@ -33,6 +47,7 @@ export const initGA = () => {
   window.gtag("js", new Date());
   window.gtag("config", GA_MEASUREMENT_ID, {
     send_page_view: false, // We'll handle page views manually
+    anonymize_ip: true, // LGPD/GDPR: Anonymize IP addresses
   });
 };
 

@@ -8,11 +8,8 @@ import {
   createSecurityEvent,
   type SecurityEvent
 } from "../_shared/guardrails.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { getCorsHeaders } from "../_shared/cors.ts";
+import { checkRateLimit, RATE_LIMITS, rateLimitExceededResponse } from "../_shared/rate-limiter.ts";
 
 // Default plan limits (used as fallback)
 const PLAN_LIMITS: Record<string, { limit: number; period: string }> = {
@@ -319,16 +316,25 @@ async function logSecurityEvent(
 }
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
+
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Rate limiting by IP
+  const ipAddress = req.headers.get('x-forwarded-for')?.split(',')[0] || req.headers.get('cf-connecting-ip') || 'unknown';
+  const rateLimitResult = checkRateLimit(ipAddress, RATE_LIMITS.scriptGeneration);
+
+  if (!rateLimitResult.allowed) {
+    logStep("Rate limit exceeded", { ip: ipAddress });
+    return rateLimitExceededResponse(rateLimitResult, corsHeaders);
   }
 
   // Initialize Supabase client
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
-  
-  const ipAddress = req.headers.get('x-forwarded-for')?.split(',')[0] || req.headers.get('cf-connecting-ip') || null;
 
   try {
     // Authenticate user
