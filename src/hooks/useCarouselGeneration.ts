@@ -182,11 +182,12 @@ export function useCarouselGeneration() {
         slide_count: slides.length,
         image_urls: imagesData.imageUrls,
         has_watermark: hasWatermark,
-        // Save template configuration for future edits
+        // Save template configuration for future edits and cleanup
         template_config: customization ? {
           fontId: customization.fontId,
           gradientId: customization.gradientId,
           customGradientColors: customization.customGradientColors,
+          slideImages: customization.slideImages, // Save for cleanup trigger
           textAlignment: customization.textAlignment,
           showNavigationDots: customization.showNavigationDots,
           showNavigationArrow: customization.showNavigationArrow,
