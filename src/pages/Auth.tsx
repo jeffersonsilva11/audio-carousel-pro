@@ -15,7 +15,6 @@ import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { BRAND } from "@/lib/constants";
 import { Separator } from "@/components/ui/separator";
-import { InteractiveCaptcha } from "@/components/auth/InteractiveCaptcha";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const Auth = () => {
@@ -29,14 +28,12 @@ const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string; name?: string }>({});
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [isRedirectingToVerify, setIsRedirectingToVerify] = useState(false);
 
   const { user, signIn, signUp, signInWithGoogle, isEmailConfirmed } = useAuth();
   const { verifyRecaptcha } = useRecaptcha();
   const {
     isLocked,
-    requiresInteractiveCaptcha,
     recordFailedAttempt,
     recordSuccessfulAttempt,
     getRemainingLockoutTime
@@ -184,16 +181,6 @@ const Auth = () => {
       return;
     }
 
-    // Check if interactive captcha is required but not completed
-    if (requiresInteractiveCaptcha && !captchaToken) {
-      toast({
-        title: t("errors", "captchaRequired", language),
-        description: t("errors", "completeCaptcha", language),
-        variant: "destructive",
-      });
-      return;
-    }
-    
     setIsLoading(true);
     
     try {
@@ -209,7 +196,6 @@ const Auth = () => {
           variant: "destructive",
         });
         setIsLoading(false);
-        setCaptchaToken(null);
         return;
       }
 
@@ -218,7 +204,6 @@ const Auth = () => {
 
         if (error) {
           await recordFailedAttempt();
-          setCaptchaToken(null);
           if (error.message.includes("Invalid login credentials")) {
             toast({
               title: t("auth", "loginError", language),
@@ -301,7 +286,6 @@ const Auth = () => {
           // Reset flag on error
           setIsRedirectingToVerify(false);
           await recordFailedAttempt();
-          setCaptchaToken(null);
           if (error.message.includes("User already registered")) {
             toast({
               title: t("auth", "emailAlreadyRegistered", language),
@@ -358,28 +342,11 @@ const Auth = () => {
     }
   };
 
-  const handleCaptchaVerify = (token: string) => {
-    setCaptchaToken(token);
-  };
-
-  const handleCaptchaExpire = () => {
-    setCaptchaToken(null);
-  };
-
   const handleGoogleSignIn = async () => {
     if (isLocked) {
       toast({
         title: t("auth", "accountLocked", language),
         description: t("auth", "tryAgainLater", language).replace("{minutes}", String(Math.ceil(lockoutSeconds / 60))),
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (requiresInteractiveCaptcha && !captchaToken) {
-      toast({
-        title: t("errors", "captchaRequired", language),
-        description: t("errors", "completeCaptcha", language),
         variant: "destructive",
       });
       return;
@@ -398,14 +365,12 @@ const Auth = () => {
           variant: "destructive",
         });
         setIsGoogleLoading(false);
-        setCaptchaToken(null);
         return;
       }
 
       const { error } = await signInWithGoogle();
       if (error) {
         await recordFailedAttempt();
-        setCaptchaToken(null);
         toast({
           title: t("auth", "googleError", language),
           description: error.message,
@@ -473,31 +438,13 @@ const Auth = () => {
               </Alert>
             )}
 
-            {/* Interactive Captcha (shown after failed attempts) */}
-            {requiresInteractiveCaptcha && !isLocked && (
-              <div className="mb-4">
-                <p className="text-sm text-muted-foreground text-center mb-2">
-                  {t("auth", "verifyCaptcha", language)}
-                </p>
-                <InteractiveCaptcha
-                  onVerify={handleCaptchaVerify}
-                  onExpire={handleCaptchaExpire}
-                />
-                {captchaToken && (
-                  <p className="text-sm text-green-600 text-center">
-                    ✓ {t("auth", "captchaVerified", language)}
-                  </p>
-                )}
-              </div>
-            )}
-
             {/* Google Sign In Button */}
             <Button
               type="button"
               variant="outline"
               className="w-full mb-4"
               onClick={handleGoogleSignIn}
-              disabled={isGoogleLoading || isLocked || registrationDisabled || (requiresInteractiveCaptcha && !captchaToken)}
+              disabled={isGoogleLoading || isLocked || registrationDisabled}
             >
               {isGoogleLoading ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -582,7 +529,7 @@ const Auth = () => {
                 type="submit"
                 variant="accent"
                 className="w-full"
-                disabled={isLoading || isLocked || registrationDisabled || (requiresInteractiveCaptcha && !captchaToken)}
+                disabled={isLoading || isLocked || registrationDisabled}
               >
                 {isLoading ? (
                   <>

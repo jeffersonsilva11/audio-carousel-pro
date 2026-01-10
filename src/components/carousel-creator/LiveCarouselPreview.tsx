@@ -231,7 +231,7 @@ const LiveCarouselPreview = ({
                 {profile.photoUrl ? (
                   <img
                     src={profile.photoUrl}
-                    alt=""
+                    alt={profile.name ? `${profile.name}'s avatar` : "Profile avatar"}
                     className="w-full h-full object-cover"
                   />
                 ) : (

@@ -226,7 +226,7 @@ const CarouselDownloadView = ({ slides, isPro = false }: CarouselDownloadViewPro
 
       {/* Export Format Selector */}
       <div className="flex items-center justify-center gap-3">
-        <span className="text-sm text-muted-foreground">Formato:</span>
+        <span className="text-sm text-muted-foreground">{t("carouselPreview", "exportFormat")}</span>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="min-w-[120px] justify-between">
@@ -243,17 +243,17 @@ const CarouselDownloadView = ({ slides, isPro = false }: CarouselDownloadViewPro
             <DropdownMenuItem onClick={() => setExportFormat("png")} className="cursor-pointer">
               <Image className="w-4 h-4 mr-2" />
               PNG
-              <span className="ml-2 text-xs text-muted-foreground">(Recomendado)</span>
+              <span className="ml-2 text-xs text-muted-foreground">{t("carouselPreview", "formatRecommended")}</span>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setExportFormat("jpg")} className="cursor-pointer">
               <Image className="w-4 h-4 mr-2" />
               JPG
-              <span className="ml-2 text-xs text-muted-foreground">(Menor tamanho)</span>
+              <span className="ml-2 text-xs text-muted-foreground">{t("carouselPreview", "formatSmaller")}</span>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setExportFormat("svg")} className="cursor-pointer">
               <FileImage className="w-4 h-4 mr-2" />
               SVG
-              <span className="ml-2 text-xs text-muted-foreground">(Vetorial)</span>
+              <span className="ml-2 text-xs text-muted-foreground">{t("carouselPreview", "formatVector")}</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

@@ -355,7 +355,7 @@ const ProfileIdentitySelector = ({ profile, setProfile, showValidation = false }
               )}>
                 <div className="w-6 h-6 rounded-full overflow-hidden bg-white/15 flex items-center justify-center">
                   {profile.photoUrl ? (
-                    <img src={profile.photoUrl} alt="" className="w-full h-full object-cover" />
+                    <img src={profile.photoUrl} alt={profile.name ? `${profile.name}'s avatar` : "Profile avatar"} className="w-full h-full object-cover" />
                   ) : (
                     <span className="text-[8px] font-bold text-white">{getInitials(profile.name)}</span>
                   )}
@@ -386,7 +386,7 @@ const ProfileIdentitySelector = ({ profile, setProfile, showValidation = false }
               )}>
                 <div className="w-6 h-6 rounded-full overflow-hidden bg-[#0A0A0A]/10 flex items-center justify-center">
                   {profile.photoUrl ? (
-                    <img src={profile.photoUrl} alt="" className="w-full h-full object-cover" />
+                    <img src={profile.photoUrl} alt={profile.name ? `${profile.name}'s avatar` : "Profile avatar"} className="w-full h-full object-cover" />
                   ) : (
                     <span className="text-[8px] font-bold text-[#0A0A0A]">{getInitials(profile.name)}</span>
                   )}

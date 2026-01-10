@@ -113,7 +113,6 @@ export function useCarouselGeneration() {
       }
 
       const transcription = transcribeData.transcription;
-      console.log("Transcription completed:", transcription.substring(0, 100));
 
       // Step 2: Generate script with AI
       setStatus("SCRIPTING");
@@ -142,7 +141,6 @@ export function useCarouselGeneration() {
       }
 
       const script = scriptData.script;
-      console.log("Script generated with", script.slides?.length, "slides");
 
       // Step 3: Generate images (with watermark for free users)
       setStatus("GENERATING");
@@ -171,7 +169,6 @@ export function useCarouselGeneration() {
       }
 
       const slides = imagesData.slides;
-      console.log("Generated", slides.length, "slide images");
 
       // Step 4: Update carousel in database
       setStatus("COMPLETED");
@@ -207,15 +204,12 @@ export function useCarouselGeneration() {
 
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "An error occurred";
-      console.error("Generation error:", err);
       setError(errorMessage);
       setStatus("FAILED");
 
       // Delete the carousel record to not consume credits on failure
       // This ensures users are only charged when generation is successful
       await supabase.from("carousels").delete().eq("id", carouselId);
-
-      console.log("Carousel deleted due to generation failure - credits not consumed");
 
       return null;
     }

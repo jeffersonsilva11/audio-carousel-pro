@@ -1619,6 +1619,41 @@ export const translations = {
       en: "Download all ({count} slides)",
       es: "Descargar todo ({count} diapositivas)",
     },
+    exportFormat: {
+      "pt-BR": "Formato:",
+      en: "Format:",
+      es: "Formato:",
+    },
+    sampleContent: {
+      "pt-BR": "Seu conteúdo",
+      en: "Your content",
+      es: "Tu contenido",
+    },
+    willAppearHere: {
+      "pt-BR": "aparecerá aqui",
+      en: "will appear here",
+      es: "aparecerá aquí",
+    },
+    previewContent: {
+      "pt-BR": "Conteúdo",
+      en: "Content",
+      es: "Contenido",
+    },
+    formatRecommended: {
+      "pt-BR": "(Recomendado)",
+      en: "(Recommended)",
+      es: "(Recomendado)",
+    },
+    formatSmaller: {
+      "pt-BR": "(Menor tamanho)",
+      en: "(Smaller size)",
+      es: "(Menor tamaño)",
+    },
+    formatVector: {
+      "pt-BR": "(Vetorial)",
+      en: "(Vector)",
+      es: "(Vectorial)",
+    },
     downloadCurrent: {
       "pt-BR": "Baixar slide atual",
       en: "Download current slide",
