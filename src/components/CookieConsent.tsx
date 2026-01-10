@@ -99,8 +99,9 @@ export const CookieConsent = () => {
                 size="icon"
                 onClick={() => handleConsent("rejected")}
                 className="hidden md:flex"
+                aria-label={t("cookies", "reject", language) || "Rejeitar cookies"}
               >
-                <X className="w-4 h-4" />
+                <X className="w-4 h-4" aria-hidden="true" />
               </Button>
             </div>
           </div>

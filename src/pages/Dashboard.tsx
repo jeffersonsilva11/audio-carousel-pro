@@ -330,13 +330,13 @@ const Dashboard = () => {
               {/* Mobile: Notification + Support + Menu */}
               <div className="flex md:hidden items-center gap-1">
                 <NotificationBell />
-                <Button variant="ghost" size="icon" onClick={() => navigate("/support")} title="Suporte">
-                  <Headphones className="w-4 h-4" />
+                <Button variant="ghost" size="icon" onClick={() => navigate("/support")} aria-label={t("nav", "support", language) || "Suporte"}>
+                  <Headphones className="w-4 h-4" aria-hidden="true" />
                 </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <Menu className="w-5 h-5" />
+                    <Button variant="ghost" size="icon" aria-label={t("nav", "openMenu", language) || "Abrir menu"}>
+                      <Menu className="w-5 h-5" aria-hidden="true" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">

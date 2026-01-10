@@ -45,8 +45,8 @@ const NotificationBell = () => {
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="w-5 h-5" />
+        <Button variant="ghost" size="icon" className="relative" aria-label={language === "pt-BR" ? "Abrir notificações" : language === "es" ? "Abrir notificaciones" : "Open notifications"}>
+          <Bell className="w-5 h-5" aria-hidden="true" />
           {unreadCount > 0 && (
             <motion.span
               initial={{ scale: 0 }}

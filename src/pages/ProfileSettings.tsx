@@ -420,8 +420,9 @@ const ProfileSettings = () => {
                 variant="ghost"
                 size="icon"
                 onClick={() => navigate("/dashboard")}
+                aria-label={t("nav", "backToDashboard", language) || "Voltar ao painel"}
               >
-                <ChevronLeft className="w-5 h-5" />
+                <ChevronLeft className="w-5 h-5" aria-hidden="true" />
               </Button>
               <h1 className="font-semibold">Minha Conta</h1>
             </div>

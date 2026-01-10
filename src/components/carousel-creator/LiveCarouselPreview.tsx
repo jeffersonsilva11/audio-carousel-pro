@@ -400,16 +400,18 @@ const LiveCarouselPreview = ({
           size="icon"
           className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 h-8 w-8 rounded-full bg-background/80 backdrop-blur-sm shadow-sm border border-border hover:bg-background"
           onClick={prevSlide}
+          aria-label={t("livePreview", "previousSlide", language) || "Slide anterior"}
         >
-          <ChevronLeft className="w-4 h-4" />
+          <ChevronLeft className="w-4 h-4" aria-hidden="true" />
         </Button>
         <Button
           variant="ghost"
           size="icon"
           className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 h-8 w-8 rounded-full bg-background/80 backdrop-blur-sm shadow-sm border border-border hover:bg-background"
           onClick={nextSlide}
+          aria-label={t("livePreview", "nextSlide", language) || "Próximo slide"}
         >
-          <ChevronRight className="w-4 h-4" />
+          <ChevronRight className="w-4 h-4" aria-hidden="true" />
         </Button>
       </div>
 
