@@ -34,6 +34,7 @@ import {
   Headphones,
   Mail,
   ChevronLeft,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BRAND } from "@/lib/constants";
@@ -84,6 +85,12 @@ const AdminSidebar = ({ activeSection, onSectionChange }: AdminSidebarProps) => 
       items: [
         { id: "email", icon: Mail, label: "E-mail" },
         { id: "support", icon: Headphones, label: language === "pt-BR" ? "Suporte" : "Support" },
+      ],
+    },
+    {
+      label: "IA",
+      items: [
+        { id: "prompts", icon: Sparkles, label: "Prompts" },
       ],
     },
     {

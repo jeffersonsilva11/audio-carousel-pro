@@ -3,13 +3,14 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import {
   sanitizeUserInput,
   wrapUserContent,
-  getSystemGuardrails,
+  getSystemGuardrails as getDefaultGuardrails,
   validateAIOutput,
   createSecurityEvent,
   type SecurityEvent
 } from "../_shared/guardrails.ts";
 import { getCorsHeaders } from "../_shared/cors.ts";
 import { checkRateLimit, RATE_LIMITS, rateLimitExceededResponse } from "../_shared/rate-limiter.ts";
+import { getTonePrompt, getModeInstructions, getGuardrails } from "../_shared/prompts.ts";
 
 // Default plan limits (used as fallback)
 const PLAN_LIMITS: Record<string, { limit: number; period: string }> = {
@@ -437,11 +438,11 @@ serve(async (req) => {
     };
     const languageInstruction = languageInstructions[language] || languageInstructions['pt-BR'];
 
-    // Build the system prompt based on text mode
-    let styleInstructions = TEXT_MODE_INSTRUCTIONS[textMode as keyof typeof TEXT_MODE_INSTRUCTIONS] || TEXT_MODE_INSTRUCTIONS.compact;
-    
+    // Build the system prompt based on text mode (fetch from database with fallback)
+    let styleInstructions = await getModeInstructions(textMode) || TEXT_MODE_INSTRUCTIONS[textMode as keyof typeof TEXT_MODE_INSTRUCTIONS] || TEXT_MODE_INSTRUCTIONS.compact;
+
     if (textMode === 'creative') {
-      const tonePrompt = CREATIVE_TONE_PROMPTS[creativeTone as keyof typeof CREATIVE_TONE_PROMPTS] || CREATIVE_TONE_PROMPTS.professional;
+      const tonePrompt = await getTonePrompt(creativeTone) || CREATIVE_TONE_PROMPTS[creativeTone as keyof typeof CREATIVE_TONE_PROMPTS] || CREATIVE_TONE_PROMPTS.professional;
       styleInstructions = `${styleInstructions}\n\n${tonePrompt}`;
     }
 
@@ -494,8 +495,8 @@ ${template !== 'solid' ? `ESTILO GERAL: ${legacyTemplateContext}` : ''}`;
 
     logStep(`Generating script`, { mode: textMode, tone: creativeTone, slides: actualSlideCount, template, coverTemplate, contentTemplate });
 
-    // === GUARDRAILS: Get system security instructions ===
-    const securityGuardrails = getSystemGuardrails(language);
+    // === GUARDRAILS: Get system security instructions (from database with fallback) ===
+    const securityGuardrails = await getGuardrails(language) || getDefaultGuardrails(language);
 
     const systemPrompt = `${securityGuardrails}
 
