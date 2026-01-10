@@ -2466,14 +2466,34 @@ export const translations = {
   // Error messages
   errors: {
     generic: {
-      "pt-BR": "Algo deu errado. Tente novamente.",
-      en: "Something went wrong. Please try again.",
-      es: "Algo salió mal. Inténtalo de nuevo.",
+      "pt-BR": "Ocorreu um erro inesperado. Tente novamente ou recarregue a página.",
+      en: "An unexpected error occurred. Try again or reload the page.",
+      es: "Ocurrió un error inesperado. Inténtalo de nuevo o recarga la página.",
     },
     networkError: {
-      "pt-BR": "Erro de conexão. Verifique sua internet.",
-      en: "Connection error. Check your internet.",
-      es: "Error de conexión. Verifica tu internet.",
+      "pt-BR": "Erro de conexão. Verifique sua internet e tente novamente.",
+      en: "Connection error. Check your internet and try again.",
+      es: "Error de conexión. Verifica tu internet e inténtalo de nuevo.",
+    },
+    serverError: {
+      "pt-BR": "Erro no servidor. Nossa equipe foi notificada. Tente novamente em alguns minutos.",
+      en: "Server error. Our team has been notified. Try again in a few minutes.",
+      es: "Error del servidor. Nuestro equipo ha sido notificado. Inténtalo de nuevo en unos minutos.",
+    },
+    timeout: {
+      "pt-BR": "A operação demorou muito. Verifique sua conexão e tente novamente.",
+      en: "Operation timed out. Check your connection and try again.",
+      es: "La operación tardó demasiado. Verifica tu conexión e inténtalo de nuevo.",
+    },
+    notFound: {
+      "pt-BR": "Recurso não encontrado. Ele pode ter sido removido ou movido.",
+      en: "Resource not found. It may have been removed or moved.",
+      es: "Recurso no encontrado. Puede haber sido eliminado o movido.",
+    },
+    forbidden: {
+      "pt-BR": "Você não tem permissão para acessar este recurso.",
+      en: "You don't have permission to access this resource.",
+      es: "No tienes permiso para acceder a este recurso.",
     },
     unauthorized: {
       "pt-BR": "Sessão expirada. Faça login novamente.",

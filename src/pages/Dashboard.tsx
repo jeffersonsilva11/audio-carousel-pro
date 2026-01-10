@@ -355,7 +355,7 @@ const Dashboard = () => {
                     <SignOutConfirmDialog
                       onSignOut={handleSignOut}
                       trigger={
-                        <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive cursor-pointer">
+                        <DropdownMenuItem variant="destructive" onSelect={(e) => e.preventDefault()} className="cursor-pointer">
                           <LogOut className="w-4 h-4 mr-2" />
                           {t("nav", "logout", language)}
                         </DropdownMenuItem>

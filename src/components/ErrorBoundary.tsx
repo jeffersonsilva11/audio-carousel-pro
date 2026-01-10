@@ -72,10 +72,13 @@ class ErrorBoundary extends Component<Props, State> {
             
             <div className="space-y-2">
               <h1 className="text-2xl font-bold text-foreground">
-                Ops! Algo deu errado
+                Ocorreu um erro inesperado
               </h1>
               <p className="text-muted-foreground">
-                Encontramos um erro inesperado. Nossa equipe já foi notificada.
+                Pedimos desculpas pelo inconveniente. Nossa equipe já foi notificada e está trabalhando na solução.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Tente recarregar a página ou voltar ao início.
               </p>
             </div>
 

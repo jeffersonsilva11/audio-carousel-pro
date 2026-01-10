@@ -135,6 +135,8 @@ const Auth = () => {
   // Update lockout countdown
   useEffect(() => {
     if (isLocked) {
+      // Initialize immediately
+      setLockoutSeconds(getRemainingLockoutTime());
       const interval = setInterval(() => {
         setLockoutSeconds(getRemainingLockoutTime());
       }, 1000);
@@ -392,7 +394,7 @@ const Auth = () => {
           href="/" 
           className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-8"
         >
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowLeft className="size-4" />
           {t("auth", "backToHome", language)}
         </a>
 
@@ -420,7 +422,7 @@ const Auth = () => {
             {/* Registration Disabled Warning */}
             {registrationDisabled && (
               <Alert className="mb-4 bg-amber-500/10 border-amber-500/30">
-                <UserX className="h-4 w-4 text-amber-600" />
+                <UserX className="size-4 text-amber-600" />
                 <AlertDescription className="text-amber-700">
                   {systemSettings.registrationDisabledMessage}
                 </AlertDescription>
@@ -428,11 +430,11 @@ const Auth = () => {
             )}
 
             {/* Lockout Warning */}
-            {isLocked && (
+            {isLocked && lockoutSeconds > 0 && (
               <Alert variant="destructive" className="mb-4">
-                <AlertTriangle className="h-4 w-4" />
+                <AlertTriangle className="size-4" />
                 <AlertDescription className="flex items-center gap-2">
-                  <Clock className="w-4 h-4" />
+                  <Clock className="size-4" />
                   {t("auth", "accountLockedMessage", language).replace("{seconds}", String(lockoutSeconds))}
                 </AlertDescription>
               </Alert>
@@ -470,7 +472,7 @@ const Auth = () => {
               {!isLogin && (
                 <div className="space-y-2">
                   <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                     <Input
                       type="text"
                       placeholder={t("auth", "yourName", language)}
@@ -485,7 +487,7 @@ const Auth = () => {
 
               <div className="space-y-2">
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                   <Input
                     type="email"
                     placeholder={t("auth", "yourEmail", language)}
@@ -500,7 +502,7 @@ const Auth = () => {
 
               <div className="space-y-2">
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                   <Input
                     type="password"
                     placeholder={t("auth", "yourPassword", language)}

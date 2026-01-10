@@ -148,7 +148,7 @@ const Header = () => {
                     <SignOutConfirmDialog
                       onSignOut={handleLogoutFromDialog}
                       trigger={
-                        <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="cursor-pointer text-destructive">
+                        <DropdownMenuItem variant="destructive" onSelect={(e) => e.preventDefault()} className="cursor-pointer">
                           <LogOut className="mr-2 h-4 w-4" />
                           {t("nav", "logout", language)}
                         </DropdownMenuItem>
