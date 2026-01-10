@@ -131,6 +131,26 @@ export const translations = {
       en: "Logout",
       es: "Salir",
     },
+    support: {
+      "pt-BR": "Suporte",
+      en: "Support",
+      es: "Soporte",
+    },
+    openMenu: {
+      "pt-BR": "Abrir menu",
+      en: "Open menu",
+      es: "Abrir menú",
+    },
+    goBack: {
+      "pt-BR": "Voltar",
+      en: "Go back",
+      es: "Volver",
+    },
+    backToDashboard: {
+      "pt-BR": "Voltar ao painel",
+      en: "Back to dashboard",
+      es: "Volver al panel",
+    },
   },
 
   // Hero section
