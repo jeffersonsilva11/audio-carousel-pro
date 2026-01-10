@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -161,6 +161,7 @@ const CreateCarousel = () => {
   // Regeneration state for batch processing
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [regeneratingProgress, setRegeneratingProgress] = useState<{ current: number; total: number } | null>(null);
+  const regenerationAbortRef = useRef(false);
   
   // Carousel ID for editing
   const [currentCarouselId, setCurrentCarouselId] = useState<string | null>(null);
@@ -189,11 +190,21 @@ const CreateCarousel = () => {
     }
   };
 
+  // Cancel regeneration handler
+  const handleCancelRegeneration = useCallback(() => {
+    regenerationAbortRef.current = true;
+    toast({
+      title: t("create", "regenerationCancelled", siteLanguage),
+      description: t("create", "regenerationCancelledDesc", siteLanguage),
+    });
+  }, [toast, siteLanguage]);
+
   // Function to finalize editing with batch regeneration
   const handleFinalizeEdit = async (editedSlides: Slide[], changedIndices: number[]) => {
     if (!currentCarouselId || !user) return;
 
     setIsRegenerating(true);
+    regenerationAbortRef.current = false;
 
     try {
       // Update script in database first
@@ -211,8 +222,18 @@ const CreateCarousel = () => {
         setRegeneratingProgress({ current: 0, total: changedIndices.length });
 
         const updatedSlides = [...editedSlides];
+        let completedCount = 0;
 
         for (let i = 0; i < changedIndices.length; i++) {
+          // Check for cancellation before each slide
+          if (regenerationAbortRef.current) {
+            // Update slides with what we have so far
+            setGeneratedSlides(updatedSlides);
+            setIsRegenerating(false);
+            setRegeneratingProgress(null);
+            return;
+          }
+
           const slideIndex = changedIndices[i];
           setRegeneratingProgress({ current: i + 1, total: changedIndices.length });
 
@@ -257,6 +278,7 @@ const CreateCarousel = () => {
                 ...updatedSlides[slideIndex],
                 imageUrl: data.slides[0].imageUrl
               };
+              completedCount++;
             }
           } catch (slideError) {
             console.error(`Error regenerating slide ${slideIndex}:`, slideError);
@@ -447,7 +469,9 @@ const CreateCarousel = () => {
   useEffect(() => {
     if (!loading && user && !isEmailConfirmed) {
       signOut().then(() => {
-        navigate(`/auth/verify?email=${encodeURIComponent(user.email || "")}`);
+        // Store email in sessionStorage instead of URL (security: avoid browser history exposure)
+        sessionStorage.setItem("verify_email_pending", user.email || "");
+        navigate("/auth/verify");
       });
     }
   }, [user, loading, isEmailConfirmed, navigate, signOut]);
@@ -1222,6 +1246,7 @@ const CreateCarousel = () => {
                   onFinalize={handleFinalizeEdit}
                   isRegenerating={isRegenerating}
                   regeneratingProgress={regeneratingProgress || undefined}
+                  onCancelRegeneration={handleCancelRegeneration}
                   format={selectedFormat}
                 />
               ) : (

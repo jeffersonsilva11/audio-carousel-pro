@@ -118,7 +118,9 @@ const Auth = () => {
             title: t("auth", "emailNotVerified", language),
             description: t("auth", "pleaseVerifyEmail", language),
           });
-          navigate(`/auth/verify?email=${encodeURIComponent(user.email || "")}`);
+          // Store email in sessionStorage instead of URL (security: avoid browser history exposure)
+          sessionStorage.setItem("verify_email_pending", user.email || "");
+          navigate("/auth/verify");
         } catch (err) {
           console.error("Verification check error:", err);
           // Fall back to isEmailConfirmed on error
@@ -259,7 +261,9 @@ const Auth = () => {
                     title: t("auth", "emailNotVerified", language),
                     description: t("auth", "pleaseVerifyEmail", language),
                   });
-                  navigate(`/auth/verify?email=${encodeURIComponent(loggedInUser.email || email)}`);
+                  // Store email in sessionStorage instead of URL (security: avoid browser history exposure)
+                  sessionStorage.setItem("verify_email_pending", loggedInUser.email || email);
+                  navigate("/auth/verify");
                   return;
                 }
               } catch (verifyError) {
@@ -334,8 +338,9 @@ const Auth = () => {
               title: t("auth", "accountCreated", language),
               description: t("auth", "checkEmailVerification", language),
             });
-            // Redirect to email verification page
-            navigate(`/auth/verify?email=${encodeURIComponent(email)}`);
+            // Store email in sessionStorage and redirect (security: avoid browser history exposure)
+            sessionStorage.setItem("verify_email_pending", email);
+            navigate("/auth/verify");
           }
         }
       }

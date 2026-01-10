@@ -1305,6 +1305,16 @@ export const translations = {
       en: "Error finalizing",
       es: "Error al finalizar",
     },
+    regenerationCancelled: {
+      "pt-BR": "Regeneração cancelada",
+      en: "Regeneration cancelled",
+      es: "Regeneración cancelada",
+    },
+    regenerationCancelledDesc: {
+      "pt-BR": "O processo foi interrompido. Os slides já regenerados foram mantidos.",
+      en: "The process was interrupted. Already regenerated slides have been kept.",
+      es: "El proceso fue interrumpido. Los slides ya regenerados se han mantenido.",
+    },
     audioRestored: {
       "pt-BR": "Áudio restaurado",
       en: "Audio restored",
@@ -3500,6 +3510,11 @@ export const translations = {
       "pt-BR": "Regenerando slides...",
       en: "Regenerating slides...",
       es: "Regenerando slides...",
+    },
+    cancelRegeneration: {
+      "pt-BR": "Cancelar",
+      en: "Cancel",
+      es: "Cancelar",
     },
   },
 

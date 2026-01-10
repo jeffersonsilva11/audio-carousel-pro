@@ -147,7 +147,9 @@ const Dashboard = () => {
 
           // Sign out and redirect to verify page
           await supabase.auth.signOut();
-          navigate(`/auth/verify?email=${encodeURIComponent(user.email || "")}`);
+          // Store email in sessionStorage instead of URL (security: avoid browser history exposure)
+          sessionStorage.setItem("verify_email_pending", user.email || "");
+          navigate("/auth/verify");
         } catch (err) {
           console.error("Verification check error:", err);
           // On error, allow access (fail open)

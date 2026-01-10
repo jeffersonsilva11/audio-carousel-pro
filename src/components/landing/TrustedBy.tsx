@@ -1,7 +1,18 @@
 import { useEffect, useState } from "react";
+import DOMPurify from "dompurify";
 import { motion } from "framer-motion";
 import { useLanguage } from "@/hooks/useLanguage";
 import { supabase } from "@/integrations/supabase/client";
+
+// Configure DOMPurify to allow safe SVG elements and attributes
+const sanitizeSvg = (svg: string): string => {
+  return DOMPurify.sanitize(svg, {
+    USE_PROFILES: { svg: true, svgFilters: true },
+    ADD_ATTR: ['viewBox', 'fill', 'class', 'd', 'cx', 'cy', 'r', 'rx', 'ry', 'x', 'y', 'width', 'height', 'transform', 'stroke', 'stroke-width', 'stroke-linecap', 'stroke-linejoin', 'fill-rule', 'clip-rule', 'opacity'],
+    FORBID_TAGS: ['script', 'style', 'foreignObject'],
+    FORBID_ATTR: ['onclick', 'onload', 'onerror', 'onmouseover', 'onfocus'],
+  });
+};
 
 interface TrustedCompany {
   id: string;
@@ -135,7 +146,7 @@ const TrustedBy = () => {
               viewport={{ once: true }}
               className="text-muted-foreground/50 hover:text-muted-foreground transition-colors duration-300"
               title={company.name}
-              dangerouslySetInnerHTML={{ __html: company.logo_svg }}
+              dangerouslySetInnerHTML={{ __html: sanitizeSvg(company.logo_svg) }}
             />
           ))}
         </motion.div>

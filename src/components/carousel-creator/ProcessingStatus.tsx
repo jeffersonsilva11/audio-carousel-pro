@@ -47,23 +47,44 @@ const ProcessingStatus = ({ status }: ProcessingStatusProps) => {
   const progressPerStep = 100 / (steps.length - 1);
 
   useEffect(() => {
-    // Animate progress
-    const targetProgress = currentStepIndex * progressPerStep;
-    
+    // Animate progress smoothly
+    // Each step reaches near its target, allowing smooth transition to next step
+    const baseProgress = currentStepIndex * progressPerStep;
+    // For current step, animate up to 95% of the way to the next step's start
+    // This allows smooth visual transition and avoids getting "stuck" at 80%
+    const maxProgress = status === "COMPLETED"
+      ? 100
+      : Math.min(baseProgress + progressPerStep * 0.95, 99);
+
     if (status === "COMPLETED") {
-      setProgress(100);
+      // Quickly animate to 100% for completion
+      const interval = setInterval(() => {
+        setProgress(prev => {
+          if (prev >= 100) {
+            clearInterval(interval);
+            return 100;
+          }
+          return Math.min(prev + 5, 100);
+        });
+      }, 50);
+      return () => clearInterval(interval);
     } else {
       const interval = setInterval(() => {
         setProgress(prev => {
-          const next = prev + 1;
-          if (next >= targetProgress + progressPerStep * 0.8) {
+          // If we're behind the base progress (step just changed), catch up faster
+          if (prev < baseProgress) {
+            return Math.min(prev + 3, baseProgress);
+          }
+          // Otherwise, animate slowly towards max
+          const next = prev + 0.5;
+          if (next >= maxProgress) {
             clearInterval(interval);
-            return targetProgress + progressPerStep * 0.8;
+            return maxProgress;
           }
           return next;
         });
       }, 100);
-      
+
       return () => clearInterval(interval);
     }
   }, [status, currentStepIndex, progressPerStep]);

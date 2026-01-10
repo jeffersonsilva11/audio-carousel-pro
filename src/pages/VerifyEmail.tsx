@@ -11,13 +11,20 @@ import { useToast } from "@/hooks/use-toast";
 import { BRAND } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
+// Session storage key for email verification (avoids exposing email in URL/browser history)
+const VERIFY_EMAIL_KEY = "verify_email_pending";
+
 const VerifyEmail = () => {
   const { language } = useLanguage();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const email = searchParams.get("email") || "";
+  // Get email from sessionStorage (preferred) or fallback to URL params for backwards compatibility
+  const urlEmail = searchParams.get("email") || "";
+  const storedEmail = sessionStorage.getItem(VERIFY_EMAIL_KEY) || "";
+  const email = storedEmail || urlEmail;
+
   const [otp, setOtp] = useState<string[]>(["", "", "", "", "", ""]);
   const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
@@ -25,6 +32,15 @@ const VerifyEmail = () => {
   const [resendCooldown, setResendCooldown] = useState(0);
 
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  // Store email in sessionStorage and clean URL if email was in params
+  useEffect(() => {
+    if (urlEmail && !storedEmail) {
+      sessionStorage.setItem(VERIFY_EMAIL_KEY, urlEmail);
+      // Clean URL by removing email param (security: remove from browser history)
+      navigate("/auth/verify", { replace: true });
+    }
+  }, [urlEmail, storedEmail, navigate]);
 
   // Redirect if no email provided
   useEffect(() => {
@@ -117,6 +133,9 @@ const VerifyEmail = () => {
         inputRefs.current[0]?.focus();
       } else {
         setIsVerified(true);
+        // Clear stored email from sessionStorage (security: cleanup after verification)
+        sessionStorage.removeItem(VERIFY_EMAIL_KEY);
+
         toast({
           title: t("verifyEmail", "emailVerified", language),
           description: t("verifyEmail", "accountActivated", language),
