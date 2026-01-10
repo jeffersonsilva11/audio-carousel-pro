@@ -39,7 +39,8 @@ import AdvancedTemplateEditor, { TemplateCustomization } from "@/components/caro
 import CoverOptionsEditor from "@/components/carousel-creator/CoverOptionsEditor";
 import AdvancedOptionsEditor from "@/components/carousel-creator/AdvancedOptionsEditor";
 import LayoutTemplateSelector from "@/components/carousel-creator/LayoutTemplateSelector";
-import { CoverTemplateType, ContentTemplateType } from "@/lib/templates";
+import SlideImageUploader from "@/components/carousel-creator/SlideImageUploader";
+import { CoverTemplateType, ContentTemplateType, templateRequiresImage } from "@/lib/templates";
 import LiveCarouselPreview from "@/components/carousel-creator/LiveCarouselPreview";
 import { FontId, GradientId } from "@/lib/constants";
 import {
@@ -136,6 +137,18 @@ const CreateCarousel = () => {
   const [coverTemplate, setCoverTemplate] = useState<CoverTemplateType>('cover_full_image');
   const [contentTemplate, setContentTemplate] = useState<ContentTemplateType>('content_text_only');
 
+  // Per-slide images for templates (Creator+ only)
+  interface SlideImage {
+    slideIndex: number;
+    storagePath: string | null;
+    publicUrl: string | null;
+    position: 'main' | 'left' | 'right' | 'top' | 'bottom';
+  }
+  const [perSlideImages, setPerSlideImages] = useState<SlideImage[]>([]);
+
+  // Generate a temporary carousel ID for image uploads during customize step
+  const [tempCarouselId] = useState(() => crypto.randomUUID());
+
   // Processing state
   const [isProcessing, setIsProcessing] = useState(false);
   const [generatedSlides, setGeneratedSlides] = useState<Slide[]>([]);
@@ -218,10 +231,18 @@ const CreateCarousel = () => {
                     fontId: templateCustomization.fontId,
                     gradientId: templateCustomization.gradientId,
                     customGradientColors: templateCustomization.customGradientColors,
-                    slideImages: templateCustomization.slideImages,
+                    slideImages: perSlideImages.length > 0
+                      ? Array.from({ length: editedSlides.length }, (_, i) => {
+                          const perSlide = perSlideImages.find(img => img.slideIndex === i);
+                          if (perSlide?.publicUrl) return perSlide.publicUrl;
+                          return templateCustomization.slideImages?.[i] || null;
+                        })
+                      : templateCustomization.slideImages,
                     textAlignment: templateCustomization.textAlignment,
                     showNavigationDots: templateCustomization.showNavigationDots,
                     showNavigationArrow: templateCustomization.showNavigationArrow,
+                    coverTemplate,
+                    contentTemplate,
                   } : undefined
                 }
               }
@@ -642,7 +663,14 @@ const CreateCarousel = () => {
           fontId: templateCustomization.fontId,
           gradientId: templateCustomization.gradientId,
           customGradientColors: templateCustomization.customGradientColors,
-          slideImages: templateCustomization.slideImages,
+          // Merge cover slideImages with per-slide images (per-slide takes priority)
+          slideImages: perSlideImages.length > 0
+            ? Array.from({ length: slideCountMode === "auto" ? 6 : manualSlideCount }, (_, i) => {
+                const perSlide = perSlideImages.find(img => img.slideIndex === i);
+                if (perSlide?.publicUrl) return perSlide.publicUrl;
+                return templateCustomization.slideImages?.[i] || null;
+              })
+            : templateCustomization.slideImages,
           textAlignment: templateCustomization.textAlignment,
           showNavigationDots: templateCustomization.showNavigationDots,
           showNavigationArrow: templateCustomization.showNavigationArrow,
@@ -1004,6 +1032,22 @@ const CreateCarousel = () => {
                       isCreator={isCreator}
                     />
                   </div>
+
+                  {/* 8.5 Per-Slide Image Upload - Creator+ only, shown when templates require images */}
+                  {isCreator && (templateRequiresImage(coverTemplate) || templateRequiresImage(contentTemplate)) && (
+                    <div className="border-t border-border pt-8">
+                      <SlideImageUploader
+                        carouselId={tempCarouselId}
+                        userId={user?.id || ''}
+                        slideCount={slideCountMode === "auto" ? 6 : manualSlideCount}
+                        coverTemplate={coverTemplate}
+                        contentTemplate={contentTemplate}
+                        slideImages={perSlideImages}
+                        onSlideImagesChange={setPerSlideImages}
+                        isCreator={isCreator}
+                      />
+                    </div>
+                  )}
 
                   {/* 9. Advanced Options - Creator+ only */}
                   <div className="border-t border-border pt-8">

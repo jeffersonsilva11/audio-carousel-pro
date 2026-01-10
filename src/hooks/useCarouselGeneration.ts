@@ -37,6 +37,10 @@ export interface ProfileIdentity {
   displayMode: 'name_and_username' | 'username_only';
 }
 
+// Layout template types (Creator+ only)
+export type CoverTemplateType = 'cover_full_image' | 'cover_split_images' | 'cover_gradient_overlay';
+export type ContentTemplateType = 'content_image_top' | 'content_text_top' | 'content_split' | 'content_text_only';
+
 export interface CarouselGenerationOptions {
   audioFile: File;
   textMode: TextModeId;
@@ -59,6 +63,9 @@ export interface CarouselGenerationOptions {
     textAlignment?: 'left' | 'center' | 'right';
     showNavigationDots?: boolean;
     showNavigationArrow?: boolean;
+    // New layout templates (Creator+ only)
+    coverTemplate?: CoverTemplateType;
+    contentTemplate?: ContentTemplateType;
   };
 }
 
@@ -115,14 +122,17 @@ export function useCarouselGeneration() {
       const { data: scriptData, error: scriptError } = await supabase.functions.invoke(
         "generate-script",
         {
-          body: { 
-            transcription, 
+          body: {
+            transcription,
             textMode,
             creativeTone,
             slideCount,
             slideCountMode,
             template,
-            language 
+            language,
+            // Pass layout templates if provided (Creator+ only)
+            coverTemplate: customization?.coverTemplate,
+            contentTemplate: customization?.contentTemplate
           }
         }
       );

@@ -529,7 +529,203 @@ function generateNavigationArrow(
   </g>`;
 }
 
-// Generate SVG for COVER slide (slide 1 - HOOK)
+// ============================================================================
+// COVER TEMPLATE RENDERERS
+// ============================================================================
+
+// Generate SVG for cover_split_images template (2x2 grid of images)
+function generateCoverSplitImagesSVG(
+  slideData: SlideData,
+  totalSlides: number,
+  style: keyof typeof STYLES,
+  format: keyof typeof DIMENSIONS,
+  hasWatermark: boolean = true,
+  profile?: ProfileIdentity,
+  customization?: TemplateCustomization
+): string {
+  const { width, height } = DIMENSIONS[format];
+  const { background } = STYLES[style];
+
+  const fontId = customization?.fontId || 'inter';
+  const fontFamily = FONTS[fontId] || FONTS['inter'];
+  const slideImages = customization?.slideImages || [];
+  const showDots = customization?.showNavigationDots !== false;
+  const showArrow = customization?.showNavigationArrow !== false;
+
+  const { text } = slideData;
+  const textColor = '#FFFFFF';
+  const counterColor = 'rgba(255,255,255,0.6)';
+
+  // Grid configuration - 2x2 layout
+  const gridPadding = 40;
+  const gridGap = 8;
+  const gridWidth = width - (gridPadding * 2);
+  const gridHeight = height * 0.6; // 60% of height for images
+  const cellWidth = (gridWidth - gridGap) / 2;
+  const cellHeight = (gridHeight - gridGap) / 2;
+  const gridStartY = 80;
+
+  // Generate image grid cells
+  const gridCells = [];
+  for (let row = 0; row < 2; row++) {
+    for (let col = 0; col < 2; col++) {
+      const index = row * 2 + col;
+      const x = gridPadding + col * (cellWidth + gridGap);
+      const y = gridStartY + row * (cellHeight + gridGap);
+      const imageUrl = slideImages[index];
+
+      if (imageUrl) {
+        gridCells.push(`
+          <clipPath id="cell-${index}">
+            <rect x="${x}" y="${y}" width="${cellWidth}" height="${cellHeight}" rx="8"/>
+          </clipPath>
+          <image href="${imageUrl}" x="${x}" y="${y}" width="${cellWidth}" height="${cellHeight}" clip-path="url(#cell-${index})" preserveAspectRatio="xMidYMid slice"/>
+        `);
+      } else {
+        gridCells.push(`
+          <rect x="${x}" y="${y}" width="${cellWidth}" height="${cellHeight}" rx="8" fill="rgba(255,255,255,0.1)"/>
+        `);
+      }
+    }
+  }
+
+  // Title at bottom
+  const titleFontSize = calculateFontSize(text.length, 'cover', format) * 0.85;
+  const maxWidth = width - 160;
+  const lines = wrapText(text, maxWidth, titleFontSize);
+  const lineHeight = titleFontSize * 1.15;
+  const titleStartY = gridStartY + gridHeight + 60;
+
+  const textElements = lines.map((line, index) => {
+    const y = titleStartY + (index * lineHeight);
+    return `<text x="${width / 2}" y="${y}" text-anchor="middle" fill="${textColor}" font-family="${fontFamily}" font-size="${titleFontSize}" font-weight="700" letter-spacing="-0.02em">${escapeXml(line)}</text>`;
+  }).join('\n    ');
+
+  const counter = `<text x="${width - 50}" y="55" text-anchor="end" fill="${counterColor}" font-family="${fontFamily}" font-size="26" font-weight="500">1/${totalSlides}</text>`;
+  const profileIdentity = profile ? generateProfileIdentitySVG(profile, style, format, fontFamily, true) : '';
+  const dotsElement = showDots ? generateNavigationDots(width, height, 1, totalSlides, textColor, format) : '';
+  const arrowElement = showArrow ? generateNavigationArrow(width, height, textColor, format) : '';
+
+  const watermark = hasWatermark ? `
+    <g class="watermark-cta">
+      <rect x="${width / 2 - 100}" y="${height - 85}" width="200" height="36" rx="18" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+      <text x="${width / 2}" y="${height - 61}" text-anchor="middle" fill="#FFFFFF" font-family="${fontFamily}" font-size="13" font-weight="600" letter-spacing="0.02em">FEITO COM AUDISELL →</text>
+    </g>` : '';
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <defs>
+    ${gridCells.filter(c => c.includes('clipPath')).join('\n')}
+  </defs>
+  <rect width="${width}" height="${height}" fill="${background}"/>
+  ${profileIdentity}
+  ${counter}
+  <g class="image-grid">
+    ${gridCells.map(c => c.replace(/<clipPath[^>]*>[\s\S]*?<\/clipPath>/g, '')).join('\n')}
+  </g>
+  <g class="title">
+    ${textElements}
+  </g>
+  ${dotsElement}
+  ${arrowElement}
+  ${watermark}
+</svg>`;
+}
+
+// Generate SVG for cover_gradient_overlay template
+function generateCoverGradientOverlaySVG(
+  slideData: SlideData,
+  totalSlides: number,
+  style: keyof typeof STYLES,
+  format: keyof typeof DIMENSIONS,
+  hasWatermark: boolean = true,
+  profile?: ProfileIdentity,
+  customization?: TemplateCustomization
+): string {
+  const { width, height } = DIMENSIONS[format];
+  const { background } = STYLES[style];
+
+  const fontId = customization?.fontId || 'inter';
+  const fontFamily = FONTS[fontId] || FONTS['inter'];
+  const slideImage = customization?.slideImages?.[0];
+  const showDots = customization?.showNavigationDots !== false;
+  const showArrow = customization?.showNavigationArrow !== false;
+
+  const { text } = slideData;
+  const textColor = '#FFFFFF';
+  const counterColor = 'rgba(255,255,255,0.6)';
+
+  // Gradient colors from customization or defaults (accent orange to dark)
+  const gradientColors = customization?.customGradientColors || ['rgba(255,107,0,0.85)', 'rgba(0,0,0,0.95)'];
+
+  // Background with image + gradient overlay
+  let backgroundElement = `<rect width="${width}" height="${height}" fill="${background}"/>`;
+
+  if (slideImage) {
+    backgroundElement = `
+      <image href="${slideImage}" x="0" y="0" width="${width}" height="${height}" preserveAspectRatio="xMidYMid slice" opacity="0.5"/>
+      <defs>
+        <linearGradient id="gradientOverlay" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="${gradientColors[0]}"/>
+          <stop offset="100%" stop-color="${gradientColors[1]}"/>
+        </linearGradient>
+      </defs>
+      <rect width="${width}" height="${height}" fill="url(#gradientOverlay)"/>
+    `;
+  } else {
+    backgroundElement = `
+      <defs>
+        <linearGradient id="gradientOverlay" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="${gradientColors[0]}"/>
+          <stop offset="100%" stop-color="${gradientColors[1]}"/>
+        </linearGradient>
+      </defs>
+      <rect width="${width}" height="${height}" fill="url(#gradientOverlay)"/>
+    `;
+  }
+
+  // Title centered with text shadow effect
+  const titleFontSize = calculateFontSize(text.length, 'cover', format);
+  const maxWidth = width - 160;
+  const lines = wrapText(text, maxWidth, titleFontSize);
+  const lineHeight = titleFontSize * 1.15;
+  const totalTitleHeight = lines.length * lineHeight;
+  const titleStartY = (height - totalTitleHeight) / 2 + titleFontSize * 0.8;
+
+  const textElements = lines.map((line, index) => {
+    const y = titleStartY + (index * lineHeight);
+    return `
+      <text x="${width / 2}" y="${y + 3}" text-anchor="middle" fill="rgba(0,0,0,0.3)" font-family="${fontFamily}" font-size="${titleFontSize}" font-weight="800" letter-spacing="-0.02em">${escapeXml(line)}</text>
+      <text x="${width / 2}" y="${y}" text-anchor="middle" fill="${textColor}" font-family="${fontFamily}" font-size="${titleFontSize}" font-weight="800" letter-spacing="-0.02em">${escapeXml(line)}</text>
+    `;
+  }).join('\n    ');
+
+  const counter = `<text x="${width - 50}" y="55" text-anchor="end" fill="${counterColor}" font-family="${fontFamily}" font-size="26" font-weight="500">1/${totalSlides}</text>`;
+  const profileIdentity = profile ? generateProfileIdentitySVG(profile, style, format, fontFamily, true) : '';
+  const dotsElement = showDots ? generateNavigationDots(width, height, 1, totalSlides, textColor, format) : '';
+  const arrowElement = showArrow ? generateNavigationArrow(width, height, textColor, format) : '';
+
+  const watermark = hasWatermark ? `
+    <g class="watermark-cta">
+      <rect x="${width / 2 - 100}" y="${height - 85}" width="200" height="36" rx="18" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+      <text x="${width / 2}" y="${height - 61}" text-anchor="middle" fill="#FFFFFF" font-family="${fontFamily}" font-size="13" font-weight="600" letter-spacing="0.02em">FEITO COM AUDISELL →</text>
+    </g>` : '';
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  ${backgroundElement}
+  ${profileIdentity}
+  ${counter}
+  <g class="title">
+    ${textElements}
+  </g>
+  ${dotsElement}
+  ${arrowElement}
+  ${watermark}
+</svg>`;
+}
+
+// Generate SVG for COVER slide (slide 1 - HOOK) - cover_full_image (default)
 function generateCoverSlideSVG(
   slideData: SlideData,
   totalSlides: number,
@@ -647,7 +843,289 @@ function generateCoverSlideSVG(
 </svg>`;
 }
 
-// Generate SVG for CONTENT slides (slides 2+)
+// ============================================================================
+// CONTENT TEMPLATE RENDERERS
+// ============================================================================
+
+// Generate SVG for content_image_top template (image at top, text at bottom)
+function generateContentImageTopSVG(
+  text: string,
+  slideNumber: number,
+  totalSlides: number,
+  style: keyof typeof STYLES,
+  format: keyof typeof DIMENSIONS,
+  hasWatermark: boolean = true,
+  profile?: ProfileIdentity,
+  customization?: TemplateCustomization
+): string {
+  const { width, height } = DIMENSIONS[format];
+  const { background, text: textColor } = STYLES[style];
+
+  const fontId = customization?.fontId || 'inter';
+  const fontFamily = FONTS[fontId] || FONTS['inter'];
+  const showDots = customization?.showNavigationDots !== false;
+  const showArrow = customization?.showNavigationArrow !== false;
+  const isLastSlide = slideNumber === totalSlides;
+
+  // Get image for this slide (slideImages array indexed by slide number - 1)
+  const slideImage = customization?.slideImages?.[slideNumber - 1];
+
+  // Layout: Image takes top 50%, text takes bottom 50%
+  const imageHeight = height * 0.5;
+  const textAreaTop = imageHeight + 20;
+  const textAreaHeight = height - imageHeight - 100; // Leave space for dots
+
+  // Image area
+  let imageElement = '';
+  if (slideImage) {
+    imageElement = `
+      <defs>
+        <clipPath id="imageTopClip-${slideNumber}">
+          <rect x="40" y="40" width="${width - 80}" height="${imageHeight - 60}" rx="16"/>
+        </clipPath>
+      </defs>
+      <image href="${slideImage}" x="40" y="40" width="${width - 80}" height="${imageHeight - 60}" clip-path="url(#imageTopClip-${slideNumber})" preserveAspectRatio="xMidYMid slice"/>
+    `;
+  } else {
+    imageElement = `
+      <rect x="40" y="40" width="${width - 80}" height="${imageHeight - 60}" rx="16" fill="rgba(128,128,128,0.1)" stroke="rgba(128,128,128,0.2)" stroke-width="2" stroke-dasharray="8,4"/>
+    `;
+  }
+
+  // Text area
+  const fontSize = calculateFontSize(text.length, 'content', format) * 0.9;
+  const maxWidth = width - 160;
+  const lines = wrapText(text, maxWidth, fontSize);
+  const lineHeight = fontSize * 1.35;
+  const totalTextHeight = lines.length * lineHeight;
+  const textStartY = textAreaTop + (textAreaHeight - totalTextHeight) / 2 + fontSize * 0.8;
+
+  const textAlignment = customization?.textAlignment || 'center';
+  const alignmentConfig = {
+    'left': { x: 80, anchor: 'start' },
+    'center': { x: width / 2, anchor: 'middle' },
+    'right': { x: width - 80, anchor: 'end' }
+  };
+  const { x: textX, anchor: textAnchor } = alignmentConfig[textAlignment];
+
+  const textElements = lines.map((line, index) => {
+    const y = textStartY + (index * lineHeight);
+    return `<text x="${textX}" y="${y}" text-anchor="${textAnchor}" fill="${textColor}" font-family="${fontFamily}" font-size="${fontSize}" font-weight="500">${escapeXml(line)}</text>`;
+  }).join('\n    ');
+
+  const counter = `<text x="${width - 50}" y="55" text-anchor="end" fill="${textColor}" opacity="0.5" font-family="${fontFamily}" font-size="26" font-weight="500">${slideNumber}/${totalSlides}</text>`;
+  const profileIdentity = profile ? generateProfileIdentitySVG(profile, style, format, fontFamily, false) : '';
+  const dotsElement = showDots ? generateNavigationDots(width, height, slideNumber, totalSlides, textColor, format) : '';
+  const arrowElement = showArrow && !isLastSlide ? generateNavigationArrow(width, height, textColor, format) : '';
+
+  const watermark = hasWatermark ? `
+    <g opacity="0.12">
+      <text x="${width / 2}" y="${height - 35}" text-anchor="middle" fill="${textColor}" font-family="${fontFamily}" font-size="18" font-weight="600">Feito com Audisell</text>
+    </g>` : '';
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <rect width="${width}" height="${height}" fill="${background}"/>
+  ${imageElement}
+  ${counter}
+  ${profileIdentity}
+  <g class="content">
+    ${textElements}
+  </g>
+  ${dotsElement}
+  ${arrowElement}
+  ${watermark}
+</svg>`;
+}
+
+// Generate SVG for content_text_top template (text at top, image at bottom)
+function generateContentTextTopSVG(
+  text: string,
+  slideNumber: number,
+  totalSlides: number,
+  style: keyof typeof STYLES,
+  format: keyof typeof DIMENSIONS,
+  hasWatermark: boolean = true,
+  profile?: ProfileIdentity,
+  customization?: TemplateCustomization
+): string {
+  const { width, height } = DIMENSIONS[format];
+  const { background, text: textColor } = STYLES[style];
+
+  const fontId = customization?.fontId || 'inter';
+  const fontFamily = FONTS[fontId] || FONTS['inter'];
+  const showDots = customization?.showNavigationDots !== false;
+  const showArrow = customization?.showNavigationArrow !== false;
+  const isLastSlide = slideNumber === totalSlides;
+
+  // Get image for this slide
+  const slideImage = customization?.slideImages?.[slideNumber - 1];
+
+  // Layout: Text takes top 45%, image takes bottom 55%
+  const profileHeight = profile ? 120 : 0;
+  const textAreaTop = profileHeight + 40;
+  const textAreaHeight = height * 0.4 - profileHeight;
+  const imageTop = textAreaTop + textAreaHeight + 20;
+  const imageHeight = height - imageTop - 80;
+
+  // Text area
+  const fontSize = calculateFontSize(text.length, 'content', format) * 0.9;
+  const maxWidth = width - 160;
+  const lines = wrapText(text, maxWidth, fontSize);
+  const lineHeight = fontSize * 1.35;
+  const totalTextHeight = lines.length * lineHeight;
+  const textStartY = textAreaTop + (textAreaHeight - totalTextHeight) / 2 + fontSize * 0.8;
+
+  const textAlignment = customization?.textAlignment || 'center';
+  const alignmentConfig = {
+    'left': { x: 80, anchor: 'start' },
+    'center': { x: width / 2, anchor: 'middle' },
+    'right': { x: width - 80, anchor: 'end' }
+  };
+  const { x: textX, anchor: textAnchor } = alignmentConfig[textAlignment];
+
+  const textElements = lines.map((line, index) => {
+    const y = textStartY + (index * lineHeight);
+    return `<text x="${textX}" y="${y}" text-anchor="${textAnchor}" fill="${textColor}" font-family="${fontFamily}" font-size="${fontSize}" font-weight="500">${escapeXml(line)}</text>`;
+  }).join('\n    ');
+
+  // Image area
+  let imageElement = '';
+  if (slideImage) {
+    imageElement = `
+      <defs>
+        <clipPath id="imageBottomClip-${slideNumber}">
+          <rect x="40" y="${imageTop}" width="${width - 80}" height="${imageHeight}" rx="16"/>
+        </clipPath>
+      </defs>
+      <image href="${slideImage}" x="40" y="${imageTop}" width="${width - 80}" height="${imageHeight}" clip-path="url(#imageBottomClip-${slideNumber})" preserveAspectRatio="xMidYMid slice"/>
+    `;
+  } else {
+    imageElement = `
+      <rect x="40" y="${imageTop}" width="${width - 80}" height="${imageHeight}" rx="16" fill="rgba(128,128,128,0.1)" stroke="rgba(128,128,128,0.2)" stroke-width="2" stroke-dasharray="8,4"/>
+    `;
+  }
+
+  const counter = `<text x="${width - 50}" y="55" text-anchor="end" fill="${textColor}" opacity="0.5" font-family="${fontFamily}" font-size="26" font-weight="500">${slideNumber}/${totalSlides}</text>`;
+  const profileIdentity = profile ? generateProfileIdentitySVG(profile, style, format, fontFamily, false) : '';
+  const dotsElement = showDots ? generateNavigationDots(width, height, slideNumber, totalSlides, textColor, format) : '';
+  const arrowElement = showArrow && !isLastSlide ? generateNavigationArrow(width, height, textColor, format) : '';
+
+  const watermark = hasWatermark ? `
+    <g opacity="0.12">
+      <text x="${width / 2}" y="${height - 35}" text-anchor="middle" fill="${textColor}" font-family="${fontFamily}" font-size="18" font-weight="600">Feito com Audisell</text>
+    </g>` : '';
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <rect width="${width}" height="${height}" fill="${background}"/>
+  ${counter}
+  ${profileIdentity}
+  <g class="content">
+    ${textElements}
+  </g>
+  ${imageElement}
+  ${dotsElement}
+  ${arrowElement}
+  ${watermark}
+</svg>`;
+}
+
+// Generate SVG for content_split template (image on one side, text on other)
+function generateContentSplitSVG(
+  text: string,
+  slideNumber: number,
+  totalSlides: number,
+  style: keyof typeof STYLES,
+  format: keyof typeof DIMENSIONS,
+  hasWatermark: boolean = true,
+  profile?: ProfileIdentity,
+  customization?: TemplateCustomization
+): string {
+  const { width, height } = DIMENSIONS[format];
+  const { background, text: textColor } = STYLES[style];
+
+  const fontId = customization?.fontId || 'inter';
+  const fontFamily = FONTS[fontId] || FONTS['inter'];
+  const showDots = customization?.showNavigationDots !== false;
+  const showArrow = customization?.showNavigationArrow !== false;
+  const isLastSlide = slideNumber === totalSlides;
+
+  // Get image for this slide
+  const slideImage = customization?.slideImages?.[slideNumber - 1];
+
+  // Layout: Alternate image position - even slides have image on right, odd on left
+  const imageOnRight = slideNumber % 2 === 0;
+  const splitWidth = width * 0.48;
+  const padding = 40;
+  const contentPadding = 60;
+
+  // Image area
+  const imageX = imageOnRight ? width - splitWidth - padding : padding;
+  const imageY = padding + 60; // Below counter
+  const imageWidth = splitWidth;
+  const imageHeight = height - 140 - 80; // Space for counter and dots
+
+  let imageElement = '';
+  if (slideImage) {
+    imageElement = `
+      <defs>
+        <clipPath id="imageSplitClip-${slideNumber}">
+          <rect x="${imageX}" y="${imageY}" width="${imageWidth}" height="${imageHeight}" rx="16"/>
+        </clipPath>
+      </defs>
+      <image href="${slideImage}" x="${imageX}" y="${imageY}" width="${imageWidth}" height="${imageHeight}" clip-path="url(#imageSplitClip-${slideNumber})" preserveAspectRatio="xMidYMid slice"/>
+    `;
+  } else {
+    imageElement = `
+      <rect x="${imageX}" y="${imageY}" width="${imageWidth}" height="${imageHeight}" rx="16" fill="rgba(128,128,128,0.1)" stroke="rgba(128,128,128,0.2)" stroke-width="2" stroke-dasharray="8,4"/>
+    `;
+  }
+
+  // Text area
+  const textAreaX = imageOnRight ? padding : width - splitWidth - padding;
+  const textAreaWidth = splitWidth - contentPadding;
+
+  const fontSize = calculateFontSize(text.length, 'content', format) * 0.85;
+  const lines = wrapText(text, textAreaWidth, fontSize);
+  const lineHeight = fontSize * 1.35;
+  const totalTextHeight = lines.length * lineHeight;
+  const textStartY = (height - totalTextHeight) / 2 + fontSize * 0.8;
+
+  const textX = textAreaX + (imageOnRight ? 0 : contentPadding);
+  const textAnchor = 'start';
+
+  const textElements = lines.map((line, index) => {
+    const y = textStartY + (index * lineHeight);
+    return `<text x="${textX}" y="${y}" text-anchor="${textAnchor}" fill="${textColor}" font-family="${fontFamily}" font-size="${fontSize}" font-weight="500">${escapeXml(line)}</text>`;
+  }).join('\n    ');
+
+  const counter = `<text x="${width - 50}" y="55" text-anchor="end" fill="${textColor}" opacity="0.5" font-family="${fontFamily}" font-size="26" font-weight="500">${slideNumber}/${totalSlides}</text>`;
+  const profileIdentity = profile ? generateProfileIdentitySVG(profile, style, format, fontFamily, false) : '';
+  const dotsElement = showDots ? generateNavigationDots(width, height, slideNumber, totalSlides, textColor, format) : '';
+  const arrowElement = showArrow && !isLastSlide ? generateNavigationArrow(width, height, textColor, format) : '';
+
+  const watermark = hasWatermark ? `
+    <g opacity="0.12">
+      <text x="${width / 2}" y="${height - 35}" text-anchor="middle" fill="${textColor}" font-family="${fontFamily}" font-size="18" font-weight="600">Feito com Audisell</text>
+    </g>` : '';
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <rect width="${width}" height="${height}" fill="${background}"/>
+  ${imageElement}
+  ${counter}
+  ${profileIdentity}
+  <g class="content">
+    ${textElements}
+  </g>
+  ${dotsElement}
+  ${arrowElement}
+  ${watermark}
+</svg>`;
+}
+
+// Generate SVG for CONTENT slides (slides 2+) - content_text_only (default)
 // Content slides use SOLID background only - gradients are only for cover
 function generateContentSlideSVG(
   text: string,
@@ -741,7 +1219,7 @@ function generateContentSlideSVG(
 </svg>`;
 }
 
-// Main function to generate slide SVG (routes to cover or content)
+// Main function to generate slide SVG (routes to cover or content based on template type)
 function generateSlideSVG(
   slideData: SlideData,
   totalSlides: number,
@@ -752,31 +1230,96 @@ function generateSlideSVG(
   profile?: ProfileIdentity,
   customization?: TemplateCustomization
 ): string {
-  // Slide 1 is always the cover slide with special layout
+  // Slide 1 is always the cover slide - route to appropriate cover template
   if (slideData.number === 1) {
-    return generateCoverSlideSVG(
-      slideData,
-      totalSlides,
-      style,
-      format,
-      hasWatermark,
-      profile,
-      customization
-    );
+    const coverTemplate = customization?.coverTemplate || 'cover_full_image';
+
+    switch (coverTemplate) {
+      case 'cover_split_images':
+        return generateCoverSplitImagesSVG(
+          slideData,
+          totalSlides,
+          style,
+          format,
+          hasWatermark,
+          profile,
+          customization
+        );
+      case 'cover_gradient_overlay':
+        return generateCoverGradientOverlaySVG(
+          slideData,
+          totalSlides,
+          style,
+          format,
+          hasWatermark,
+          profile,
+          customization
+        );
+      case 'cover_full_image':
+      default:
+        return generateCoverSlideSVG(
+          slideData,
+          totalSlides,
+          style,
+          format,
+          hasWatermark,
+          profile,
+          customization
+        );
+    }
   }
 
-  // All other slides use content layout
-  return generateContentSlideSVG(
-    slideData.text,
-    slideData.number,
-    totalSlides,
-    style,
-    format,
-    isSignature,
-    hasWatermark,
-    profile,
-    customization
-  );
+  // Content slides (2+) - route to appropriate content template
+  const contentTemplate = customization?.contentTemplate || 'content_text_only';
+
+  switch (contentTemplate) {
+    case 'content_image_top':
+      return generateContentImageTopSVG(
+        slideData.text,
+        slideData.number,
+        totalSlides,
+        style,
+        format,
+        hasWatermark,
+        profile,
+        customization
+      );
+    case 'content_text_top':
+      return generateContentTextTopSVG(
+        slideData.text,
+        slideData.number,
+        totalSlides,
+        style,
+        format,
+        hasWatermark,
+        profile,
+        customization
+      );
+    case 'content_split':
+      return generateContentSplitSVG(
+        slideData.text,
+        slideData.number,
+        totalSlides,
+        style,
+        format,
+        hasWatermark,
+        profile,
+        customization
+      );
+    case 'content_text_only':
+    default:
+      return generateContentSlideSVG(
+        slideData.text,
+        slideData.number,
+        totalSlides,
+        style,
+        format,
+        isSignature,
+        hasWatermark,
+        profile,
+        customization
+      );
+  }
 }
 
 function escapeXml(text: string): string {
