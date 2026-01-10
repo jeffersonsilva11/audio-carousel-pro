@@ -41,14 +41,14 @@ serve(async (req) => {
       });
     }
 
-    if (newPassword.length < 6) {
-      return new Response(JSON.stringify({ error: "A senha deve ter pelo menos 6 caracteres" }), {
+    if (newPassword.length < 8) {
+      return new Response(JSON.stringify({ error: "A senha deve ter pelo menos 8 caracteres" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 400,
       });
     }
 
-    logStep("Verifying reset token", { email, token: token.substring(0, 2) + "****" });
+    logStep("Verifying reset token", { email });
 
     // Find valid token
     const { data: tokenData, error: tokenError } = await supabaseClient

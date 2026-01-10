@@ -400,7 +400,6 @@ const CarouselDetail = () => {
                                 src={url}
                                 alt={`Slide ${index + 1}`}
                                 className="w-full h-full object-contain"
-                                onLoad={() => setCurrentSlide(index)}
                               />
                             </div>
                           </CarouselItem>
@@ -432,9 +431,11 @@ const CarouselDetail = () => {
                 {carousel.image_urls.map((url, index) => (
                   <button
                     key={index}
-                    className="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 border-transparent hover:border-accent/50 transition-colors"
-                    onClick={() => handleDownloadSingle(url, index)}
-                    title={`${t("carouselDetail", "downloadSlide")} ${index + 1}`}
+                    className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-colors ${
+                      currentSlide === index ? "border-accent" : "border-transparent hover:border-accent/50"
+                    }`}
+                    onClick={() => setCurrentSlide(index)}
+                    title={`${t("carouselDetail", "goToSlide")} ${index + 1}`}
                   >
                     <img
                       src={url}

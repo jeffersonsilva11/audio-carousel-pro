@@ -8,6 +8,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { useLanguage } from "@/hooks/useLanguage";
 import { usePlansConfig } from "@/hooks/usePlansConfig";
 import { t } from "@/lib/translations";
+import { useToast } from "@/hooks/use-toast";
 import { PlanTier } from "@/lib/plans";
 
 const Pricing = () => {
@@ -16,6 +17,7 @@ const Pricing = () => {
   const { plan: currentPlan, createCheckout } = useSubscription();
   const { language } = useLanguage();
   const { plans, getPlanPrice, getPlanName, getPlanDescription, getPlanFeatures, getPlanLimitations, loading: plansLoading } = usePlansConfig();
+  const { toast } = useToast();
   const [checkoutLoading, setCheckoutLoading] = useState<PlanTier | null>(null);
 
   // Map language to currency
@@ -48,6 +50,11 @@ const Pricing = () => {
       await createCheckout(planTier, getCurrency());
     } catch (error) {
       console.error("Checkout error:", error);
+      toast({
+        title: t("pricing", "checkoutError", language),
+        description: t("pricing", "checkoutErrorDescription", language),
+        variant: "destructive",
+      });
     } finally {
       setCheckoutLoading(null);
     }
