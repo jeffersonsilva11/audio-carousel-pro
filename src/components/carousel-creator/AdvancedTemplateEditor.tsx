@@ -26,6 +26,7 @@ import {
   GradientId,
   GradientCategory
 } from "@/lib/constants";
+import { CoverTemplateType, ContentTemplateType } from "@/lib/templates";
 
 export type TextAlignment = 'left' | 'center' | 'right';
 
@@ -37,6 +38,9 @@ export interface TemplateCustomization {
   textAlignment: TextAlignment;
   showNavigationDots: boolean;
   showNavigationArrow: boolean;
+  // Layout templates (Creator+ only)
+  coverTemplate?: CoverTemplateType;
+  contentTemplate?: ContentTemplateType;
 }
 
 interface AdvancedTemplateEditorProps {

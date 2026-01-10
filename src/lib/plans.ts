@@ -26,6 +26,12 @@ export interface PlanConfig {
   hasCustomFonts?: boolean;
   hasGradients?: boolean;
   hasSlideImages?: boolean;
+  // New template features
+  hasCoverTemplates?: boolean;
+  hasContentTemplates?: boolean;
+  hasCustomColors?: boolean;
+  hasImageUpload?: boolean;
+  maxTemplatesSaved?: number;
   templates: ('solid' | 'gradient' | 'image_top')[];
   features: string[];
   limitations: string[];
@@ -44,6 +50,11 @@ export const PLANS: Record<PlanTier, PlanConfig> = {
     hasEditor: false,
     hasHistory: false,
     hasZipDownload: false,
+    hasCoverTemplates: false,
+    hasContentTemplates: false,
+    hasCustomColors: false,
+    hasImageUpload: false,
+    maxTemplatesSaved: 0,
     templates: ['solid'],
     features: [
       '1 carrossel por conta',
@@ -69,6 +80,11 @@ export const PLANS: Record<PlanTier, PlanConfig> = {
     hasEditor: true,
     hasHistory: true,
     hasZipDownload: true,
+    hasCoverTemplates: false,
+    hasContentTemplates: false,
+    hasCustomColors: false,
+    hasImageUpload: false,
+    maxTemplatesSaved: 0,
     templates: ['solid'],
     features: [
       '3 carrosséis por semana',
@@ -96,14 +112,21 @@ export const PLANS: Record<PlanTier, PlanConfig> = {
     hasCustomFonts: true,
     hasGradients: true,
     hasSlideImages: true,
+    hasCoverTemplates: true,
+    hasContentTemplates: true,
+    hasCustomColors: true,
+    hasImageUpload: true,
+    maxTemplatesSaved: 10,
     templates: ['solid', 'gradient', 'image_top'],
     features: [
       '1 carrossel por dia',
       'Sem marca d\'água',
       'Editor visual completo',
       'Customização de fontes',
-      'Templates premium',
+      '3 templates de capa',
+      '4 templates de conteúdo',
       'Upload de imagens por slide',
+      'Salvar templates customizados',
       'Processamento prioritário',
     ],
     limitations: [],

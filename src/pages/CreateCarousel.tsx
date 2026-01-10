@@ -38,6 +38,8 @@ import LanguageSelector from "@/components/carousel-creator/LanguageSelector";
 import AdvancedTemplateEditor, { TemplateCustomization } from "@/components/carousel-creator/AdvancedTemplateEditor";
 import CoverOptionsEditor from "@/components/carousel-creator/CoverOptionsEditor";
 import AdvancedOptionsEditor from "@/components/carousel-creator/AdvancedOptionsEditor";
+import LayoutTemplateSelector from "@/components/carousel-creator/LayoutTemplateSelector";
+import { CoverTemplateType, ContentTemplateType } from "@/lib/templates";
 import LiveCarouselPreview from "@/components/carousel-creator/LiveCarouselPreview";
 import { FontId, GradientId } from "@/lib/constants";
 import {
@@ -129,6 +131,10 @@ const CreateCarousel = () => {
     showNavigationDots: true,
     showNavigationArrow: true,
   });
+
+  // Layout templates (Creator+ only)
+  const [coverTemplate, setCoverTemplate] = useState<CoverTemplateType>('cover_full_image');
+  const [contentTemplate, setContentTemplate] = useState<ContentTemplateType>('content_text_only');
 
   // Processing state
   const [isProcessing, setIsProcessing] = useState(false);
@@ -640,6 +646,8 @@ const CreateCarousel = () => {
           textAlignment: templateCustomization.textAlignment,
           showNavigationDots: templateCustomization.showNavigationDots,
           showNavigationArrow: templateCustomization.showNavigationArrow,
+          coverTemplate,
+          contentTemplate,
         } : undefined
       });
 
@@ -986,7 +994,18 @@ const CreateCarousel = () => {
                     />
                   </div>
 
-                  {/* 8. Advanced Options - Creator+ only */}
+                  {/* 8. Layout Templates - Creator+ only */}
+                  <div className="border-t border-border pt-8">
+                    <LayoutTemplateSelector
+                      selectedCoverTemplate={coverTemplate}
+                      selectedContentTemplate={contentTemplate}
+                      onCoverTemplateChange={setCoverTemplate}
+                      onContentTemplateChange={setContentTemplate}
+                      isCreator={isCreator}
+                    />
+                  </div>
+
+                  {/* 9. Advanced Options - Creator+ only */}
                   <div className="border-t border-border pt-8">
                     <AdvancedOptionsEditor
                       showNavigationDots={templateCustomization.showNavigationDots}

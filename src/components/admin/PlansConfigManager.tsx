@@ -70,6 +70,12 @@ interface PlanConfig {
   has_custom_fonts: boolean;
   has_gradients: boolean;
   has_slide_images: boolean;
+  // New template features
+  has_cover_templates: boolean;
+  has_content_templates: boolean;
+  has_custom_colors: boolean;
+  has_image_upload: boolean;
+  max_templates_saved: number;
   is_active: boolean;
   display_order: number;
 }
@@ -174,6 +180,11 @@ export default function PlansConfigManager() {
           has_custom_fonts: editForm.has_custom_fonts,
           has_gradients: editForm.has_gradients,
           has_slide_images: editForm.has_slide_images,
+          has_cover_templates: editForm.has_cover_templates,
+          has_content_templates: editForm.has_content_templates,
+          has_custom_colors: editForm.has_custom_colors,
+          has_image_upload: editForm.has_image_upload,
+          max_templates_saved: editForm.max_templates_saved,
           is_active: editForm.is_active,
         })
         .eq("id", editingPlan.id);
@@ -361,6 +372,10 @@ export default function PlansConfigManager() {
                     {plan.has_gradients ? <Check className="w-3 h-3 mr-1" /> : <X className="w-3 h-3 mr-1" />}
                     {language === "pt-BR" ? "Gradientes" : "Gradients"}
                   </Badge>
+                  <Badge variant={plan.has_cover_templates ? "default" : "outline"} className="text-xs">
+                    {plan.has_cover_templates ? <Check className="w-3 h-3 mr-1" /> : <X className="w-3 h-3 mr-1" />}
+                    {language === "pt-BR" ? "Templates" : "Templates"}
+                  </Badge>
                 </div>
               </div>
             ))}
@@ -533,6 +548,53 @@ export default function PlansConfigManager() {
                   <Switch
                     checked={editForm.has_slide_images}
                     onCheckedChange={(checked) => setEditForm({ ...editForm, has_slide_images: checked })}
+                  />
+                </div>
+              </div>
+
+              {/* Template Features Section */}
+              <div className="pt-4 border-t">
+                <h4 className="text-sm font-medium mb-3">
+                  {language === "pt-BR" ? "Recursos de Templates" : "Template Features"}
+                </h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex items-center justify-between p-3 rounded-lg border">
+                    <Label>{language === "pt-BR" ? "Templates de Capa" : "Cover Templates"}</Label>
+                    <Switch
+                      checked={editForm.has_cover_templates}
+                      onCheckedChange={(checked) => setEditForm({ ...editForm, has_cover_templates: checked })}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between p-3 rounded-lg border">
+                    <Label>{language === "pt-BR" ? "Templates de Conteúdo" : "Content Templates"}</Label>
+                    <Switch
+                      checked={editForm.has_content_templates}
+                      onCheckedChange={(checked) => setEditForm({ ...editForm, has_content_templates: checked })}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between p-3 rounded-lg border">
+                    <Label>{language === "pt-BR" ? "Cores Customizadas" : "Custom Colors"}</Label>
+                    <Switch
+                      checked={editForm.has_custom_colors}
+                      onCheckedChange={(checked) => setEditForm({ ...editForm, has_custom_colors: checked })}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between p-3 rounded-lg border">
+                    <Label>{language === "pt-BR" ? "Upload de Imagens" : "Image Upload"}</Label>
+                    <Switch
+                      checked={editForm.has_image_upload}
+                      onCheckedChange={(checked) => setEditForm({ ...editForm, has_image_upload: checked })}
+                    />
+                  </div>
+                </div>
+                <div className="mt-3">
+                  <Label>{language === "pt-BR" ? "Máximo de Templates Salvos" : "Max Saved Templates"}</Label>
+                  <Input
+                    type="number"
+                    value={editForm.max_templates_saved || 0}
+                    onChange={(e) => setEditForm({ ...editForm, max_templates_saved: parseInt(e.target.value) || 0 })}
+                    min={0}
+                    className="mt-1"
                   />
                 </div>
               </div>

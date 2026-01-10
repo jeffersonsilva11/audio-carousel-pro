@@ -91,6 +91,10 @@ interface ProfileIdentity {
   displayMode: 'name_and_username' | 'username_only';
 }
 
+// Layout template types
+type CoverTemplateType = 'cover_full_image' | 'cover_split_images' | 'cover_gradient_overlay';
+type ContentTemplateType = 'content_image_top' | 'content_text_top' | 'content_split' | 'content_text_only';
+
 interface TemplateCustomization {
   fontId?: string;
   gradientId?: string;
@@ -99,6 +103,9 @@ interface TemplateCustomization {
   textAlignment?: 'left' | 'center' | 'right';
   showNavigationDots?: boolean;
   showNavigationArrow?: boolean;
+  // New layout templates (Creator+ only)
+  coverTemplate?: CoverTemplateType;
+  contentTemplate?: ContentTemplateType;
 }
 
 interface SlideData {
