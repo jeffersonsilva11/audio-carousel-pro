@@ -10,9 +10,16 @@ function getAllowedOrigins(): string[] {
   const originsEnv = Deno.env.get("ALLOWED_ORIGINS");
 
   if (!originsEnv) {
-    // Default to localhost for development if not set
-    console.warn("ALLOWED_ORIGINS not set, defaulting to localhost only");
-    return ["http://localhost:5173", "http://localhost:3000"];
+    // Default origins for development - includes common localhost ports
+    console.warn("ALLOWED_ORIGINS not set, using development defaults");
+    return [
+      "http://localhost:5173",
+      "http://localhost:3000",
+      "http://localhost:8080",
+      "http://127.0.0.1:5173",
+      "http://127.0.0.1:3000",
+      "http://127.0.0.1:8080",
+    ];
   }
 
   return originsEnv.split(",").map(origin => origin.trim());
