@@ -1,11 +1,13 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { getCorsHeaders } from "../_shared/cors.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+// Note: For Stripe webhooks, we need to allow stripe-signature header
+const getWebhookCorsHeaders = (req: Request) => ({
+  ...getCorsHeaders(req),
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, stripe-signature",
-};
+});
 
 const logStep = (step: string, details?: unknown) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
@@ -86,6 +88,8 @@ async function getFreePlanConfig(supabase: SupabaseClient): Promise<PlanConfig> 
 }
 
 serve(async (req) => {
+  const corsHeaders = getWebhookCorsHeaders(req);
+
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -115,35 +119,27 @@ serve(async (req) => {
       });
     }
 
-    // Verify webhook signature for production security
+    // SECURITY: Webhook signature verification is MANDATORY
     const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
+    if (!webhookSecret) {
+      logStep("ERROR: STRIPE_WEBHOOK_SECRET is not configured");
+      return new Response(JSON.stringify({ error: "Webhook secret not configured" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     let event: Stripe.Event;
-    
-    if (webhookSecret) {
-      try {
-        event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
-        logStep("Event verified with signature", { type: event.type, id: event.id });
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : String(err);
-        logStep("Signature verification failed", { error: errorMessage });
-        return new Response(JSON.stringify({ error: `Webhook signature verification failed: ${errorMessage}` }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-    } else {
-      // Fallback for development - parse without verification
-      logStep("WARNING: No webhook secret configured, parsing without verification");
-      try {
-        event = JSON.parse(body) as Stripe.Event;
-        logStep("Event parsed (unverified)", { type: event.type, id: event.id });
-      } catch (parseError) {
-        logStep("Failed to parse event", { error: String(parseError) });
-        return new Response(JSON.stringify({ error: "Invalid JSON" }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
+    try {
+      event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+      logStep("Event verified with signature", { type: event.type, id: event.id });
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      logStep("Signature verification failed", { error: errorMessage });
+      return new Response(JSON.stringify({ error: `Webhook signature verification failed: ${errorMessage}` }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     // Store event in database for logging (ignore duplicates)

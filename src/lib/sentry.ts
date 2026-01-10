@@ -1,5 +1,15 @@
 // Sentry Error Monitoring Configuration
 // Free tier: 5K errors/month, 10K performance transactions
+// LGPD/GDPR: Only initializes after user consent
+
+const COOKIE_CONSENT_KEY = "cookie_consent";
+
+// Check if user has given analytics consent (LGPD/GDPR compliance)
+const hasAnalyticsConsent = (): boolean => {
+  if (typeof window === "undefined") return false;
+  const consent = localStorage.getItem(COOKIE_CONSENT_KEY);
+  return consent === "accepted";
+};
 
 interface SentryConfig {
   dsn: string;
@@ -19,9 +29,9 @@ interface SentryError {
   stack?: string;
   tags?: Record<string, string>;
   extra?: Record<string, unknown>;
+  // LGPD/GDPR: Only user ID allowed, no email or other PII
   user?: {
     id?: string;
-    email?: string;
   };
 }
 
@@ -33,6 +43,14 @@ class SentryService {
 
   init(config: SentryConfig) {
     if (this.initialized || !config.dsn) {
+      return;
+    }
+
+    // LGPD/GDPR: Check for consent before initializing
+    if (!hasAnalyticsConsent()) {
+      if (import.meta.env.DEV) {
+        console.log('[Sentry] Skipping initialization - user has not consented to analytics');
+      }
       return;
     }
 
@@ -102,7 +120,8 @@ class SentryService {
     this.sendToSentry(level, { message });
   }
 
-  setUser(user: { id?: string; email?: string } | null) {
+  // LGPD/GDPR: Only store user ID, never email or other PII
+  setUser(user: { id?: string } | null) {
     if (user) {
       this.addBreadcrumb({
         category: 'auth',
@@ -230,5 +249,6 @@ export const captureMessage = (message: string, level?: 'info' | 'warning' | 'er
 export const addBreadcrumb = (breadcrumb: SentryBreadcrumb) => 
   sentry.addBreadcrumb(breadcrumb);
 
-export const setUser = (user: { id?: string; email?: string } | null) => 
+// LGPD/GDPR: Only user ID allowed, no email or other PII
+export const setUser = (user: { id?: string } | null) =>
   sentry.setUser(user);
