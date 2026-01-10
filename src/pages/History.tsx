@@ -186,6 +186,10 @@ const History = () => {
           const url = carousel.image_urls[i];
           try {
             const response = await fetch(url);
+            if (!response.ok) {
+              console.error(`Failed to fetch slide ${i + 1}: ${response.status}`);
+              continue;
+            }
             const blob = await response.blob();
             carouselFolder.file(`slide-${i + 1}.svg`, blob);
           } catch (err) {

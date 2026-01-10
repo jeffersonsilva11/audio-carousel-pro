@@ -277,9 +277,14 @@ const CarouselDownloadView = ({ slides, isPro = false }: CarouselDownloadViewPro
               : `Baixar ZIP (${slides.length} slides)`}
           </Button>
         ) : (
-          <Button variant="accent" size="lg" className="flex-1 sm:flex-initial">
+          <Button
+            variant="accent"
+            size="lg"
+            onClick={() => downloadSlide(currentSlideData)}
+            className="flex-1 sm:flex-initial"
+          >
             <Download className="w-4 h-4 mr-2" />
-            Baixar todos ({slides.length} slides)
+            {t("carouselPreview", "downloadCurrent")}
           </Button>
         )}
         <Button

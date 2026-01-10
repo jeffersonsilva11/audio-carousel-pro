@@ -770,9 +770,14 @@ const CreateCarousel = () => {
     if (generatedSlides.length === 0) return;
 
     try {
+      let downloadCount = 0;
       for (const slide of generatedSlides) {
         if (slide.imageUrl) {
           const response = await fetch(slide.imageUrl);
+          if (!response.ok) {
+            console.error(`Failed to fetch slide ${slide.number}: ${response.status}`);
+            continue;
+          }
           const blob = await response.blob();
           const url = URL.createObjectURL(blob);
           const a = document.createElement("a");
@@ -782,15 +787,16 @@ const CreateCarousel = () => {
           a.click();
           document.body.removeChild(a);
           URL.revokeObjectURL(url);
-          
+          downloadCount++;
+
           // Small delay between downloads
           await new Promise(r => setTimeout(r, 200));
         }
       }
-      
+
       toast({
         title: "Download concluído",
-        description: `${generatedSlides.length} slides baixados com sucesso.`,
+        description: `${downloadCount} slides baixados com sucesso.`,
       });
     } catch (err) {
       toast({

@@ -7,7 +7,7 @@ export type LimitPeriod = "daily" | "weekly" | "monthly";
 
 // Cache configuration
 const SUBSCRIPTION_CACHE_KEY = "subscription_cache";
-const CACHE_TTL_MS = 2 * 60 * 1000; // 2 minutes
+const CACHE_TTL_MS = 55 * 1000; // 55 seconds (less than 60s refresh interval to avoid race conditions)
 
 interface CachedSubscription {
   data: Record<string, unknown>;

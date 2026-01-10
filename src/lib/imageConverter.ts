@@ -26,11 +26,17 @@ export async function convertSvgToFormat(
   // If SVG format, just fetch and return the original
   if (format === 'svg') {
     const response = await fetch(svgUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch SVG: ${response.status} ${response.statusText}`);
+    }
     return response.blob();
   }
 
   // Fetch the SVG content
   const response = await fetch(svgUrl);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch SVG: ${response.status} ${response.statusText}`);
+  }
   const svgText = await response.text();
 
   // Parse SVG to get dimensions

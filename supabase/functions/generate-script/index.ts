@@ -14,13 +14,56 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Plan daily limits
-const PLAN_LIMITS: Record<string, number> = {
-  'free': 1,
-  'starter': 1,
-  'creator': 8,
-  'agency': 20,
+// Default plan limits (used as fallback)
+const PLAN_LIMITS: Record<string, { limit: number; period: string }> = {
+  'free': { limit: 1, period: 'daily' },
+  'starter': { limit: 3, period: 'weekly' },
+  'creator': { limit: 8, period: 'daily' },
+  'agency': { limit: 20, period: 'daily' },
 };
+
+// Helper function to get usage based on period
+async function getUsageForPeriod(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+  userId: string,
+  period: string
+): Promise<number> {
+  const today = new Date();
+  let startDate: string;
+
+  switch (period) {
+    case 'weekly': {
+      const dayOfWeek = today.getDay();
+      const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+      const monday = new Date(today);
+      monday.setDate(today.getDate() + mondayOffset);
+      startDate = monday.toISOString().split('T')[0];
+      break;
+    }
+    case 'monthly': {
+      const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+      startDate = firstDay.toISOString().split('T')[0];
+      break;
+    }
+    case 'daily':
+    default:
+      startDate = today.toISOString().split('T')[0];
+  }
+
+  const endDate = today.toISOString().split('T')[0];
+
+  const { data } = await supabase
+    .from("daily_usage")
+    .select("carousels_created")
+    .eq("user_id", userId)
+    .gte("usage_date", startDate)
+    .lte("usage_date", endDate);
+
+  interface UsageRow { carousels_created: number }
+  const totalUsed = data?.reduce((sum: number, row: UsageRow) => sum + (row.carousels_created || 0), 0) || 0;
+  return totalUsed;
+}
 
 const logStep = (step: string, details?: unknown) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
@@ -123,69 +166,79 @@ function getWordsPerSlide(slideCount: number, textMode: string): string {
   return '35-60 palavras por slide';
 }
 
-// Get user's current plan from Stripe
+// Get user's current plan from Stripe with period-aware usage
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function getUserPlan(supabase: any, userId: string, email: string): Promise<{ plan: string; dailyUsed: number; dailyLimit: number; isAdmin: boolean }> {
-  const today = new Date().toISOString().split('T')[0];
-  
-  // Get daily usage
-  const { data: usageData } = await supabase
-    .from("daily_usage")
-    .select("carousels_created")
-    .eq("user_id", userId)
-    .eq("usage_date", today)
-    .maybeSingle();
-  
-  const dailyUsed = (usageData as { carousels_created?: number })?.carousels_created || 0;
-  
-  // Check if admin
+async function getUserPlan(supabase: any, userId: string, email: string): Promise<{ plan: string; periodUsed: number; periodLimit: number; limitPeriod: string; isAdmin: boolean }> {
+  // Check if admin first
   const { data: roleData } = await supabase
     .from("user_roles")
     .select("role")
     .eq("user_id", userId)
     .eq("role", "admin")
     .maybeSingle();
-  
+
   if (roleData) {
-    return { plan: 'creator', dailyUsed, dailyLimit: 9999, isAdmin: true };
+    return { plan: 'creator', periodUsed: 0, periodLimit: 9999, limitPeriod: 'daily', isAdmin: true };
   }
-  
+
   // Check Stripe subscription
   const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
   if (!stripeKey) {
-    return { plan: 'free', dailyUsed, dailyLimit: PLAN_LIMITS['free'], isAdmin: false };
+    const freePlan = PLAN_LIMITS['free'];
+    const periodUsed = await getUsageForPeriod(supabase, userId, freePlan.period);
+    return { plan: 'free', periodUsed, periodLimit: freePlan.limit, limitPeriod: freePlan.period, isAdmin: false };
   }
-  
+
   try {
     const { default: Stripe } = await import("https://esm.sh/stripe@18.5.0");
     const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
-    
+
     const customers = await stripe.customers.list({ email, limit: 1 });
     if (customers.data.length === 0) {
-      return { plan: 'free', dailyUsed, dailyLimit: PLAN_LIMITS['free'], isAdmin: false };
+      const freePlan = PLAN_LIMITS['free'];
+      const periodUsed = await getUsageForPeriod(supabase, userId, freePlan.period);
+      return { plan: 'free', periodUsed, periodLimit: freePlan.limit, limitPeriod: freePlan.period, isAdmin: false };
     }
-    
+
     const subscriptions = await stripe.subscriptions.list({
       customer: customers.data[0].id,
       status: "active",
       limit: 1,
     });
-    
+
     if (subscriptions.data.length === 0) {
-      return { plan: 'free', dailyUsed, dailyLimit: PLAN_LIMITS['free'], isAdmin: false };
+      const freePlan = PLAN_LIMITS['free'];
+      const periodUsed = await getUsageForPeriod(supabase, userId, freePlan.period);
+      return { plan: 'free', periodUsed, periodLimit: freePlan.limit, limitPeriod: freePlan.period, isAdmin: false };
     }
-    
-    const price = subscriptions.data[0].items.data[0]?.price;
-    const unitAmount = price?.unit_amount || 0;
-    
+
+    const priceId = subscriptions.data[0].items.data[0]?.price?.id;
+    const unitAmount = subscriptions.data[0].items.data[0]?.price?.unit_amount || 0;
+
+    // Determine plan tier
     let plan = 'starter';
     if (unitAmount >= 19990) plan = 'agency';
     else if (unitAmount >= 9990) plan = 'creator';
-    
-    return { plan, dailyUsed, dailyLimit: PLAN_LIMITS[plan], isAdmin: false };
+
+    // Try to get plan config from database for accurate limit_period
+    const { data: planConfig } = await supabase
+      .from("plans_config")
+      .select("daily_limit, limit_period")
+      .or(`stripe_price_id_brl.eq.${priceId},stripe_price_id_usd.eq.${priceId},stripe_price_id_eur.eq.${priceId},tier.eq.${plan}`)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    // Use database config or fallback to defaults
+    const limitPeriod = planConfig?.limit_period || PLAN_LIMITS[plan]?.period || 'daily';
+    const periodLimit = planConfig?.daily_limit || PLAN_LIMITS[plan]?.limit || 1;
+    const periodUsed = await getUsageForPeriod(supabase, userId, limitPeriod);
+
+    return { plan, periodUsed, periodLimit, limitPeriod, isAdmin: false };
   } catch (error) {
     logStep('Error checking subscription', { error: String(error) });
-    return { plan: 'free', dailyUsed, dailyLimit: PLAN_LIMITS['free'], isAdmin: false };
+    const freePlan = PLAN_LIMITS['free'];
+    const periodUsed = await getUsageForPeriod(supabase, userId, freePlan.period);
+    return { plan: 'free', periodUsed, periodLimit: freePlan.limit, limitPeriod: freePlan.period, isAdmin: false };
   }
 }
 
@@ -295,16 +348,16 @@ serve(async (req) => {
     const user = userData.user;
     logStep('User authenticated', { userId: user.id });
     
-    // Check rate limits
-    const { plan, dailyUsed, dailyLimit, isAdmin } = await getUserPlan(supabase, user.id, user.email || '');
-    logStep('Plan checked', { plan, dailyUsed, dailyLimit, isAdmin });
-    
-    if (!isAdmin && dailyUsed >= dailyLimit) {
-      await logUsage(supabase, user.id, 'generate_script', null, 'rate_limited', { plan, dailyUsed, dailyLimit }, ipAddress);
-      return new Response(JSON.stringify({ 
-        error: 'Daily limit reached',
+    // Check rate limits (supports daily, weekly, monthly periods)
+    const { plan, periodUsed, periodLimit, limitPeriod, isAdmin } = await getUserPlan(supabase, user.id, user.email || '');
+    logStep('Plan checked', { plan, periodUsed, periodLimit, limitPeriod, isAdmin });
+
+    if (!isAdmin && periodUsed >= periodLimit) {
+      await logUsage(supabase, user.id, 'generate_script', null, 'rate_limited', { plan, periodUsed, periodLimit, limitPeriod }, ipAddress);
+      return new Response(JSON.stringify({
+        error: 'Period limit reached',
         code: 'RATE_LIMIT_EXCEEDED',
-        details: { plan, dailyUsed, dailyLimit }
+        details: { plan, periodUsed, periodLimit, limitPeriod }
       }), {
         status: 429,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

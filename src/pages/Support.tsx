@@ -4,6 +4,7 @@ import { ArrowLeft, Mic2, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { BRAND } from "@/lib/constants";
 import { supabase } from "@/integrations/supabase/client";
+import DOMPurify from "dompurify";
 
 interface SupportSettings {
   title: string;
@@ -56,21 +57,23 @@ const Support = () => {
 
   useEffect(() => {
     if (!loading && settings.formScript) {
-      // Execute scripts from the form HTML
       const container = document.getElementById("zoho-form-container");
       if (container) {
-        container.innerHTML = settings.formScript;
-
-        // Find and execute all script tags
-        const scripts = container.querySelectorAll("script");
-        scripts.forEach((oldScript) => {
-          const newScript = document.createElement("script");
-          Array.from(oldScript.attributes).forEach((attr) => {
-            newScript.setAttribute(attr.name, attr.value);
-          });
-          newScript.textContent = oldScript.textContent;
-          oldScript.parentNode?.replaceChild(newScript, oldScript);
+        // Sanitize the HTML content to prevent XSS attacks
+        // Allow only specific tags and attributes needed for form embedding
+        const sanitizedHtml = DOMPurify.sanitize(settings.formScript, {
+          ADD_TAGS: ["iframe"],
+          ADD_ATTR: ["frameborder", "scrolling", "allowfullscreen", "allow", "loading"],
+          ALLOW_DATA_ATTR: false,
+          FORBID_TAGS: ["script", "style"],
+          FORBID_ATTR: ["onerror", "onload", "onclick", "onmouseover"],
         });
+
+        container.innerHTML = sanitizedHtml;
+
+        // For embedded forms that require scripts (like Zoho),
+        // only allow scripts from trusted domains loaded via src attribute
+        // Note: Inline scripts are blocked by sanitization for security
       }
     }
   }, [loading, settings.formScript]);
