@@ -13,6 +13,7 @@ import {
   templateRequiresImage,
   getTemplateName,
 } from "@/lib/templates";
+import { FILE_LIMITS } from "@/lib/constants";
 
 interface SlideImageUploaderProps {
   userId: string;
@@ -153,7 +154,7 @@ const SlideImageUploader = ({
     }
 
     // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
+    if (file.size > FILE_LIMITS.MAX_IMAGE_SIZE) {
       toast({
         title: t.fileTooLarge,
         description: t.fileTooLargeDesc,
@@ -174,7 +175,7 @@ const SlideImageUploader = ({
       const { data, error } = await supabase.storage
         .from("slide-images")
         .upload(fileName, file, {
-          cacheControl: "3600",
+          cacheControl: FILE_LIMITS.CACHE_CONTROL_TTL,
           upsert: true,
         });
 

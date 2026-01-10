@@ -21,7 +21,9 @@ import {
   GRADIENT_PRESETS,
   GRADIENT_CATEGORY_LABELS,
   GradientId,
-  GradientCategory
+  GradientCategory,
+  FILE_LIMITS,
+  DEFAULT_GRADIENT_COLORS
 } from "@/lib/constants";
 
 interface CoverOptionsEditorProps {
@@ -50,8 +52,8 @@ const CoverOptionsEditor = ({
   const { language } = useLanguage();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const [customColor1, setCustomColor1] = useState(customGradientColors?.[0] || "#667eea");
-  const [customColor2, setCustomColor2] = useState(customGradientColors?.[1] || "#764ba2");
+  const [customColor1, setCustomColor1] = useState(customGradientColors?.[0] || DEFAULT_GRADIENT_COLORS.START);
+  const [customColor2, setCustomColor2] = useState(customGradientColors?.[1] || DEFAULT_GRADIENT_COLORS.END);
   const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
   // Default to 'basic' category so "Sem gradiente" is visible
   const [activeGradientCategory, setActiveGradientCategory] = useState<GradientCategory | 'basic'>('basic');
@@ -126,7 +128,7 @@ const CoverOptionsEditor = ({
       });
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
+    if (file.size > FILE_LIMITS.MAX_IMAGE_SIZE) {
       toast({
         title: language === "pt-BR" ? "Arquivo muito grande" : "File too large",
         description: language === "pt-BR" ? "Máximo 5MB por imagem." : "Maximum 5MB per image.",
@@ -153,7 +155,7 @@ const CoverOptionsEditor = ({
       const { data, error } = await supabase.storage
         .from('slide-images')
         .upload(fileName, file, {
-          cacheControl: '3600',
+          cacheControl: FILE_LIMITS.CACHE_CONTROL_TTL,
           upsert: false
         });
 

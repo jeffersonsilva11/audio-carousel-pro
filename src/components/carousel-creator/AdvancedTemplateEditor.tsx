@@ -18,6 +18,7 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { t } from "@/lib/translations";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { FILE_LIMITS, DEFAULT_GRADIENT_COLORS } from "@/lib/constants";
 import { LockedFeature } from "@/components/ui/locked-feature";
 import {
   GRADIENT_PRESETS,
@@ -63,8 +64,8 @@ const AdvancedTemplateEditor = ({
   const { language } = useLanguage();
   const { toast } = useToast();
   const fileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
-  const [customColor1, setCustomColor1] = useState("#667eea");
-  const [customColor2, setCustomColor2] = useState("#764ba2");
+  const [customColor1, setCustomColor1] = useState(DEFAULT_GRADIENT_COLORS.START);
+  const [customColor2, setCustomColor2] = useState(DEFAULT_GRADIENT_COLORS.END);
   const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
   const [activeGradientCategory, setActiveGradientCategory] = useState<GradientCategory | 'basic'>('warm');
 
@@ -152,7 +153,7 @@ const AdvancedTemplateEditor = ({
       });
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
+    if (file.size > FILE_LIMITS.MAX_IMAGE_SIZE) {
       toast({
         title: "Arquivo muito grande",
         description: "Máximo 5MB por imagem.",
@@ -181,7 +182,7 @@ const AdvancedTemplateEditor = ({
       const { data, error } = await supabase.storage
         .from('slide-images')
         .upload(fileName, file, {
-          cacheControl: '3600',
+          cacheControl: FILE_LIMITS.CACHE_CONTROL_TTL,
           upsert: false
         });
 

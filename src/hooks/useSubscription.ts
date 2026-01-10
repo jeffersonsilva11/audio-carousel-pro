@@ -167,7 +167,9 @@ export function useSubscription() {
         const is401 = errorMessage.includes("401") || errorMessage.includes("jwt") || errorMessage.includes("unauthorized");
         
         if (is401) {
-          console.log("Auth token issue, using free plan defaults");
+          if (import.meta.env.DEV) {
+            console.log("Auth token issue, using free plan defaults");
+          }
         } else {
           console.error("Error checking subscription:", error);
         }

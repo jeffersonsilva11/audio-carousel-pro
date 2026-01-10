@@ -229,3 +229,21 @@ export const CHARACTER_LIMITS = {
   PROFILE_USERNAME: 30,
   HEX_COLOR: 7,
 } as const;
+
+// File upload limits
+export const FILE_LIMITS = {
+  MAX_IMAGE_SIZE: 5 * 1024 * 1024, // 5MB
+  MAX_AUDIO_SIZE: 25 * 1024 * 1024, // 25MB
+  CACHE_CONTROL_TTL: '3600', // 1 hour
+} as const;
+
+// Default gradient colors
+export const DEFAULT_GRADIENT_COLORS = {
+  START: '#667eea',
+  END: '#764ba2',
+} as const;
+
+// SMTP defaults
+export const SMTP_DEFAULTS = {
+  PORT: '587',
+} as const;

@@ -3,6 +3,17 @@ import { BRAND } from '@/lib/constants';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
+interface FAQItem {
+  id: string;
+  question_pt: string;
+  question_en: string | null;
+  question_es: string | null;
+  answer_pt: string;
+  answer_en: string | null;
+  answer_es: string | null;
+  display_order: number;
+}
+
 const STRUCTURED_DATA_CONTENT = {
   'pt-BR': {
     description: 'Plataforma SaaS que transforma áudio em carrosséis profissionais para Instagram usando IA. Grave um áudio de até 30 segundos e nossa inteligência artificial transcreve, roteiriza e gera imagens prontas para publicar.',
@@ -77,10 +88,10 @@ const DynamicStructuredData = () => {
     },
   });
 
-  const getFAQText = (faq: any, type: 'question' | 'answer') => {
-    if (language === 'en' && faq[`${type}_en`]) return faq[`${type}_en`];
-    if (language === 'es' && faq[`${type}_es`]) return faq[`${type}_es`];
-    return faq[`${type}_pt`];
+  const getFAQText = (faq: FAQItem, type: 'question' | 'answer'): string => {
+    const key = `${type}_${language === 'pt-BR' ? 'pt' : language}` as keyof FAQItem;
+    const ptKey = `${type}_pt` as keyof FAQItem;
+    return (faq[key] as string | null) || (faq[ptKey] as string);
   };
 
   const structuredData = {
