@@ -214,7 +214,7 @@ const CarouselPreview = ({ slides, onDownloadAll, isPro = false }: CarouselPrevi
 
       {/* Export Format Selector */}
       <div className="flex items-center justify-center gap-3">
-        <span className="text-sm text-muted-foreground">Formato:</span>
+        <span className="text-sm text-muted-foreground">{t("carouselPreview", "exportFormat")}</span>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="min-w-[120px] justify-between">
@@ -229,19 +229,19 @@ const CarouselPreview = ({ slides, onDownloadAll, isPro = false }: CarouselPrevi
           </DropdownMenuTrigger>
           <DropdownMenuContent align="center">
             <DropdownMenuItem onClick={() => setExportFormat("png")} className="cursor-pointer">
-              <Image className="w-4 h-4 mr-2" />
-              PNG
-              <span className="ml-2 text-xs text-muted-foreground">(Recomendado)</span>
+              <Image className="size-4 mr-2" />
+              {t("carouselPreview", "formatPNG")}
+              <span className="ml-2 text-xs text-muted-foreground">{t("carouselPreview", "formatRecommended")}</span>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setExportFormat("jpg")} className="cursor-pointer">
-              <Image className="w-4 h-4 mr-2" />
-              JPG
-              <span className="ml-2 text-xs text-muted-foreground">(Menor tamanho)</span>
+              <Image className="size-4 mr-2" />
+              {t("carouselPreview", "formatJPG")}
+              <span className="ml-2 text-xs text-muted-foreground">{t("carouselPreview", "formatSmaller")}</span>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setExportFormat("svg")} className="cursor-pointer">
-              <FileImage className="w-4 h-4 mr-2" />
-              SVG
-              <span className="ml-2 text-xs text-muted-foreground">(Vetorial)</span>
+              <FileImage className="size-4 mr-2" />
+              {t("carouselPreview", "formatSVG")}
+              <span className="ml-2 text-xs text-muted-foreground">{t("carouselPreview", "formatVector")}</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

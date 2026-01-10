@@ -2,13 +2,14 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { TextModeId } from "@/lib/constants";
 import { CreativeTone } from "@/components/carousel-creator/TextModeSelector";
+import { CoverTemplateType, ContentTemplateType } from "@/lib/templates";
 
-export type ProcessingStatus = 
-  | "QUEUED" 
-  | "TRANSCRIBING" 
-  | "SCRIPTING" 
-  | "GENERATING" 
-  | "COMPLETED" 
+export type ProcessingStatus =
+  | "QUEUED"
+  | "TRANSCRIBING"
+  | "SCRIPTING"
+  | "GENERATING"
+  | "COMPLETED"
   | "FAILED";
 
 interface Slide {
@@ -37,6 +38,9 @@ export interface ProfileIdentity {
   displayMode: 'name_and_username' | 'username_only';
 }
 
+// Re-export template types for consumers
+export type { CoverTemplateType, ContentTemplateType };
+
 export interface CarouselGenerationOptions {
   audioFile: File;
   textMode: TextModeId;
@@ -59,6 +63,9 @@ export interface CarouselGenerationOptions {
     textAlignment?: 'left' | 'center' | 'right';
     showNavigationDots?: boolean;
     showNavigationArrow?: boolean;
+    // New layout templates (Creator+ only)
+    coverTemplate?: CoverTemplateType;
+    contentTemplate?: ContentTemplateType;
   };
 }
 
@@ -106,7 +113,6 @@ export function useCarouselGeneration() {
       }
 
       const transcription = transcribeData.transcription;
-      console.log("Transcription completed:", transcription.substring(0, 100));
 
       // Step 2: Generate script with AI
       setStatus("SCRIPTING");
@@ -115,14 +121,17 @@ export function useCarouselGeneration() {
       const { data: scriptData, error: scriptError } = await supabase.functions.invoke(
         "generate-script",
         {
-          body: { 
-            transcription, 
+          body: {
+            transcription,
             textMode,
             creativeTone,
             slideCount,
             slideCountMode,
             template,
-            language 
+            language,
+            // Pass layout templates if provided (Creator+ only)
+            coverTemplate: customization?.coverTemplate,
+            contentTemplate: customization?.contentTemplate
           }
         }
       );
@@ -132,7 +141,6 @@ export function useCarouselGeneration() {
       }
 
       const script = scriptData.script;
-      console.log("Script generated with", script.slides?.length, "slides");
 
       // Step 3: Generate images (with watermark for free users)
       setStatus("GENERATING");
@@ -161,18 +169,33 @@ export function useCarouselGeneration() {
       }
 
       const slides = imagesData.slides;
-      console.log("Generated", slides.length, "slide images");
 
       // Step 4: Update carousel in database
       setStatus("COMPLETED");
-      await supabase.from("carousels").update({
+      const { error: updateError } = await supabase.from("carousels").update({
         status: "COMPLETED",
         transcription,
         script,
         slide_count: slides.length,
         image_urls: imagesData.imageUrls,
         has_watermark: hasWatermark,
+        // Save template configuration for future edits and cleanup
+        template_config: customization ? {
+          fontId: customization.fontId,
+          gradientId: customization.gradientId,
+          customGradientColors: customization.customGradientColors,
+          slideImages: customization.slideImages, // Save for cleanup trigger
+          textAlignment: customization.textAlignment,
+          showNavigationDots: customization.showNavigationDots,
+          showNavigationArrow: customization.showNavigationArrow,
+          coverTemplate: customization.coverTemplate,
+          contentTemplate: customization.contentTemplate,
+        } : null,
       }).eq("id", carouselId);
+
+      if (updateError) {
+        throw new Error("Failed to save carousel: " + updateError.message);
+      }
 
       const generationResult: GenerationResult = {
         transcription,
@@ -185,7 +208,6 @@ export function useCarouselGeneration() {
 
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "An error occurred";
-      console.error("Generation error:", err);
       setError(errorMessage);
       setStatus("FAILED");
 
@@ -193,14 +215,15 @@ export function useCarouselGeneration() {
       // This ensures users are only charged when generation is successful
       await supabase.from("carousels").delete().eq("id", carouselId);
 
-      console.log("Carousel deleted due to generation failure - credits not consumed");
-
       return null;
     }
   };
 
   const updateCarouselStatus = async (carouselId: string, status: ProcessingStatus) => {
-    await supabase.from("carousels").update({ status }).eq("id", carouselId);
+    const { error } = await supabase.from("carousels").update({ status }).eq("id", carouselId);
+    if (error) {
+      console.error("Error updating carousel status:", error);
+    }
   };
 
   const fileToBase64 = (file: File): Promise<string> => {

@@ -50,11 +50,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         // If user was deleted or session is invalid, sign out
         if (error || !data.user) {
-          console.log("User session invalid or user deleted, signing out");
           await supabase.auth.signOut();
         }
-      } catch (err) {
-        console.error("Error validating user:", err);
+      } catch {
+        // Silently fail on validation errors
       }
     };
 
@@ -99,7 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const redirectUrl = `${window.location.origin}/dashboard`;
 
     try {
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: redirectUrl,
@@ -111,14 +110,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (error) {
-        console.error("Google OAuth error:", error);
         return { error };
       }
 
       return { error: null };
     } catch (err) {
-      console.error("Google OAuth exception:", err);
-      return { error: err as any };
+      return { error: err as AuthError };
     }
   };
 

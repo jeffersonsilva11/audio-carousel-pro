@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -38,6 +38,17 @@ import LanguageSelector from "@/components/carousel-creator/LanguageSelector";
 import AdvancedTemplateEditor, { TemplateCustomization } from "@/components/carousel-creator/AdvancedTemplateEditor";
 import CoverOptionsEditor from "@/components/carousel-creator/CoverOptionsEditor";
 import AdvancedOptionsEditor from "@/components/carousel-creator/AdvancedOptionsEditor";
+import LayoutTemplateSelector from "@/components/carousel-creator/LayoutTemplateSelector";
+import SlideImageUploader from "@/components/carousel-creator/SlideImageUploader";
+import {
+  CoverTemplateType,
+  ContentTemplateType,
+  SlideImage,
+  templateRequiresImage,
+  isValidCoverTemplate,
+  isValidContentTemplate,
+  validateRequiredImages,
+} from "@/lib/templates";
 import LiveCarouselPreview from "@/components/carousel-creator/LiveCarouselPreview";
 import { FontId, GradientId } from "@/lib/constants";
 import {
@@ -130,6 +141,14 @@ const CreateCarousel = () => {
     showNavigationArrow: true,
   });
 
+  // Layout templates (Creator+ only)
+  const [coverTemplate, setCoverTemplate] = useState<CoverTemplateType>('cover_full_image');
+  const [contentTemplate, setContentTemplate] = useState<ContentTemplateType>('content_text_only');
+
+  // Per-slide images for templates (Creator+ only)
+  // SlideImage interface is imported from @/lib/templates
+  const [perSlideImages, setPerSlideImages] = useState<SlideImage[]>([]);
+
   // Processing state
   const [isProcessing, setIsProcessing] = useState(false);
   const [generatedSlides, setGeneratedSlides] = useState<Slide[]>([]);
@@ -142,6 +161,7 @@ const CreateCarousel = () => {
   // Regeneration state for batch processing
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [regeneratingProgress, setRegeneratingProgress] = useState<{ current: number; total: number } | null>(null);
+  const regenerationAbortRef = useRef(false);
   
   // Carousel ID for editing
   const [currentCarouselId, setCurrentCarouselId] = useState<string | null>(null);
@@ -170,26 +190,50 @@ const CreateCarousel = () => {
     }
   };
 
+  // Cancel regeneration handler
+  const handleCancelRegeneration = useCallback(() => {
+    regenerationAbortRef.current = true;
+    toast({
+      title: t("create", "regenerationCancelled", siteLanguage),
+      description: t("create", "regenerationCancelledDesc", siteLanguage),
+    });
+  }, [toast, siteLanguage]);
+
   // Function to finalize editing with batch regeneration
   const handleFinalizeEdit = async (editedSlides: Slide[], changedIndices: number[]) => {
     if (!currentCarouselId || !user) return;
 
     setIsRegenerating(true);
+    regenerationAbortRef.current = false;
 
     try {
       // Update script in database first
-      await supabase
+      const { error: scriptError } = await supabase
         .from('carousels')
         .update({ script: { slides: editedSlides } })
         .eq('id', currentCarouselId);
+
+      if (scriptError) {
+        throw new Error("Failed to save script: " + scriptError.message);
+      }
 
       // If there are changed slides, regenerate them
       if (changedIndices.length > 0) {
         setRegeneratingProgress({ current: 0, total: changedIndices.length });
 
         const updatedSlides = [...editedSlides];
+        let completedCount = 0;
 
         for (let i = 0; i < changedIndices.length; i++) {
+          // Check for cancellation before each slide
+          if (regenerationAbortRef.current) {
+            // Update slides with what we have so far
+            setGeneratedSlides(updatedSlides);
+            setIsRegenerating(false);
+            setRegeneratingProgress(null);
+            return;
+          }
+
           const slideIndex = changedIndices[i];
           setRegeneratingProgress({ current: i + 1, total: changedIndices.length });
 
@@ -212,10 +256,18 @@ const CreateCarousel = () => {
                     fontId: templateCustomization.fontId,
                     gradientId: templateCustomization.gradientId,
                     customGradientColors: templateCustomization.customGradientColors,
-                    slideImages: templateCustomization.slideImages,
+                    slideImages: perSlideImages.length > 0
+                      ? Array.from({ length: editedSlides.length }, (_, i) => {
+                          const perSlide = perSlideImages.find(img => img.slideIndex === i);
+                          if (perSlide?.publicUrl) return perSlide.publicUrl;
+                          return templateCustomization.slideImages?.[i] || null;
+                        })
+                      : templateCustomization.slideImages,
                     textAlignment: templateCustomization.textAlignment,
                     showNavigationDots: templateCustomization.showNavigationDots,
                     showNavigationArrow: templateCustomization.showNavigationArrow,
+                    coverTemplate,
+                    contentTemplate,
                   } : undefined
                 }
               }
@@ -226,6 +278,7 @@ const CreateCarousel = () => {
                 ...updatedSlides[slideIndex],
                 imageUrl: data.slides[0].imageUrl
               };
+              completedCount++;
             }
           } catch (slideError) {
             console.error(`Error regenerating slide ${slideIndex}:`, slideError);
@@ -236,25 +289,24 @@ const CreateCarousel = () => {
       }
 
       // Mark as finalized
-      await supabase
+      const { error: finalizeError } = await supabase
         .from('carousels')
         .update({ exported_at: new Date().toISOString() })
         .eq('id', currentCarouselId);
 
+      if (finalizeError) {
+        throw new Error("Failed to finalize carousel: " + finalizeError.message);
+      }
+
       setIsCarouselLocked(true);
       toast({
-        title: siteLanguage === "pt-BR" ? "Carrossel finalizado!" : siteLanguage === "es" ? "¡Carrusel finalizado!" : "Carousel finalized!",
-        description: siteLanguage === "pt-BR"
-          ? "Agora você pode baixar seus slides."
-          : siteLanguage === "es"
-          ? "Ahora puedes descargar tus slides."
-          : "Now you can download your slides.",
+        title: t("create", "carouselFinalized", siteLanguage),
+        description: t("create", "nowYouCanDownload", siteLanguage),
       });
-    } catch (err) {
-      console.error('Error finalizing carousel:', err);
+    } catch {
       toast({
-        title: siteLanguage === "pt-BR" ? "Erro ao finalizar" : "Error finalizing",
-        description: siteLanguage === "pt-BR" ? "Tente novamente." : "Please try again.",
+        title: t("create", "errorFinalizing", siteLanguage),
+        description: t("create", "tryAgain", siteLanguage),
         variant: "destructive",
       });
     } finally {
@@ -347,15 +399,10 @@ const CreateCarousel = () => {
         }
 
         toast({
-          title: siteLanguage === "pt-BR" ? "Áudio restaurado" : siteLanguage === "es" ? "Audio restaurado" : "Audio restored",
-          description: siteLanguage === "pt-BR"
-            ? "Seu áudio anterior foi recuperado."
-            : siteLanguage === "es"
-            ? "Tu audio anterior fue recuperado."
-            : "Your previous audio was recovered.",
+          title: t("create", "audioRestored", siteLanguage),
+          description: t("create", "previousAudioRecovered", siteLanguage),
         });
-      } catch (err) {
-        console.error('Error restoring audio from storage:', err);
+      } catch {
         // Clear corrupted data
         sessionStorage.removeItem('carousel_audio_data');
         sessionStorage.removeItem('carousel_audio_duration');
@@ -422,7 +469,9 @@ const CreateCarousel = () => {
   useEffect(() => {
     if (!loading && user && !isEmailConfirmed) {
       signOut().then(() => {
-        navigate(`/auth/verify?email=${encodeURIComponent(user.email || "")}`);
+        // Store email in sessionStorage instead of URL (security: avoid browser history exposure)
+        sessionStorage.setItem("verify_email_pending", user.email || "");
+        navigate("/auth/verify");
       });
     }
   }, [user, loading, isEmailConfirmed, navigate, signOut]);
@@ -446,8 +495,8 @@ const CreateCarousel = () => {
 
       if (error || !carousel) {
         toast({
-          title: "Erro",
-          description: "Carrossel não encontrado ou você não tem permissão.",
+          title: t("errors", "error", siteLanguage),
+          description: t("create", "carouselNotFound", siteLanguage),
           variant: "destructive",
         });
         return;
@@ -455,8 +504,8 @@ const CreateCarousel = () => {
 
       if (carousel.status !== 'FAILED') {
         toast({
-          title: "Aviso",
-          description: "Este carrossel não está em estado de falha.",
+          title: t("create", "warning", siteLanguage),
+          description: t("create", "notInFailedState", siteLanguage),
           variant: "destructive",
         });
         return;
@@ -465,25 +514,50 @@ const CreateCarousel = () => {
       // Load the carousel data
       setCurrentCarouselId(carouselId);
 
-      // If there's a transcription, skip to customize step
-      if (carousel.transcription) {
-        setTranscription(carousel.transcription);
-        setAudioUrl(carousel.audio_url || null);
-        setSelectedTone(carousel.tone as ToneType || 'PROFESSIONAL');
-        setSelectedStyle(carousel.style as StyleType || 'BLACK_WHITE');
-        setSelectedFormat(carousel.format as FormatType || 'POST_SQUARE');
-        setCurrentStep('customize');
+      // Restore style, format and tone
+      if (carousel.tone) {
+        const toneMap: Record<string, CreativeTone> = {
+          EMOTIONAL: "emotional",
+          PROFESSIONAL: "professional",
+          PROVOCATIVE: "provocative"
+        };
+        setCreativeTone(toneMap[carousel.tone] || "professional");
+      }
+      setSelectedStyle(carousel.style as StyleType || 'BLACK_WHITE');
+      setSelectedFormat(carousel.format as FormatType || 'POST_SQUARE');
 
-        toast({
-          title: "Carrossel carregado",
-          description: "Continue de onde parou. O áudio original será usado.",
+      // Restore template selections (Creator+ only) - with validation
+      if (carousel.cover_template && isValidCoverTemplate(carousel.cover_template)) {
+        setCoverTemplate(carousel.cover_template);
+      }
+      if (carousel.content_template && isValidContentTemplate(carousel.content_template)) {
+        setContentTemplate(carousel.content_template);
+      }
+
+      // Restore template customization from template_config
+      if (carousel.template_config && typeof carousel.template_config === 'object') {
+        const config = carousel.template_config as Record<string, unknown>;
+        setTemplateCustomization({
+          fontId: (config.fontId as FontId) || 'inter',
+          gradientId: (config.gradientId as GradientId) || 'none',
+          customGradientColors: config.customGradientColors as string[] | undefined,
+          slideImages: config.slideImages as (string | null)[] | undefined,
+          textAlignment: (config.textAlignment as 'left' | 'center' | 'right') || 'center',
+          showNavigationDots: config.showNavigationDots !== false,
+          showNavigationArrow: config.showNavigationArrow !== false,
         });
       }
-    } catch (err) {
-      console.error('Error loading failed carousel:', err);
+
+      setCurrentStep('customize');
+
       toast({
-        title: "Erro",
-        description: "Não foi possível carregar o carrossel.",
+        title: t("create", "carouselLoaded", siteLanguage),
+        description: t("create", "continueWhereYouLeft", siteLanguage),
+      });
+    } catch {
+      toast({
+        title: t("errors", "error", siteLanguage),
+        description: t("create", "couldNotLoadCarousel", siteLanguage),
         variant: "destructive",
       });
     }
@@ -574,6 +648,31 @@ const CreateCarousel = () => {
         return;
       }
 
+      // Check required images for Creator+ users with image-requiring templates
+      if (isCreator) {
+        const slideCount = slideCountMode === "auto" ? 6 : manualSlideCount;
+        const imageValidation = validateRequiredImages(
+          slideCount,
+          coverTemplate,
+          contentTemplate,
+          perSlideImages
+        );
+
+        if (!imageValidation.isValid) {
+          const missingCount = imageValidation.missingSlides.length;
+          const missingList = imageValidation.missingSlides
+            .map(i => i === 0 ? t("create", "cover", siteLanguage) : `Slide ${i}`)
+            .join(", ");
+
+          toast({
+            title: t("create", "requiredImagesMissing", siteLanguage).replace("{count}", String(missingCount)),
+            description: t("create", "uploadImagesFor", siteLanguage).replace("{list}", missingList),
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+
       // Check usage limit for free users
       if (!isPro && carouselCount >= 1) {
         setShowUpgradeDialog(true);
@@ -610,6 +709,9 @@ const CreateCarousel = () => {
           audio_duration: audioDuration,
           status: "TRANSCRIBING",
           has_watermark: !isPro,
+          // Save template selections (Creator+ only)
+          cover_template: isCreator ? coverTemplate : 'cover_full_image',
+          content_template: isCreator ? contentTemplate : 'content_text_only',
         })
         .select()
         .single();
@@ -636,18 +738,26 @@ const CreateCarousel = () => {
           fontId: templateCustomization.fontId,
           gradientId: templateCustomization.gradientId,
           customGradientColors: templateCustomization.customGradientColors,
-          slideImages: templateCustomization.slideImages,
+          // Merge cover slideImages with per-slide images (per-slide takes priority)
+          slideImages: perSlideImages.length > 0
+            ? Array.from({ length: slideCountMode === "auto" ? 6 : manualSlideCount }, (_, i) => {
+                const perSlide = perSlideImages.find(img => img.slideIndex === i);
+                if (perSlide?.publicUrl) return perSlide.publicUrl;
+                return templateCustomization.slideImages?.[i] || null;
+              })
+            : templateCustomization.slideImages,
           textAlignment: templateCustomization.textAlignment,
           showNavigationDots: templateCustomization.showNavigationDots,
           showNavigationArrow: templateCustomization.showNavigationArrow,
+          coverTemplate,
+          contentTemplate,
         } : undefined
       });
 
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : "Tente novamente mais tarde.";
-      console.error("Error starting generation:", err);
+      const errorMessage = err instanceof Error ? err.message : t("create", "tryAgain", siteLanguage);
       toast({
-        title: "Erro ao gerar carrossel",
+        title: t("create", "generationError", siteLanguage),
         description: errorMessage,
         variant: "destructive",
       });
@@ -661,10 +771,10 @@ const CreateCarousel = () => {
     try {
       await createCheckout();
       setShowUpgradeDialog(false);
-    } catch (error) {
+    } catch {
       toast({
-        title: "Erro ao iniciar checkout",
-        description: "Tente novamente.",
+        title: t("create", "checkoutError", siteLanguage),
+        description: t("create", "tryAgain", siteLanguage),
         variant: "destructive",
       });
     } finally {
@@ -676,9 +786,14 @@ const CreateCarousel = () => {
     if (generatedSlides.length === 0) return;
 
     try {
+      let downloadCount = 0;
       for (const slide of generatedSlides) {
         if (slide.imageUrl) {
           const response = await fetch(slide.imageUrl);
+          if (!response.ok) {
+            console.error(`Failed to fetch slide ${slide.number}: ${response.status}`);
+            continue;
+          }
           const blob = await response.blob();
           const url = URL.createObjectURL(blob);
           const a = document.createElement("a");
@@ -688,20 +803,21 @@ const CreateCarousel = () => {
           a.click();
           document.body.removeChild(a);
           URL.revokeObjectURL(url);
-          
+          downloadCount++;
+
           // Small delay between downloads
           await new Promise(r => setTimeout(r, 200));
         }
       }
-      
+
       toast({
-        title: "Download concluído",
-        description: `${generatedSlides.length} slides baixados com sucesso.`,
+        title: t("create", "downloadComplete", siteLanguage),
+        description: `${downloadCount} ${t("create", "slidesDownloaded", siteLanguage)}`,
       });
-    } catch (err) {
+    } catch {
       toast({
-        title: "Erro no download",
-        description: "Não foi possível baixar os slides.",
+        title: t("create", "downloadError", siteLanguage),
+        description: t("create", "couldNotDownload", siteLanguage),
         variant: "destructive",
       });
     }
@@ -899,9 +1015,9 @@ const CreateCarousel = () => {
           {currentStep === "customize" && (
             <>
               <div className="text-center mb-8">
-                <h1 className="text-2xl font-bold mb-2">Personalize seu carrossel</h1>
+                <h1 className="text-2xl font-bold mb-2">{t("create", "customizeCarousel", siteLanguage)}</h1>
                 <p className="text-muted-foreground">
-                  Escolha como a IA vai criar seu conteúdo
+                  {t("create", "customizeSubtitle", siteLanguage)}
                 </p>
               </div>
               
@@ -986,7 +1102,33 @@ const CreateCarousel = () => {
                     />
                   </div>
 
-                  {/* 8. Advanced Options - Creator+ only */}
+                  {/* 8. Layout Templates - Creator+ only */}
+                  <div className="border-t border-border pt-8">
+                    <LayoutTemplateSelector
+                      selectedCoverTemplate={coverTemplate}
+                      selectedContentTemplate={contentTemplate}
+                      onCoverTemplateChange={setCoverTemplate}
+                      onContentTemplateChange={setContentTemplate}
+                      isCreator={isCreator}
+                    />
+                  </div>
+
+                  {/* 8.5 Per-Slide Image Upload - Creator+ only, shown when templates require images */}
+                  {isCreator && (templateRequiresImage(coverTemplate) || templateRequiresImage(contentTemplate)) && (
+                    <div className="border-t border-border pt-8">
+                      <SlideImageUploader
+                        userId={user?.id || ''}
+                        slideCount={slideCountMode === "auto" ? 6 : manualSlideCount}
+                        coverTemplate={coverTemplate}
+                        contentTemplate={contentTemplate}
+                        slideImages={perSlideImages}
+                        onSlideImagesChange={setPerSlideImages}
+                        isCreator={isCreator}
+                      />
+                    </div>
+                  )}
+
+                  {/* 9. Advanced Options - Creator+ only */}
                   <div className="border-t border-border pt-8">
                     <AdvancedOptionsEditor
                       showNavigationDots={templateCustomization.showNavigationDots}
@@ -1016,6 +1158,8 @@ const CreateCarousel = () => {
                       gradientId={templateCustomization.gradientId}
                       customGradientColors={templateCustomization.customGradientColors}
                       textAlignment={templateCustomization.textAlignment}
+                      coverTemplate={coverTemplate}
+                      contentTemplate={contentTemplate}
                     />
                   </div>
                 </div>
@@ -1034,6 +1178,8 @@ const CreateCarousel = () => {
                   gradientId={templateCustomization.gradientId}
                   customGradientColors={templateCustomization.customGradientColors}
                   textAlignment={templateCustomization.textAlignment}
+                  coverTemplate={coverTemplate}
+                  contentTemplate={contentTemplate}
                 />
               </div>
             </>
@@ -1042,12 +1188,12 @@ const CreateCarousel = () => {
           {currentStep === "processing" && (
             <>
               <div className="text-center mb-8">
-                <h1 className="text-2xl font-bold mb-2">Gerando seu carrossel</h1>
+                <h1 className="text-2xl font-bold mb-2">{t("create", "generatingCarousel", siteLanguage)}</h1>
                 <p className="text-muted-foreground">
-                  Nossa IA está trabalhando no seu conteúdo
+                  {t("create", "aiWorkingOnContent", siteLanguage)}
                 </p>
               </div>
-              
+
               <ProcessingStatus status={status} />
             </>
           )}
@@ -1057,16 +1203,16 @@ const CreateCarousel = () => {
               <div className="text-center mb-8">
                 <h1 className="text-2xl font-bold mb-2">
                   {isCarouselLocked
-                    ? (siteLanguage === "pt-BR" ? "Pronto para baixar! 🎉" : siteLanguage === "es" ? "¡Listo para descargar! 🎉" : "Ready to download! 🎉")
+                    ? t("create", "readyToDownloadEmoji", siteLanguage)
                     : (isPro
-                      ? (siteLanguage === "pt-BR" ? "Revise seu carrossel" : siteLanguage === "es" ? "Revisa tu carrusel" : "Review your carousel")
+                      ? t("create", "reviewCarousel", siteLanguage)
                       : t("create", "carouselReady", siteLanguage) + " 🎉")}
                 </h1>
                 <p className="text-muted-foreground">
                   {isCarouselLocked
-                    ? (siteLanguage === "pt-BR" ? "Escolha o formato e baixe seus slides" : siteLanguage === "es" ? "Elige el formato y descarga tus slides" : "Choose the format and download your slides")
+                    ? t("create", "chooseFormatAndDownload", siteLanguage)
                     : (isPro
-                      ? (siteLanguage === "pt-BR" ? "Edite os textos se necessário e finalize" : siteLanguage === "es" ? "Edita los textos si es necesario y finaliza" : "Edit the texts if needed and finalize")
+                      ? t("create", "editTextsIfNeeded", siteLanguage)
                       : t("create", "generatedSuccess", siteLanguage))}
                   {" "}• {generatedSlides.length} slides
                 </p>
@@ -1100,6 +1246,7 @@ const CreateCarousel = () => {
                   onFinalize={handleFinalizeEdit}
                   isRegenerating={isRegenerating}
                   regeneratingProgress={regeneratingProgress || undefined}
+                  onCancelRegeneration={handleCancelRegeneration}
                   format={selectedFormat}
                 />
               ) : (
@@ -1140,7 +1287,7 @@ const CreateCarousel = () => {
               className={cn(currentStep === "upload" && "invisible")}
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Voltar
+              {t("create", "back", siteLanguage)}
             </Button>
 
             <Button
@@ -1151,16 +1298,16 @@ const CreateCarousel = () => {
               {isProcessing ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Processando...
+                  {t("create", "processing", siteLanguage)}
                 </>
               ) : currentStep === "customize" ? (
                 <>
-                  Gerar Carrossel
+                  {t("create", "generateCarousel", siteLanguage)}
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </>
               ) : (
                 <>
-                  Continuar
+                  {t("create", "continue", siteLanguage)}
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </>
               )}

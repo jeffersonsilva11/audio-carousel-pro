@@ -6,11 +6,9 @@ const MAX_FAILED_ATTEMPTS = 3;
 const LOCKOUT_DURATION = 15 * 60 * 1000; // 15 minutes in ms
 const STORAGE_KEY = 'auth_attempts';
 
-// Check if running in development (localhost)
-const isDevelopment = () => {
-  const hostname = window.location.hostname;
-  return hostname === 'localhost' || hostname === '127.0.0.1' || hostname.startsWith('192.168.');
-};
+// Check if running in development mode using Vite's environment variable
+// This is safe because import.meta.env.DEV is replaced at build time (false in production)
+const isDevelopment = import.meta.env.DEV;
 
 interface AttemptData {
   count: number;
@@ -23,7 +21,6 @@ export function useAuthProtection() {
   const [failedAttempts, setFailedAttempts] = useState(0);
   const [isLocked, setIsLocked] = useState(false);
   const [lockoutEndTime, setLockoutEndTime] = useState<number | null>(null);
-  const [requiresInteractiveCaptcha, setRequiresInteractiveCaptcha] = useState(false);
 
   // Load stored attempts on mount
   useEffect(() => {
@@ -37,13 +34,10 @@ export function useAuthProtection() {
           // Check if lockout has expired
           if (data.lastAttempt + LOCKOUT_DURATION > now) {
             setFailedAttempts(data.count);
-            
+
             if (data.count >= MAX_FAILED_ATTEMPTS) {
               setIsLocked(true);
               setLockoutEndTime(data.lastAttempt + LOCKOUT_DURATION);
-              setRequiresInteractiveCaptcha(true);
-            } else if (data.count >= 2) {
-              setRequiresInteractiveCaptcha(true);
             }
           } else {
             // Lockout expired, clear storage
@@ -65,7 +59,6 @@ export function useAuthProtection() {
         if (Date.now() >= lockoutEndTime) {
           setIsLocked(false);
           setLockoutEndTime(null);
-          setRequiresInteractiveCaptcha(false);
           setFailedAttempts(0);
           localStorage.removeItem(STORAGE_KEY);
         }
@@ -91,9 +84,6 @@ export function useAuthProtection() {
     if (newCount >= MAX_FAILED_ATTEMPTS) {
       setIsLocked(true);
       setLockoutEndTime(Date.now() + LOCKOUT_DURATION);
-      setRequiresInteractiveCaptcha(true);
-    } else if (newCount >= 2) {
-      setRequiresInteractiveCaptcha(true);
     }
 
     // Log to backend for analytics
@@ -115,7 +105,6 @@ export function useAuthProtection() {
     setFailedAttempts(0);
     setIsLocked(false);
     setLockoutEndTime(null);
-    setRequiresInteractiveCaptcha(false);
 
     const fingerprint = await getFingerprint();
     
@@ -140,9 +129,7 @@ export function useAuthProtection() {
 
   return {
     failedAttempts,
-    isLocked: isDevelopment() ? false : isLocked,
-    // Interactive captcha (v2) disabled - using only invisible reCAPTCHA v3
-    requiresInteractiveCaptcha: false,
+    isLocked: isDevelopment ? false : isLocked,
     recordFailedAttempt,
     recordSuccessfulAttempt,
     getRemainingLockoutTime,

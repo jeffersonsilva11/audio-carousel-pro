@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import DOMPurify from "dompurify";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,6 +8,16 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+
+// Configure DOMPurify to allow safe SVG elements and attributes
+const sanitizeSvg = (svg: string): string => {
+  return DOMPurify.sanitize(svg, {
+    USE_PROFILES: { svg: true, svgFilters: true },
+    ADD_ATTR: ['viewBox', 'fill', 'class', 'd', 'cx', 'cy', 'r', 'rx', 'ry', 'x', 'y', 'width', 'height', 'transform', 'stroke', 'stroke-width', 'stroke-linecap', 'stroke-linejoin', 'fill-rule', 'clip-rule', 'opacity'],
+    FORBID_TAGS: ['script', 'style', 'foreignObject'],
+    FORBID_ATTR: ['onclick', 'onload', 'onerror', 'onmouseover', 'onfocus'],
+  });
+};
 import { 
   Loader2, 
   Plus, 
@@ -100,9 +111,9 @@ const SortableCompanyItem = ({ company, onEdit, onToggle, onDelete }: SortableCo
       </button>
 
       <div className="w-24 h-12 flex items-center justify-center bg-muted rounded p-2">
-        <div 
+        <div
           className="text-muted-foreground"
-          dangerouslySetInnerHTML={{ __html: company.logo_svg }}
+          dangerouslySetInnerHTML={{ __html: sanitizeSvg(company.logo_svg) }}
         />
       </div>
 
@@ -438,9 +449,9 @@ const TrustedCompaniesManager = () => {
               <div>
                 <Label>Prévia</Label>
                 <div className="w-full h-20 bg-muted rounded-lg flex items-center justify-center p-4">
-                  <div 
+                  <div
                     className="text-muted-foreground h-10 [&>svg]:h-full [&>svg]:w-auto"
-                    dangerouslySetInnerHTML={{ __html: formData.logo_svg }}
+                    dangerouslySetInnerHTML={{ __html: sanitizeSvg(formData.logo_svg) }}
                   />
                 </div>
               </div>

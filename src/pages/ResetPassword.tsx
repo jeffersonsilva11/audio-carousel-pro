@@ -11,16 +11,29 @@ import { BRAND } from "@/lib/constants";
 import { z } from "zod";
 import { cn } from "@/lib/utils";
 
+// Session storage key for reset password email
+const RESET_PASSWORD_EMAIL_KEY = "reset_password_email";
+
 const ResetPassword = () => {
   const { language } = useLanguage();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
 
-  // Get email from URL params
+  // Get email from sessionStorage (preferred) or fallback to URL params for backwards compatibility
   const emailFromParams = searchParams.get("email") || "";
+  const storedEmail = sessionStorage.getItem(RESET_PASSWORD_EMAIL_KEY) || "";
+  const initialEmail = storedEmail || emailFromParams;
 
-  const [email, setEmail] = useState(emailFromParams);
+  const [email, setEmail] = useState(initialEmail);
+
+  // Clean URL if email was in params (security: remove from browser history)
+  useEffect(() => {
+    if (emailFromParams && !storedEmail) {
+      sessionStorage.setItem(RESET_PASSWORD_EMAIL_KEY, emailFromParams);
+      navigate("/auth/reset-password", { replace: true });
+    }
+  }, [emailFromParams, storedEmail, navigate]);
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -166,6 +179,9 @@ const ResetPassword = () => {
         setErrors({ otp: response.data.error });
       } else {
         setIsSuccess(true);
+        // Clear stored email from sessionStorage (security: cleanup after reset)
+        sessionStorage.removeItem(RESET_PASSWORD_EMAIL_KEY);
+
         toast({
           title: "Senha alterada!",
           description: "Sua senha foi atualizada com sucesso.",

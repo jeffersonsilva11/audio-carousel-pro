@@ -109,7 +109,11 @@ const ForgotPassword = () => {
                 <Button
                   variant="accent"
                   className="w-full"
-                  onClick={() => navigate(`/auth/reset-password?email=${encodeURIComponent(email)}`)}
+                  onClick={() => {
+                    // Store email in sessionStorage instead of URL (security: avoid browser history exposure)
+                    sessionStorage.setItem("reset_password_email", email);
+                    navigate("/auth/reset-password");
+                  }}
                 >
                   Inserir código de verificação
                 </Button>

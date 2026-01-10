@@ -13,6 +13,21 @@ export interface Notification {
   isFromServer?: boolean; // Distinguishes server notifications from client-side ones
 }
 
+// Database row type for notifications
+interface NotificationRow {
+  id: string;
+  title_pt: string;
+  title_en: string | null;
+  title_es: string | null;
+  message_pt: string;
+  message_en: string | null;
+  message_es: string | null;
+  type: Notification["type"];
+  is_read: boolean;
+  created_at: string;
+  action_url: string | null;
+}
+
 interface NotificationsContextType {
   notifications: Notification[];
   unreadCount: number;
@@ -60,7 +75,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
       }
 
       if (data) {
-        const serverNotifications: Notification[] = data.map((n: any) => {
+        const serverNotifications: Notification[] = data.map((n: NotificationRow) => {
           // Get localized title and message
           let title = n.title_pt;
           let message = n.message_pt;

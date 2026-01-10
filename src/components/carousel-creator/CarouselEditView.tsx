@@ -11,6 +11,7 @@ import {
   Undo2,
   Redo2,
   AlertTriangle,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -61,6 +62,7 @@ interface CarouselEditViewProps {
   onFinalize: (editedSlides: Slide[], changedIndices: number[]) => void;
   isRegenerating?: boolean;
   regeneratingProgress?: { current: number; total: number };
+  onCancelRegeneration?: () => void;
   format?: FormatType;
 }
 
@@ -70,6 +72,7 @@ const CarouselEditView = ({
   onFinalize,
   isRegenerating = false,
   regeneratingProgress,
+  onCancelRegeneration,
   format = 'POST_SQUARE',
 }: CarouselEditViewProps) => {
   const { t } = useTranslation();
@@ -289,6 +292,17 @@ const CarouselEditView = ({
                         <p className="text-xs text-muted-foreground mt-1">
                           {regeneratingProgress.current}/{regeneratingProgress.total}
                         </p>
+                      )}
+                      {onCancelRegeneration && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={onCancelRegeneration}
+                          className="mt-3"
+                        >
+                          <X className="w-4 h-4 mr-1" />
+                          {t("carouselEditor", "cancelRegeneration") || "Cancelar"}
+                        </Button>
                       )}
                     </div>
                   </div>

@@ -1,5 +1,5 @@
 // Plan configuration for Audisell
-export type PlanTier = 'free' | 'starter' | 'creator';
+export type PlanTier = 'free' | 'starter' | 'creator' | 'agency';
 
 // Stripe Price IDs - Atualize com os IDs do Stripe Dashboard
 // Produtos criados:
@@ -26,6 +26,12 @@ export interface PlanConfig {
   hasCustomFonts?: boolean;
   hasGradients?: boolean;
   hasSlideImages?: boolean;
+  // New template features
+  hasCoverTemplates?: boolean;
+  hasContentTemplates?: boolean;
+  hasCustomColors?: boolean;
+  hasImageUpload?: boolean;
+  maxTemplatesSaved?: number;
   templates: ('solid' | 'gradient' | 'image_top')[];
   features: string[];
   limitations: string[];
@@ -44,6 +50,11 @@ export const PLANS: Record<PlanTier, PlanConfig> = {
     hasEditor: false,
     hasHistory: false,
     hasZipDownload: false,
+    hasCoverTemplates: false,
+    hasContentTemplates: false,
+    hasCustomColors: false,
+    hasImageUpload: false,
+    maxTemplatesSaved: 0,
     templates: ['solid'],
     features: [
       '1 carrossel por conta',
@@ -69,6 +80,11 @@ export const PLANS: Record<PlanTier, PlanConfig> = {
     hasEditor: true,
     hasHistory: true,
     hasZipDownload: true,
+    hasCoverTemplates: false,
+    hasContentTemplates: false,
+    hasCustomColors: false,
+    hasImageUpload: false,
+    maxTemplatesSaved: 0,
     templates: ['solid'],
     features: [
       '3 carrosséis por semana',
@@ -96,21 +112,62 @@ export const PLANS: Record<PlanTier, PlanConfig> = {
     hasCustomFonts: true,
     hasGradients: true,
     hasSlideImages: true,
+    hasCoverTemplates: true,
+    hasContentTemplates: true,
+    hasCustomColors: true,
+    hasImageUpload: true,
+    maxTemplatesSaved: 10,
     templates: ['solid', 'gradient', 'image_top'],
     features: [
       '1 carrossel por dia',
       'Sem marca d\'água',
       'Editor visual completo',
       'Customização de fontes',
-      'Templates premium',
+      '3 templates de capa',
+      '4 templates de conteúdo',
       'Upload de imagens por slide',
+      'Salvar templates customizados',
       'Processamento prioritário',
+    ],
+    limitations: [],
+  },
+  agency: {
+    id: 'agency',
+    name: 'Agency',
+    description: 'Para agências e equipes',
+    price: 29990, // R$ 299,90
+    priceDisplay: 'R$ 299,90',
+    dailyLimit: 5, // 5 per day
+    monthlyLimit: null, // unlimited fair usage
+    hasWatermark: false,
+    hasEditor: true,
+    hasHistory: true,
+    hasZipDownload: true,
+    hasCustomFonts: true,
+    hasGradients: true,
+    hasSlideImages: true,
+    hasCoverTemplates: true,
+    hasContentTemplates: true,
+    hasCustomColors: true,
+    hasImageUpload: true,
+    maxTemplatesSaved: 50,
+    templates: ['solid', 'gradient', 'image_top'],
+    features: [
+      '5 carrosséis por dia',
+      'Sem marca d\'água',
+      'Editor visual completo',
+      'Todas as customizações',
+      'Todos os templates',
+      'Upload de imagens por slide',
+      'Templates ilimitados salvos',
+      'Processamento prioritário',
+      'Suporte prioritário',
     ],
     limitations: [],
   },
 };
 
-export const PLAN_ORDER: PlanTier[] = ['free', 'starter', 'creator'];
+export const PLAN_ORDER: PlanTier[] = ['free', 'starter', 'creator', 'agency'];
 
 export function getPlanByPriceId(priceId: string): PlanTier | null {
   const priceIdMap: Record<string, PlanTier> = {

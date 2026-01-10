@@ -13,9 +13,13 @@ const logStep = (step: string, details?: any) => {
   console.log(`[SEND-SIGNUP-VERIFICATION] ${step}${detailsStr}`);
 };
 
-// Generate 6-digit OTP
+// Generate 6-digit OTP using cryptographically secure random
 function generateOTP(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+  const array = new Uint32Array(1);
+  crypto.getRandomValues(array);
+  // Generate a number between 100000 and 999999
+  const otp = 100000 + (array[0] % 900000);
+  return otp.toString();
 }
 
 // Replace template variables

@@ -161,6 +161,7 @@ const CarouselDownloadView = ({ slides, isPro = false }: CarouselDownloadViewPro
             <button
               onClick={() => goToSlide(currentSlide - 1)}
               disabled={currentSlide === 0}
+              aria-label={t("carouselPreview", "previousSlide")}
               className={cn(
                 "absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-background/80 backdrop-blur flex items-center justify-center transition-opacity",
                 currentSlide === 0 ? "opacity-30 cursor-not-allowed" : "hover:bg-background"
@@ -172,6 +173,7 @@ const CarouselDownloadView = ({ slides, isPro = false }: CarouselDownloadViewPro
             <button
               onClick={() => goToSlide(currentSlide + 1)}
               disabled={currentSlide === slides.length - 1}
+              aria-label={t("carouselPreview", "nextSlide")}
               className={cn(
                 "absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-background/80 backdrop-blur flex items-center justify-center transition-opacity",
                 currentSlide === slides.length - 1 ? "opacity-30 cursor-not-allowed" : "hover:bg-background"
@@ -224,7 +226,7 @@ const CarouselDownloadView = ({ slides, isPro = false }: CarouselDownloadViewPro
 
       {/* Export Format Selector */}
       <div className="flex items-center justify-center gap-3">
-        <span className="text-sm text-muted-foreground">Formato:</span>
+        <span className="text-sm text-muted-foreground">{t("carouselPreview", "exportFormat")}</span>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="min-w-[120px] justify-between">
@@ -239,19 +241,19 @@ const CarouselDownloadView = ({ slides, isPro = false }: CarouselDownloadViewPro
           </DropdownMenuTrigger>
           <DropdownMenuContent align="center">
             <DropdownMenuItem onClick={() => setExportFormat("png")} className="cursor-pointer">
-              <Image className="w-4 h-4 mr-2" />
-              PNG
-              <span className="ml-2 text-xs text-muted-foreground">(Recomendado)</span>
+              <Image className="size-4 mr-2" />
+              {t("carouselPreview", "formatPNG")}
+              <span className="ml-2 text-xs text-muted-foreground">{t("carouselPreview", "formatRecommended")}</span>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setExportFormat("jpg")} className="cursor-pointer">
-              <Image className="w-4 h-4 mr-2" />
-              JPG
-              <span className="ml-2 text-xs text-muted-foreground">(Menor tamanho)</span>
+              <Image className="size-4 mr-2" />
+              {t("carouselPreview", "formatJPG")}
+              <span className="ml-2 text-xs text-muted-foreground">{t("carouselPreview", "formatSmaller")}</span>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setExportFormat("svg")} className="cursor-pointer">
-              <FileImage className="w-4 h-4 mr-2" />
-              SVG
-              <span className="ml-2 text-xs text-muted-foreground">(Vetorial)</span>
+              <FileImage className="size-4 mr-2" />
+              {t("carouselPreview", "formatSVG")}
+              <span className="ml-2 text-xs text-muted-foreground">{t("carouselPreview", "formatVector")}</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -277,9 +279,14 @@ const CarouselDownloadView = ({ slides, isPro = false }: CarouselDownloadViewPro
               : `Baixar ZIP (${slides.length} slides)`}
           </Button>
         ) : (
-          <Button variant="accent" size="lg" className="flex-1 sm:flex-initial">
+          <Button
+            variant="accent"
+            size="lg"
+            onClick={() => downloadSlide(currentSlideData)}
+            className="flex-1 sm:flex-initial"
+          >
             <Download className="w-4 h-4 mr-2" />
-            Baixar todos ({slides.length} slides)
+            {t("carouselPreview", "downloadCurrent")}
           </Button>
         )}
         <Button

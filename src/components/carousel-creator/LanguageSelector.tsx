@@ -1,6 +1,7 @@
 import { Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { LANGUAGES, SupportedLanguage } from "@/hooks/useLanguage";
+import { LANGUAGES, SupportedLanguage, useLanguage } from "@/hooks/useLanguage";
+import { t } from "@/lib/translations";
 
 interface LanguageSelectorProps {
   value: SupportedLanguage;
@@ -9,11 +10,13 @@ interface LanguageSelectorProps {
 }
 
 const LanguageSelector = ({ value, onChange, className }: LanguageSelectorProps) => {
+  const { language } = useLanguage();
+
   return (
     <div className={cn("space-y-3", className)}>
       <div className="flex items-center gap-2 text-sm font-medium">
         <Globe className="w-4 h-4 text-muted-foreground" />
-        <span>Idioma do Carrossel</span>
+        <span>{t("languageSelector", "carouselLanguage", language)}</span>
       </div>
       
       <div className="grid grid-cols-3 gap-2">

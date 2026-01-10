@@ -15,7 +15,6 @@ import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { BRAND } from "@/lib/constants";
 import { Separator } from "@/components/ui/separator";
-import { InteractiveCaptcha } from "@/components/auth/InteractiveCaptcha";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const Auth = () => {
@@ -29,14 +28,12 @@ const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string; name?: string }>({});
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [isRedirectingToVerify, setIsRedirectingToVerify] = useState(false);
 
   const { user, signIn, signUp, signInWithGoogle, isEmailConfirmed } = useAuth();
   const { verifyRecaptcha } = useRecaptcha();
   const {
     isLocked,
-    requiresInteractiveCaptcha,
     recordFailedAttempt,
     recordSuccessfulAttempt,
     getRemainingLockoutTime
@@ -121,7 +118,9 @@ const Auth = () => {
             title: t("auth", "emailNotVerified", language),
             description: t("auth", "pleaseVerifyEmail", language),
           });
-          navigate(`/auth/verify?email=${encodeURIComponent(user.email || "")}`);
+          // Store email in sessionStorage instead of URL (security: avoid browser history exposure)
+          sessionStorage.setItem("verify_email_pending", user.email || "");
+          navigate("/auth/verify");
         } catch (err) {
           console.error("Verification check error:", err);
           // Fall back to isEmailConfirmed on error
@@ -138,6 +137,8 @@ const Auth = () => {
   // Update lockout countdown
   useEffect(() => {
     if (isLocked) {
+      // Initialize immediately
+      setLockoutSeconds(getRemainingLockoutTime());
       const interval = setInterval(() => {
         setLockoutSeconds(getRemainingLockoutTime());
       }, 1000);
@@ -184,16 +185,6 @@ const Auth = () => {
       return;
     }
 
-    // Check if interactive captcha is required but not completed
-    if (requiresInteractiveCaptcha && !captchaToken) {
-      toast({
-        title: t("errors", "captchaRequired", language),
-        description: t("errors", "completeCaptcha", language),
-        variant: "destructive",
-      });
-      return;
-    }
-    
     setIsLoading(true);
     
     try {
@@ -209,7 +200,6 @@ const Auth = () => {
           variant: "destructive",
         });
         setIsLoading(false);
-        setCaptchaToken(null);
         return;
       }
 
@@ -218,7 +208,6 @@ const Auth = () => {
 
         if (error) {
           await recordFailedAttempt();
-          setCaptchaToken(null);
           if (error.message.includes("Invalid login credentials")) {
             toast({
               title: t("auth", "loginError", language),
@@ -272,7 +261,9 @@ const Auth = () => {
                     title: t("auth", "emailNotVerified", language),
                     description: t("auth", "pleaseVerifyEmail", language),
                   });
-                  navigate(`/auth/verify?email=${encodeURIComponent(loggedInUser.email || email)}`);
+                  // Store email in sessionStorage instead of URL (security: avoid browser history exposure)
+                  sessionStorage.setItem("verify_email_pending", loggedInUser.email || email);
+                  navigate("/auth/verify");
                   return;
                 }
               } catch (verifyError) {
@@ -301,7 +292,6 @@ const Auth = () => {
           // Reset flag on error
           setIsRedirectingToVerify(false);
           await recordFailedAttempt();
-          setCaptchaToken(null);
           if (error.message.includes("User already registered")) {
             toast({
               title: t("auth", "emailAlreadyRegistered", language),
@@ -348,8 +338,9 @@ const Auth = () => {
               title: t("auth", "accountCreated", language),
               description: t("auth", "checkEmailVerification", language),
             });
-            // Redirect to email verification page
-            navigate(`/auth/verify?email=${encodeURIComponent(email)}`);
+            // Store email in sessionStorage and redirect (security: avoid browser history exposure)
+            sessionStorage.setItem("verify_email_pending", email);
+            navigate("/auth/verify");
           }
         }
       }
@@ -358,28 +349,11 @@ const Auth = () => {
     }
   };
 
-  const handleCaptchaVerify = (token: string) => {
-    setCaptchaToken(token);
-  };
-
-  const handleCaptchaExpire = () => {
-    setCaptchaToken(null);
-  };
-
   const handleGoogleSignIn = async () => {
     if (isLocked) {
       toast({
         title: t("auth", "accountLocked", language),
         description: t("auth", "tryAgainLater", language).replace("{minutes}", String(Math.ceil(lockoutSeconds / 60))),
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (requiresInteractiveCaptcha && !captchaToken) {
-      toast({
-        title: t("errors", "captchaRequired", language),
-        description: t("errors", "completeCaptcha", language),
         variant: "destructive",
       });
       return;
@@ -398,14 +372,12 @@ const Auth = () => {
           variant: "destructive",
         });
         setIsGoogleLoading(false);
-        setCaptchaToken(null);
         return;
       }
 
       const { error } = await signInWithGoogle();
       if (error) {
         await recordFailedAttempt();
-        setCaptchaToken(null);
         toast({
           title: t("auth", "googleError", language),
           description: error.message,
@@ -427,7 +399,7 @@ const Auth = () => {
           href="/" 
           className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-8"
         >
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowLeft className="size-4" />
           {t("auth", "backToHome", language)}
         </a>
 
@@ -455,7 +427,7 @@ const Auth = () => {
             {/* Registration Disabled Warning */}
             {registrationDisabled && (
               <Alert className="mb-4 bg-amber-500/10 border-amber-500/30">
-                <UserX className="h-4 w-4 text-amber-600" />
+                <UserX className="size-4 text-amber-600" />
                 <AlertDescription className="text-amber-700">
                   {systemSettings.registrationDisabledMessage}
                 </AlertDescription>
@@ -463,32 +435,14 @@ const Auth = () => {
             )}
 
             {/* Lockout Warning */}
-            {isLocked && (
+            {isLocked && lockoutSeconds > 0 && (
               <Alert variant="destructive" className="mb-4">
-                <AlertTriangle className="h-4 w-4" />
+                <AlertTriangle className="size-4" />
                 <AlertDescription className="flex items-center gap-2">
-                  <Clock className="w-4 h-4" />
+                  <Clock className="size-4" />
                   {t("auth", "accountLockedMessage", language).replace("{seconds}", String(lockoutSeconds))}
                 </AlertDescription>
               </Alert>
-            )}
-
-            {/* Interactive Captcha (shown after failed attempts) */}
-            {requiresInteractiveCaptcha && !isLocked && (
-              <div className="mb-4">
-                <p className="text-sm text-muted-foreground text-center mb-2">
-                  {t("auth", "verifyCaptcha", language)}
-                </p>
-                <InteractiveCaptcha
-                  onVerify={handleCaptchaVerify}
-                  onExpire={handleCaptchaExpire}
-                />
-                {captchaToken && (
-                  <p className="text-sm text-green-600 text-center">
-                    ✓ {t("auth", "captchaVerified", language)}
-                  </p>
-                )}
-              </div>
             )}
 
             {/* Google Sign In Button */}
@@ -497,7 +451,7 @@ const Auth = () => {
               variant="outline"
               className="w-full mb-4"
               onClick={handleGoogleSignIn}
-              disabled={isGoogleLoading || isLocked || registrationDisabled || (requiresInteractiveCaptcha && !captchaToken)}
+              disabled={isGoogleLoading || isLocked || registrationDisabled}
             >
               {isGoogleLoading ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -523,7 +477,7 @@ const Auth = () => {
               {!isLogin && (
                 <div className="space-y-2">
                   <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                     <Input
                       type="text"
                       placeholder={t("auth", "yourName", language)}
@@ -538,7 +492,7 @@ const Auth = () => {
 
               <div className="space-y-2">
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                   <Input
                     type="email"
                     placeholder={t("auth", "yourEmail", language)}
@@ -553,7 +507,7 @@ const Auth = () => {
 
               <div className="space-y-2">
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                   <Input
                     type="password"
                     placeholder={t("auth", "yourPassword", language)}
@@ -582,7 +536,7 @@ const Auth = () => {
                 type="submit"
                 variant="accent"
                 className="w-full"
-                disabled={isLoading || isLocked || registrationDisabled || (requiresInteractiveCaptcha && !captchaToken)}
+                disabled={isLoading || isLocked || registrationDisabled}
               >
                 {isLoading ? (
                   <>

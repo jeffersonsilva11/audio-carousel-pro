@@ -182,11 +182,11 @@ const Hero = () => {
               </motion.h1>
 
               {/* Subheadline - Dynamic Content */}
-              <motion.p 
+              <motion.p
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="text-body-lg md:text-xl text-muted-foreground mb-6 max-w-xl mx-auto lg:mx-0"
+                className="text-body-lg md:text-body-xl text-muted-foreground mb-6 max-w-xl mx-auto lg:mx-0"
               >
                 {heroSubtitle}
               </motion.p>

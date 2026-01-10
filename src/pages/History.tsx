@@ -112,7 +112,7 @@ const History = () => {
       setCarousels(data || []);
     } catch (error) {
       console.error("Error fetching carousels:", error);
-      toast.error(t("common", "error", language));
+      toast.error(t("common", "errorLoadingData", language));
     } finally {
       setLoadingCarousels(false);
     }
@@ -132,7 +132,7 @@ const History = () => {
       });
 
       if (error || data?.error) {
-        throw new Error(data?.error || error?.message || "Error");
+        throw new Error(data?.error || error?.message || t("common", "errorUnexpected", language));
       }
 
       toast.success(t("dashboard", "watermarkRemoved", language));
@@ -186,6 +186,10 @@ const History = () => {
           const url = carousel.image_urls[i];
           try {
             const response = await fetch(url);
+            if (!response.ok) {
+              console.error(`Failed to fetch slide ${i + 1}: ${response.status}`);
+              continue;
+            }
             const blob = await response.blob();
             carouselFolder.file(`slide-${i + 1}.svg`, blob);
           } catch (err) {
@@ -390,32 +394,38 @@ const History = () => {
         <DialogContent className="max-w-4xl p-0 overflow-hidden">
           {previewCarousel && previewCarousel.image_urls && (
             <div className="relative">
-              <img 
-                src={previewCarousel.image_urls[previewSlideIndex]} 
+              <img
+                src={previewCarousel.image_urls[previewSlideIndex]}
                 alt={`Slide ${previewSlideIndex + 1}`}
                 className="w-full h-auto"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = 'none';
+                }}
               />
               
               {/* Slide navigation */}
               <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-black/60 rounded-full px-4 py-2">
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
+                <Button
+                  variant="ghost"
+                  size="icon"
                   className="w-8 h-8 text-white hover:bg-white/20"
                   onClick={() => setPreviewSlideIndex(i => Math.max(0, i - 1))}
                   disabled={previewSlideIndex === 0}
+                  aria-label={t("carouselPreview", "previousSlide", language)}
                 >
                   ←
                 </Button>
                 <span className="text-white text-sm px-2">
                   {previewSlideIndex + 1} / {previewCarousel.image_urls.length}
                 </span>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
+                <Button
+                  variant="ghost"
+                  size="icon"
                   className="w-8 h-8 text-white hover:bg-white/20"
                   onClick={() => setPreviewSlideIndex(i => Math.min(previewCarousel.image_urls!.length - 1, i + 1))}
                   disabled={previewSlideIndex === previewCarousel.image_urls.length - 1}
+                  aria-label={t("carouselPreview", "nextSlide", language)}
                 >
                   →
                 </Button>
@@ -427,11 +437,20 @@ const History = () => {
                   <button
                     key={i}
                     onClick={() => setPreviewSlideIndex(i)}
+                    aria-label={t("carouselPreview", "goToSlide", language).replace("{number}", String(i + 1))}
                     className={`w-12 h-12 rounded border-2 overflow-hidden flex-shrink-0 transition-all ${
                       i === previewSlideIndex ? "border-white scale-110" : "border-transparent opacity-60 hover:opacity-100"
                     }`}
                   >
-                    <img src={url} alt={`Thumb ${i + 1}`} className="w-full h-full object-cover" />
+                    <img
+                      src={url}
+                      alt={`Thumb ${i + 1}`}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48"><rect fill="%23ccc" width="48" height="48"/></svg>';
+                      }}
+                    />
                   </button>
                 ))}
               </div>
@@ -445,7 +464,12 @@ const History = () => {
         <div className="container mx-auto px-4">
           <nav className="flex items-center justify-between h-16">
             <div className="flex items-center gap-4">
-              <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard")}>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate("/dashboard")}
+                aria-label={t("common", "back", language)}
+              >
                 <ArrowLeft className="w-5 h-5" />
               </Button>
               <a href="/" className="flex items-center gap-2 group">
@@ -668,7 +692,7 @@ const History = () => {
                       <span className="font-semibold text-sm">{group.label}</span>
                     </div>
                     <span className="text-xs text-muted-foreground">
-                      {group.count} {group.count === 1 ? 'carrossel' : 'carrosséis'}
+                      {group.count} {group.count === 1 ? t("dashboard", "carouselCount", language) : t("dashboard", "carouselsCount", language)}
                     </span>
                     <div className="flex-1 h-px bg-border" />
                   </div>
@@ -699,10 +723,14 @@ const History = () => {
                         <div className="aspect-square bg-muted relative overflow-hidden">
                           {carousel.image_urls && carousel.image_urls[0] ? (
                             <>
-                              <img 
-                                src={carousel.image_urls[0]} 
-                                alt="Carousel preview" 
+                              <img
+                                src={carousel.image_urls[0]}
+                                alt="Carousel preview"
                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.style.display = 'none';
+                                }}
                               />
                               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                               
@@ -722,15 +750,16 @@ const History = () => {
                               {/* Action buttons */}
                               {!isSelectionMode && (
                                 <div className="absolute bottom-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <Button 
-                                    size="icon" 
-                                    variant="secondary" 
-                                    className="w-8 h-8" 
+                                  <Button
+                                    size="icon"
+                                    variant="secondary"
+                                    className="w-8 h-8"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       setPreviewCarousel(carousel);
                                       setPreviewSlideIndex(0);
                                     }}
+                                    aria-label={t("history", "preview", language)}
                                   >
                                     <Eye className="w-4 h-4" />
                                   </Button>

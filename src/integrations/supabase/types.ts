@@ -83,6 +83,8 @@ export type Database = {
           audio_size: number | null
           audio_url: string | null
           cover_image_url: string | null
+          cover_template: string | null
+          content_template: string | null
           created_at: string | null
           error_message: string | null
           exported_at: string | null
@@ -96,6 +98,7 @@ export type Database = {
           slide_count: number | null
           status: string | null
           style: string | null
+          template_config: Json | null
           tone: string | null
           transcription: string | null
           updated_at: string | null
@@ -106,6 +109,8 @@ export type Database = {
           audio_size?: number | null
           audio_url?: string | null
           cover_image_url?: string | null
+          cover_template?: string | null
+          content_template?: string | null
           created_at?: string | null
           error_message?: string | null
           exported_at?: string | null
@@ -119,6 +124,7 @@ export type Database = {
           slide_count?: number | null
           status?: string | null
           style?: string | null
+          template_config?: Json | null
           tone?: string | null
           transcription?: string | null
           updated_at?: string | null
@@ -129,6 +135,8 @@ export type Database = {
           audio_size?: number | null
           audio_url?: string | null
           cover_image_url?: string | null
+          cover_template?: string | null
+          content_template?: string | null
           created_at?: string | null
           error_message?: string | null
           exported_at?: string | null
@@ -142,6 +150,7 @@ export type Database = {
           slide_count?: number | null
           status?: string | null
           style?: string | null
+          template_config?: Json | null
           tone?: string | null
           transcription?: string | null
           updated_at?: string | null

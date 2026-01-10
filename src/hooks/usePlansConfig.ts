@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { SupportedLanguage } from "./useLanguage";
+import { EXCHANGE_RATES } from "@/lib/localization";
 
 export interface PlanConfigData {
   id: string;
@@ -29,6 +30,12 @@ export interface PlanConfigData {
   has_custom_fonts: boolean;
   has_gradients: boolean;
   has_slide_images: boolean;
+  // New template features
+  has_cover_templates: boolean;
+  has_content_templates: boolean;
+  has_custom_colors: boolean;
+  has_image_upload: boolean;
+  max_templates_saved: number;
   features_pt: string[] | null;
   features_en: string[] | null;
   features_es: string[] | null;
@@ -119,9 +126,9 @@ export function usePlansConfig(): UsePlansConfigReturn {
           case "pt-BR":
             return plan.price_brl;
           case "en":
-            return plan.price_usd || Math.round(plan.price_brl * 0.17);
+            return plan.price_usd || Math.round(plan.price_brl * EXCHANGE_RATES.USD);
           case "es":
-            return plan.price_eur || Math.round(plan.price_brl * 0.16);
+            return plan.price_eur || Math.round(plan.price_brl * EXCHANGE_RATES.EUR);
         }
       }
 

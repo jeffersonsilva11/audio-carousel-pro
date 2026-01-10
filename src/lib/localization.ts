@@ -54,11 +54,16 @@ const BASE_PRICES_BRL: Record<string, number> = {
   agency: 19990,
 };
 
-// Exchange rates (approximate, BRL to other currencies)
-const EXCHANGE_RATES: Record<string, number> = {
+/**
+ * Exchange rates (approximate, BRL to other currencies)
+ * NOTE: These rates should be updated periodically or fetched from an API
+ * for production accuracy. Current rates are approximations.
+ * Last updated: 2024-01
+ */
+export const EXCHANGE_RATES: Record<string, number> = {
   BRL: 1,
-  USD: 0.17, // 1 BRL ≈ 0.17 USD
-  EUR: 0.16, // 1 BRL ≈ 0.16 EUR
+  USD: 0.20, // 1 BRL ≈ 0.20 USD (5 BRL = 1 USD)
+  EUR: 0.18, // 1 BRL ≈ 0.18 EUR (5.5 BRL = 1 EUR)
 };
 
 /**

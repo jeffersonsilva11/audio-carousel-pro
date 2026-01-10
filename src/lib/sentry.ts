@@ -11,14 +11,14 @@ interface SentryBreadcrumb {
   category: string;
   message: string;
   level: 'info' | 'warning' | 'error';
-  data?: Record<string, any>;
+  data?: Record<string, unknown>;
 }
 
 interface SentryError {
   message: string;
   stack?: string;
   tags?: Record<string, string>;
-  extra?: Record<string, any>;
+  extra?: Record<string, unknown>;
   user?: {
     id?: string;
     email?: string;
@@ -53,7 +53,9 @@ class SentryService {
       });
     };
 
-    console.log('[Sentry] Initialized in', config.environment, 'environment');
+    if (import.meta.env.DEV) {
+      console.log('[Sentry] Initialized in', config.environment, 'environment');
+    }
   }
 
   addBreadcrumb(breadcrumb: SentryBreadcrumb) {
@@ -73,7 +75,9 @@ class SentryService {
 
   captureException(error: Error | unknown, context?: Partial<SentryError>) {
     if (!this.initialized || !this.dsn) {
-      console.error('[Sentry] Not initialized, logging locally:', error);
+      if (import.meta.env.DEV) {
+        console.error('[Sentry] Not initialized, logging locally:', error);
+      }
       return;
     }
 
@@ -89,7 +93,9 @@ class SentryService {
 
   captureMessage(message: string, level: 'info' | 'warning' | 'error' = 'info') {
     if (!this.initialized || !this.dsn) {
-      console.log(`[Sentry ${level}]`, message);
+      if (import.meta.env.DEV) {
+        console.log(`[Sentry ${level}]`, message);
+      }
       return;
     }
 
@@ -184,7 +190,7 @@ class SentryService {
   }
 
   // Get stored errors for debugging
-  getStoredErrors(): any[] {
+  getStoredErrors(): unknown[] {
     try {
       return JSON.parse(localStorage.getItem('sentry_errors') || '[]');
     } catch {
@@ -209,7 +215,7 @@ export const initSentry = () => {
       environment: import.meta.env.MODE,
       release: import.meta.env.VITE_APP_VERSION || '1.0.0',
     });
-  } else {
+  } else if (import.meta.env.DEV) {
     console.log('[Sentry] No DSN configured, error tracking disabled');
   }
 };

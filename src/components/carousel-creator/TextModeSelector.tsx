@@ -84,9 +84,9 @@ const TextModeSelector = ({
       {/* Text Mode Selection */}
       <div className="space-y-4">
         <div>
-          <h3 className="text-lg font-semibold mb-1">Modo de Texto</h3>
+          <h3 className="text-lg font-semibold mb-1">{t("textMode", "title")}</h3>
           <p className="text-sm text-muted-foreground">
-            Como a IA deve processar seu conteúdo
+            {t("textMode", "subtitle")}
           </p>
         </div>
 
@@ -133,7 +133,7 @@ const TextModeSelector = ({
         {/* Helper text for single mode */}
         {selectedMode === "single" && (
           <p className="text-xs text-muted-foreground bg-muted/50 p-3 rounded-lg">
-            💡 O modo Texto Único gera uma imagem com texto mais longo, ideal para threads ou conteúdo educativo denso.
+            💡 {t("textMode", "singleModeHint")}
           </p>
         )}
       </div>
@@ -199,7 +199,7 @@ const TextModeSelector = ({
         <div className="flex items-center gap-2">
           <Type className="w-4 h-4 text-muted-foreground" />
           <h3 className="text-lg font-semibold">
-            {language === "pt-BR" ? "Personalização do Texto" : language === "es" ? "Personalización del Texto" : "Text Customization"}
+            {t("textMode", "textCustomization")}
           </h3>
           <Badge variant="secondary" className="text-[10px] bg-accent/20 text-accent">Creator+</Badge>
         </div>
@@ -209,13 +209,13 @@ const TextModeSelector = ({
             {/* Text Alignment */}
             <div className="space-y-2">
               <p className="text-sm font-medium">
-                {language === "pt-BR" ? "Alinhamento do Texto" : language === "es" ? "Alineación del Texto" : "Text Alignment"}
+                {t("textMode", "textAlignment")}
               </p>
               <div className="flex gap-2">
                 {([
-                  { value: 'left' as TextAlignment, icon: AlignLeft, label: language === "pt-BR" ? 'Esquerda' : language === "es" ? 'Izquierda' : 'Left' },
-                  { value: 'center' as TextAlignment, icon: AlignCenter, label: language === "pt-BR" ? 'Centro' : language === "es" ? 'Centro' : 'Center' },
-                  { value: 'right' as TextAlignment, icon: AlignRight, label: language === "pt-BR" ? 'Direita' : language === "es" ? 'Derecha' : 'Right' }
+                  { value: 'left' as TextAlignment, icon: AlignLeft, label: t("textMode", "left") },
+                  { value: 'center' as TextAlignment, icon: AlignCenter, label: t("textMode", "center") },
+                  { value: 'right' as TextAlignment, icon: AlignRight, label: t("textMode", "right") }
                 ]).map(({ value, icon: Icon, label }) => (
                   <button
                     key={value}
@@ -237,7 +237,7 @@ const TextModeSelector = ({
             {/* Font Selection */}
             <div className="space-y-2">
               <p className="text-sm font-medium">
-                {language === "pt-BR" ? "Fonte" : language === "es" ? "Fuente" : "Font"}
+                {t("textMode", "font")}
               </p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {AVAILABLE_FONTS.map((font) => (
@@ -268,22 +268,14 @@ const TextModeSelector = ({
         ) : (
           <LockedFeature
             requiredPlan="creator"
-            title={language === "pt-BR" ? "Fonte e Alinhamento" : language === "es" ? "Fuente y Alineación" : "Font and Alignment"}
-            description={
-              language === "pt-BR"
-                ? "Personalize a fonte e o alinhamento do texto"
-                : language === "es"
-                ? "Personaliza la fuente y alineación del texto"
-                : "Customize font and text alignment"
-            }
+            title={t("textMode", "fontAndAlignment")}
+            description={t("textMode", "customizeFontAndAlignment")}
             icon={Type}
-            features={
-              language === "pt-BR"
-                ? ["12 fontes exclusivas", "Alinhamento personalizado", "Preview em tempo real"]
-                : language === "es"
-                ? ["12 fuentes exclusivas", "Alineación personalizada", "Vista previa en tiempo real"]
-                : ["12 exclusive fonts", "Custom alignment", "Real-time preview"]
-            }
+            features={[
+              t("textMode", "exclusiveFonts"),
+              t("textMode", "customAlignment"),
+              t("textMode", "realtimePreview")
+            ]}
             hasAccess={false}
           />
         )}

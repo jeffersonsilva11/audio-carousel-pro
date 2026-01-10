@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import NotificationBell from "@/components/NotificationBell";
+import SignOutConfirmDialog from "@/components/SignOutConfirmDialog";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -40,6 +41,10 @@ const Header = () => {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     window.location.href = "/";
+  };
+
+  const handleLogoutFromDialog = async () => {
+    await handleLogout();
   };
 
   const getInitials = (email?: string, name?: string) => {
@@ -140,10 +145,15 @@ const Header = () => {
                       </a>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive">
-                      <LogOut className="mr-2 h-4 w-4" />
-                      {t("nav", "logout", language)}
-                    </DropdownMenuItem>
+                    <SignOutConfirmDialog
+                      onSignOut={handleLogoutFromDialog}
+                      trigger={
+                        <DropdownMenuItem variant="destructive" onSelect={(e) => e.preventDefault()} className="cursor-pointer">
+                          <LogOut className="mr-2 h-4 w-4" />
+                          {t("nav", "logout", language)}
+                        </DropdownMenuItem>
+                      }
+                    />
                   </DropdownMenuContent>
                 </DropdownMenu>
               </>
@@ -187,10 +197,11 @@ const Header = () => {
                         {language === "pt-BR" ? "Configurações" : language === "es" ? "Configuración" : "Settings"}
                       </a>
                     </Button>
-                    <Button variant="ghost" className="w-full" onClick={handleLogout}>
-                      <LogOut className="w-4 h-4 mr-1" />
-                      {t("nav", "logout", language)}
-                    </Button>
+                    <SignOutConfirmDialog
+                      onSignOut={handleLogoutFromDialog}
+                      variant="ghost"
+                      className="w-full justify-start"
+                    />
                   </>
                 ) : (
                   <>

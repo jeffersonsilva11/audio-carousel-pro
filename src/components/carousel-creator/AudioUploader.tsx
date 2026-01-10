@@ -59,6 +59,37 @@ const AudioUploader = ({
     onRecordingStateChange?.(isRecording);
   }, [isRecording, onRecordingStateChange]);
 
+  // Cleanup audio resources on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      // Clean up audio element
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = "";
+        audioRef.current = null;
+      }
+      // Clean up playback interval
+      if (playbackIntervalRef.current) {
+        clearInterval(playbackIntervalRef.current);
+        playbackIntervalRef.current = null;
+      }
+      // Clean up recording interval
+      if (recordingIntervalRef.current) {
+        clearInterval(recordingIntervalRef.current);
+        recordingIntervalRef.current = null;
+      }
+      // Stop media stream tracks
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+      }
+      // Stop media recorder
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        mediaRecorderRef.current.stop();
+      }
+    };
+  }, []);
+
   // Check if max duration reached
   const isMaxDurationReached = totalRecordedTime >= MAX_DURATION;
 
@@ -379,6 +410,7 @@ const AudioUploader = ({
                 size="icon"
                 onClick={togglePlayback}
                 className="rounded-full w-12 h-12"
+                aria-label={isPlaying ? t("audioUploader", "pause") : t("audioUploader", "play")}
               >
                 {isPlaying ? (
                   <Pause className="w-5 h-5" />
@@ -401,6 +433,7 @@ const AudioUploader = ({
               size="icon"
               onClick={removeAudio}
               className="text-muted-foreground hover:text-destructive"
+              aria-label={t("audioUploader", "removeAudio")}
             >
               <Trash2 className="w-5 h-5" />
             </Button>
@@ -477,6 +510,7 @@ const AudioUploader = ({
                   size="lg"
                   className="rounded-full w-14 h-14"
                   onClick={isPaused ? resumeRecording : pauseRecording}
+                  aria-label={isPaused ? t("audioUploader", "resumeRecording") : t("audioUploader", "pauseRecording")}
                 >
                   {isPaused ? (
                     <Mic className="w-6 h-6" />
@@ -504,6 +538,7 @@ const AudioUploader = ({
                 size="lg"
                 className="rounded-full w-14 h-14 text-muted-foreground hover:text-destructive"
                 onClick={cancelRecording}
+                aria-label={t("audioUploader", "cancelRecording")}
               >
                 <Trash2 className="w-5 h-5" />
               </Button>
@@ -535,6 +570,7 @@ const AudioUploader = ({
               className="w-16 h-16 rounded-full mb-4"
               onClick={startRecording}
               disabled={isVerifying}
+              aria-label={t("audioUploader", "startRecording")}
             >
               {isVerifying ? (
                 <Loader2 className="w-6 h-6 animate-spin" />

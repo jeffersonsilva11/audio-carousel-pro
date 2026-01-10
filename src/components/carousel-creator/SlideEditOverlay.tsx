@@ -70,12 +70,15 @@ const SlideEditOverlay = ({
           src={imageUrl}
           alt={`Slide ${slideNumber}`}
           className="w-full h-full object-contain"
+          onError={(e) => {
+            e.currentTarget.style.display = 'none';
+            e.currentTarget.parentElement?.querySelector('.slide-fallback')?.classList.remove('hidden');
+          }}
         />
-      ) : (
-        <div className="w-full h-full flex items-center justify-center bg-muted text-muted-foreground">
-          {language === "pt-BR" ? "Carregando..." : "Loading..."}
-        </div>
-      )}
+      ) : null}
+      <div className={`w-full h-full flex items-center justify-center bg-muted text-muted-foreground slide-fallback ${imageUrl ? 'hidden absolute inset-0' : ''}`}>
+        {language === "pt-BR" ? "Carregando..." : "Loading..."}
+      </div>
 
       {/* Watermark Overlay - Only in edit mode and not locked */}
       {showWatermark && !isLocked && (
@@ -97,17 +100,25 @@ const SlideEditOverlay = ({
 
       {/* Click to Edit Overlay - Only when not editing and not locked */}
       {!isEditing && !isLocked && (
-        <div
+        <button
+          type="button"
           onClick={onStartEdit}
-          className="absolute inset-0 flex items-center justify-center bg-black/0 hover:bg-black/30 transition-all cursor-pointer group"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              onStartEdit();
+            }
+          }}
+          className="absolute inset-0 flex items-center justify-center bg-black/0 hover:bg-black/30 focus:bg-black/30 transition-all cursor-pointer group focus:outline-none focus:ring-2 focus:ring-accent focus:ring-inset"
+          aria-label={language === "pt-BR" ? "Editar slide" : language === "es" ? "Editar slide" : "Edit slide"}
         >
-          <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-background/90 backdrop-blur-sm rounded-lg px-4 py-3 shadow-lg flex items-center gap-2">
+          <div className="opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity bg-background/90 backdrop-blur-sm rounded-lg px-4 py-3 shadow-lg flex items-center gap-2">
             <Edit2 className="w-4 h-4 text-accent" />
             <span className="text-sm font-medium">
               {language === "pt-BR" ? "Clique para editar" : language === "es" ? "Clic para editar" : "Click to edit"}
             </span>
           </div>
-        </div>
+        </button>
       )}
 
       {/* Inline Editor Overlay */}

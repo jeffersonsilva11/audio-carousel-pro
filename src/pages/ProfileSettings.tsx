@@ -44,6 +44,7 @@ import {
   AVATAR_POSITIONS,
   DISPLAY_MODES,
   BRAND,
+  CHARACTER_LIMITS,
   type AvatarPosition,
   type DisplayMode,
   getPositionLabel,
@@ -432,14 +433,17 @@ const ProfileSettings = () => {
                     {/* Name and Username */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="name">Nome</Label>
+                        <Label htmlFor="name">{t("profileIdentity", "name", language)}</Label>
                         <Input
                           id="name"
-                          placeholder="Seu nome"
+                          placeholder={t("profileIdentity", "namePlaceholder", language)}
                           value={name}
                           onChange={(e) => setName(e.target.value)}
-                          maxLength={50}
+                          maxLength={CHARACTER_LIMITS.PROFILE_NAME}
                         />
+                        <span className="text-xs text-muted-foreground">
+                          {name.length}/{CHARACTER_LIMITS.PROFILE_NAME}
+                        </span>
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="username">@username</Label>
@@ -447,13 +451,16 @@ const ProfileSettings = () => {
                           <Instagram className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                           <Input
                             id="username"
-                            placeholder="seuusername"
+                            placeholder={t("profileIdentity", "usernamePlaceholder", language)}
                             value={username}
                             onChange={(e) => setUsername(e.target.value.replace('@', '').replace(/\s/g, ''))}
                             className="pl-10"
-                            maxLength={30}
+                            maxLength={CHARACTER_LIMITS.PROFILE_USERNAME}
                           />
                         </div>
+                        <span className="text-xs text-muted-foreground">
+                          {username.length}/{CHARACTER_LIMITS.PROFILE_USERNAME}
+                        </span>
                       </div>
                     </div>
 

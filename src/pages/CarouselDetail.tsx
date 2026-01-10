@@ -93,6 +93,10 @@ interface CarouselData {
   script: CarouselScript | null;
   language: string | null;
   images_cleaned_at: string | null;
+  // Template fields (Creator+ only)
+  cover_template: string | null;
+  content_template: string | null;
+  template_config: Record<string, unknown> | null;
 }
 
 const CarouselDetail = () => {
@@ -157,7 +161,7 @@ const CarouselDetail = () => {
       });
 
       if (error || data?.error) {
-        throw new Error(data?.error || error?.message || "Error");
+        throw new Error(data?.error || error?.message || t("common", "errorUnexpected"));
       }
 
       toast.success(t("carouselDetail", "watermarkRemoved"));
@@ -396,7 +400,6 @@ const CarouselDetail = () => {
                                 src={url}
                                 alt={`Slide ${index + 1}`}
                                 className="w-full h-full object-contain"
-                                onLoad={() => setCurrentSlide(index)}
                               />
                             </div>
                           </CarouselItem>
@@ -428,9 +431,11 @@ const CarouselDetail = () => {
                 {carousel.image_urls.map((url, index) => (
                   <button
                     key={index}
-                    className="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 border-transparent hover:border-accent/50 transition-colors"
-                    onClick={() => handleDownloadSingle(url, index)}
-                    title={`${t("carouselDetail", "downloadSlide")} ${index + 1}`}
+                    className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-colors ${
+                      currentSlide === index ? "border-accent" : "border-transparent hover:border-accent/50"
+                    }`}
+                    onClick={() => setCurrentSlide(index)}
+                    title={`${t("carouselDetail", "goToSlide")} ${index + 1}`}
                   >
                     <img
                       src={url}
@@ -571,17 +576,17 @@ const CarouselDetail = () => {
                         <DropdownMenuItem onClick={() => setExportFormat("png")} className="cursor-pointer">
                           <ImageIcon className="w-4 h-4 mr-2" />
                           PNG
-                          <span className="ml-2 text-xs text-muted-foreground">(Recomendado)</span>
+                          <span className="ml-2 text-xs text-muted-foreground">{t("carouselPreview", "formatRecommended")}</span>
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => setExportFormat("jpg")} className="cursor-pointer">
                           <ImageIcon className="w-4 h-4 mr-2" />
                           JPG
-                          <span className="ml-2 text-xs text-muted-foreground">(Menor tamanho)</span>
+                          <span className="ml-2 text-xs text-muted-foreground">{t("carouselPreview", "formatSmaller")}</span>
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => setExportFormat("svg")} className="cursor-pointer">
                           <FileImage className="w-4 h-4 mr-2" />
                           SVG
-                          <span className="ml-2 text-xs text-muted-foreground">(Vetorial)</span>
+                          <span className="ml-2 text-xs text-muted-foreground">{t("carouselPreview", "formatVector")}</span>
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>

@@ -65,9 +65,9 @@ const SlidePreview = ({ profile, style, className }: SlidePreviewProps) => {
             )}
           >
             {profile.photoUrl ? (
-              <img 
-                src={profile.photoUrl} 
-                alt="" 
+              <img
+                src={profile.photoUrl}
+                alt={profile.name ? `${profile.name}'s avatar` : "Profile avatar"}
                 className="w-full h-full object-cover"
               />
             ) : (

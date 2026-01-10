@@ -4,11 +4,9 @@ import { supabase } from '@/integrations/supabase/client';
 // reCAPTCHA v3 site key - this is a publishable key
 const RECAPTCHA_SITE_KEY = '6LckrjssAAAAALZUi5LorvDMcL6AqGHsi2wGr10r';
 
-// Check if running in development (localhost)
-const isDevelopment = () => {
-  const hostname = window.location.hostname;
-  return hostname === 'localhost' || hostname === '127.0.0.1' || hostname.startsWith('192.168.');
-};
+// Check if running in development mode using Vite's environment variable
+// This is safe because import.meta.env.DEV is replaced at build time
+const isDevelopment = import.meta.env.DEV;
 
 declare global {
   interface Window {
@@ -76,9 +74,8 @@ export function useRecaptcha() {
   }, [isLoaded]);
 
   const verifyRecaptcha = useCallback(async (action: string): Promise<{ success: boolean; score?: number; error?: string }> => {
-    // Skip reCAPTCHA in development environment
-    if (isDevelopment()) {
-      console.log('[DEV] Skipping reCAPTCHA verification in development mode');
+    // Skip reCAPTCHA in development environment (import.meta.env.DEV is false in production builds)
+    if (isDevelopment) {
       return { success: true, score: 1.0 };
     }
 

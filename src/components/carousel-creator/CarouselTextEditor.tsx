@@ -143,15 +143,13 @@ const CarouselTextEditor = ({
       const scriptData = JSON.parse(JSON.stringify({ slides: slidesToSave }));
       await supabase
         .from("carousels")
-        .update({ 
+        .update({
           script: scriptData,
           updated_at: new Date().toISOString()
         })
         .eq("id", carouselId);
-      
-      console.log("Auto-saved slides");
-    } catch (error) {
-      console.error("Auto-save error:", error);
+    } catch {
+      // Auto-save failed silently - user can manually save
     }
   }, [carouselId, isPro]);
 
@@ -352,8 +350,7 @@ const CarouselTextEditor = ({
           description: t("carouselEditor", "imageUpdated"),
         });
       }
-    } catch (error) {
-      console.error("Regeneration error:", error);
+    } catch {
       toast({
         title: t("carouselEditor", "regenerateError"),
         description: t("carouselEditor", "tryAgain"),
@@ -387,8 +384,7 @@ const CarouselTextEditor = ({
         title: t("carouselPreview", "downloadStarted"),
         description: t("carouselPreview", "slideDownloaded").replace("{number}", String(slide.number)),
       });
-    } catch (error) {
-      console.error("Download error:", error);
+    } catch {
       toast({
         title: t("carouselPreview", "downloadError"),
         description: t("carouselPreview", "couldNotDownload"),
@@ -419,8 +415,8 @@ const CarouselTextEditor = ({
           try {
             const blob = await convertSvgToFormat(slide.imageUrl, { format });
             folder.file(`slide-${slide.number}.${getFileExtension(format)}`, blob);
-          } catch (err) {
-            console.error(`Error converting slide ${slide.number}:`, err);
+          } catch {
+            // Skip failed slide conversions silently
           }
         }
       }
@@ -444,8 +440,7 @@ const CarouselTextEditor = ({
         title: t("carouselPreview", "downloadComplete"),
         description: t("carouselPreview", "zipDownloaded").replace("{count}", String(slides.length)),
       });
-    } catch (error) {
-      console.error("ZIP download error:", error);
+    } catch {
       toast({
         title: t("carouselPreview", "downloadError"),
         description: t("carouselPreview", "couldNotCreateZip"),
@@ -485,12 +480,14 @@ const CarouselTextEditor = ({
                 src={currentSlideData.imageUrl}
                 alt={`${t("carouselPreview", "slide")} ${currentSlide + 1}`}
                 className="w-full h-full object-contain"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
               />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                {t("carouselPreview", "loading")}
-              </div>
-            )}
+            ) : null}
+            <div className={`w-full h-full flex items-center justify-center text-muted-foreground ${currentSlideData?.imageUrl ? 'absolute inset-0' : ''}`}>
+              {t("carouselPreview", "loading")}
+            </div>
 
             {/* Watermark Overlay - Only in edit mode and not locked */}
             {isPro && !isLocked && (
@@ -774,7 +771,7 @@ const CarouselTextEditor = ({
 
       {/* Export Format Selector */}
       <div className="flex items-center justify-center gap-2">
-        <span className="text-sm text-muted-foreground">Formato:</span>
+        <span className="text-sm text-muted-foreground">{t("carouselPreview", "exportFormat")}</span>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="min-w-[100px] justify-between">
@@ -791,17 +788,17 @@ const CarouselTextEditor = ({
             <DropdownMenuItem onClick={() => setExportFormat('png')} className="cursor-pointer">
               <Image className="w-4 h-4 mr-2" />
               PNG
-              <span className="ml-2 text-xs text-muted-foreground">(Recomendado)</span>
+              <span className="ml-2 text-xs text-muted-foreground">{t("carouselPreview", "formatRecommended")}</span>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setExportFormat('jpg')} className="cursor-pointer">
               <Image className="w-4 h-4 mr-2" />
               JPG
-              <span className="ml-2 text-xs text-muted-foreground">(Menor tamanho)</span>
+              <span className="ml-2 text-xs text-muted-foreground">{t("carouselPreview", "formatSmaller")}</span>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setExportFormat('svg')} className="cursor-pointer">
               <FileImage className="w-4 h-4 mr-2" />
               SVG
-              <span className="ml-2 text-xs text-muted-foreground">(Vetorial)</span>
+              <span className="ml-2 text-xs text-muted-foreground">{t("carouselPreview", "formatVector")}</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
