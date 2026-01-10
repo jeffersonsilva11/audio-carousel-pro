@@ -161,6 +161,7 @@ const CarouselDownloadView = ({ slides, isPro = false }: CarouselDownloadViewPro
             <button
               onClick={() => goToSlide(currentSlide - 1)}
               disabled={currentSlide === 0}
+              aria-label={t("carouselPreview", "previousSlide")}
               className={cn(
                 "absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-background/80 backdrop-blur flex items-center justify-center transition-opacity",
                 currentSlide === 0 ? "opacity-30 cursor-not-allowed" : "hover:bg-background"
@@ -172,6 +173,7 @@ const CarouselDownloadView = ({ slides, isPro = false }: CarouselDownloadViewPro
             <button
               onClick={() => goToSlide(currentSlide + 1)}
               disabled={currentSlide === slides.length - 1}
+              aria-label={t("carouselPreview", "nextSlide")}
               className={cn(
                 "absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-background/80 backdrop-blur flex items-center justify-center transition-opacity",
                 currentSlide === slides.length - 1 ? "opacity-30 cursor-not-allowed" : "hover:bg-background"

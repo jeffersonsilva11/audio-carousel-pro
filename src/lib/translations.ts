@@ -1284,6 +1284,41 @@ export const translations = {
       en: "Playing...",
       es: "Reproduciendo...",
     },
+    play: {
+      "pt-BR": "Reproduzir áudio",
+      en: "Play audio",
+      es: "Reproducir audio",
+    },
+    pause: {
+      "pt-BR": "Pausar áudio",
+      en: "Pause audio",
+      es: "Pausar audio",
+    },
+    removeAudio: {
+      "pt-BR": "Remover áudio",
+      en: "Remove audio",
+      es: "Eliminar audio",
+    },
+    startRecording: {
+      "pt-BR": "Iniciar gravação",
+      en: "Start recording",
+      es: "Iniciar grabación",
+    },
+    pauseRecording: {
+      "pt-BR": "Pausar gravação",
+      en: "Pause recording",
+      es: "Pausar grabación",
+    },
+    resumeRecording: {
+      "pt-BR": "Continuar gravação",
+      en: "Resume recording",
+      es: "Continuar grabación",
+    },
+    cancelRecording: {
+      "pt-BR": "Cancelar gravação",
+      en: "Cancel recording",
+      es: "Cancelar grabación",
+    },
   },
 
   // Tone Selector
@@ -1568,6 +1603,21 @@ export const translations = {
       "pt-BR": "Texto do slide {number}:",
       en: "Slide {number} text:",
       es: "Texto de la diapositiva {number}:",
+    },
+    previousSlide: {
+      "pt-BR": "Slide anterior",
+      en: "Previous slide",
+      es: "Diapositiva anterior",
+    },
+    nextSlide: {
+      "pt-BR": "Próximo slide",
+      en: "Next slide",
+      es: "Siguiente diapositiva",
+    },
+    goToSlide: {
+      "pt-BR": "Ir para slide {number}",
+      en: "Go to slide {number}",
+      es: "Ir a diapositiva {number}",
     },
   },
 
@@ -2432,6 +2482,11 @@ export const translations = {
       "pt-BR": "Erro no download em lote",
       en: "Batch download error",
       es: "Error en la descarga por lotes",
+    },
+    preview: {
+      "pt-BR": "Visualizar",
+      en: "Preview",
+      es: "Vista previa",
     },
   },
 
