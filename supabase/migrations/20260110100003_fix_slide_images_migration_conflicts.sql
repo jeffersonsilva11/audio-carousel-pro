@@ -71,10 +71,10 @@ USING (
 );
 
 -- ============================================================================
--- STEP 4: Create cleanup_queue table (must exist before trigger function)
+-- STEP 4: Create cleanup_queue table in PUBLIC schema (storage schema is managed by Supabase)
 -- ============================================================================
 
-CREATE TABLE IF NOT EXISTS storage.cleanup_queue (
+CREATE TABLE IF NOT EXISTS public.storage_cleanup_queue (
   id SERIAL PRIMARY KEY,
   bucket_id TEXT NOT NULL,
   path_prefix TEXT NOT NULL,
@@ -83,10 +83,21 @@ CREATE TABLE IF NOT EXISTS storage.cleanup_queue (
   CONSTRAINT unique_cleanup_path UNIQUE (bucket_id, path_prefix)
 );
 
-COMMENT ON TABLE storage.cleanup_queue IS
+COMMENT ON TABLE public.storage_cleanup_queue IS
 'Queue for storage file cleanup. Entries are added when carousels are deleted.
 Path format: {user_id}/slides/{timestamp}-slide-{index}.{ext}
 Process with edge function or cron job to actually delete files.';
+
+-- Enable RLS on cleanup queue
+ALTER TABLE public.storage_cleanup_queue ENABLE ROW LEVEL SECURITY;
+
+-- Only service role can manage cleanup queue
+CREATE POLICY "Service role can manage cleanup queue"
+ON public.storage_cleanup_queue
+FOR ALL
+TO service_role
+USING (true)
+WITH CHECK (true);
 
 -- ============================================================================
 -- STEP 5: Drop and recreate cleanup trigger function
@@ -121,7 +132,7 @@ BEGIN
           storage_path := substring(slide_url from bucket_base || '(.+)$');
 
           IF storage_path IS NOT NULL AND storage_path != '' THEN
-            INSERT INTO storage.cleanup_queue (bucket_id, path_prefix, created_at)
+            INSERT INTO public.storage_cleanup_queue (bucket_id, path_prefix, created_at)
             VALUES ('slide-images', storage_path, NOW())
             ON CONFLICT (bucket_id, path_prefix) DO NOTHING;
           END IF;
@@ -131,7 +142,7 @@ BEGIN
   END IF;
 
   -- Also queue paths from carousel_slide_images table (if records exist)
-  INSERT INTO storage.cleanup_queue (bucket_id, path_prefix, created_at)
+  INSERT INTO public.storage_cleanup_queue (bucket_id, path_prefix, created_at)
   SELECT 'slide-images', storage_path, NOW()
   FROM carousel_slide_images
   WHERE carousel_id = OLD.id
