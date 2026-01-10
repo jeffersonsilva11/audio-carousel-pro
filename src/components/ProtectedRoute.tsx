@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useAdminAccess } from "@/hooks/useAdminAccess";
 import { Loader2 } from "lucide-react";
 
 interface ProtectedRouteProps {
@@ -13,10 +14,12 @@ interface ProtectedRouteProps {
  * Redirects unauthenticated users to /auth and optionally checks for admin role.
  */
 const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps) => {
-  const { user, loading, isAdmin } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const { isAdmin, loading: adminLoading } = useAdminAccess();
   const location = useLocation();
 
   // Show loading spinner while checking auth state
+  const loading = authLoading || (requireAdmin && adminLoading);
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
