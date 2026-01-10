@@ -48,7 +48,7 @@ const SlideImageUploader = ({
   const fileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
 
-  const langKey = language === "pt-BR" ? "pt" : "en";
+  const langKey = language === "pt-BR" ? "pt" : language === "es" ? "es" : "en";
 
   // Translations
   const translations = {
@@ -70,6 +70,8 @@ const SlideImageUploader = ({
       fileTooLargeDesc: "O tamanho máximo é 5MB",
       lockedTitle: "Upload de Imagens",
       lockedDesc: "Faça upload de imagens personalizadas para cada slide",
+      noImagesTitle: "Sem imagens necessárias",
+      noImagesDesc: "Os templates selecionados não requerem upload de imagens.",
     },
     en: {
       title: "Slide Images",
@@ -89,10 +91,33 @@ const SlideImageUploader = ({
       fileTooLargeDesc: "Maximum size is 5MB",
       lockedTitle: "Image Upload",
       lockedDesc: "Upload custom images for each slide",
+      noImagesTitle: "No images required",
+      noImagesDesc: "The selected templates don't require image uploads.",
+    },
+    es: {
+      title: "Imágenes de Diapositivas",
+      subtitle: "Sube imágenes para cada diapositiva que requiera una imagen",
+      coverSlide: "Portada",
+      contentSlide: "Diapositiva",
+      uploadImage: "Subir imagen",
+      removeImage: "Eliminar",
+      requiresImage: "Requiere imagen",
+      noImageRequired: "No requiere imagen",
+      uploadingImage: "Subiendo...",
+      uploadSuccess: "Imagen subida correctamente",
+      uploadError: "Error al subir imagen",
+      invalidFile: "Archivo inválido",
+      invalidFileDesc: "Por favor, sube una imagen (JPG, PNG, WebP)",
+      fileTooLarge: "Archivo muy grande",
+      fileTooLargeDesc: "El tamaño máximo es 5MB",
+      lockedTitle: "Subida de Imágenes",
+      lockedDesc: "Sube imágenes personalizadas para cada diapositiva",
+      noImagesTitle: "Sin imágenes necesarias",
+      noImagesDesc: "Las plantillas seleccionadas no requieren subida de imágenes.",
     },
   };
 
-  const t = translations[langKey];
+  const t = translations[langKey as keyof typeof translations];
 
   // Determine which slides require images based on templates
   const getSlidesRequiringImages = () => {
@@ -239,12 +264,10 @@ const SlideImageUploader = ({
           <Info className="w-5 h-5 text-muted-foreground mt-0.5" />
           <div>
             <h4 className="font-medium text-sm">
-              {langKey === "pt" ? "Sem imagens necessárias" : "No images required"}
+              {t.noImagesTitle}
             </h4>
             <p className="text-sm text-muted-foreground">
-              {langKey === "pt"
-                ? "Os templates selecionados não requerem upload de imagens."
-                : "The selected templates don't require image uploads."}
+              {t.noImagesDesc}
             </p>
           </div>
         </div>

@@ -237,8 +237,10 @@ export interface TemplateMetadata {
   category: TemplateCategory;
   namePt: string;
   nameEn: string;
+  nameEs: string;
   descriptionPt: string;
   descriptionEn: string;
+  descriptionEs: string;
   requiresImage: boolean;
   maxImages: number;
   minPlanTier: 'free' | 'starter' | 'creator' | 'agency';
@@ -250,8 +252,10 @@ export const COVER_TEMPLATES: Record<CoverTemplateType, TemplateMetadata> = {
     category: 'cover',
     namePt: 'Imagem Completa',
     nameEn: 'Full Image',
+    nameEs: 'Imagen Completa',
     descriptionPt: 'Imagem de fundo cobrindo todo o slide com texto sobreposto',
     descriptionEn: 'Full background image with overlaid text',
+    descriptionEs: 'Imagen de fondo cubriendo toda la diapositiva con texto superpuesto',
     requiresImage: true,
     maxImages: 1,
     minPlanTier: 'creator',
@@ -261,8 +265,10 @@ export const COVER_TEMPLATES: Record<CoverTemplateType, TemplateMetadata> = {
     category: 'cover',
     namePt: 'Imagens Divididas',
     nameEn: 'Split Images',
+    nameEs: 'Imágenes Divididas',
     descriptionPt: 'Layout com múltiplas imagens em grid',
     descriptionEn: 'Layout with multiple images in grid',
+    descriptionEs: 'Diseño con múltiples imágenes en cuadrícula',
     requiresImage: true,
     maxImages: 4,
     minPlanTier: 'creator',
@@ -272,8 +278,10 @@ export const COVER_TEMPLATES: Record<CoverTemplateType, TemplateMetadata> = {
     category: 'cover',
     namePt: 'Gradiente Sobreposto',
     nameEn: 'Gradient Overlay',
+    nameEs: 'Degradado Superpuesto',
     descriptionPt: 'Imagem com gradiente colorido sobreposto',
     descriptionEn: 'Image with colorful gradient overlay',
+    descriptionEs: 'Imagen con degradado de color superpuesto',
     requiresImage: true,
     maxImages: 1,
     minPlanTier: 'creator',
@@ -286,8 +294,10 @@ export const CONTENT_TEMPLATES: Record<ContentTemplateType, TemplateMetadata> = 
     category: 'content',
     namePt: 'Apenas Texto',
     nameEn: 'Text Only',
+    nameEs: 'Solo Texto',
     descriptionPt: 'Slide com fundo sólido ou gradiente, apenas texto',
     descriptionEn: 'Slide with solid or gradient background, text only',
+    descriptionEs: 'Diapositiva con fondo sólido o degradado, solo texto',
     requiresImage: false,
     maxImages: 0,
     minPlanTier: 'free',
@@ -297,8 +307,10 @@ export const CONTENT_TEMPLATES: Record<ContentTemplateType, TemplateMetadata> = 
     category: 'content',
     namePt: 'Imagem no Topo',
     nameEn: 'Image Top',
+    nameEs: 'Imagen Arriba',
     descriptionPt: 'Imagem na parte superior, texto abaixo',
     descriptionEn: 'Image at top, text below',
+    descriptionEs: 'Imagen en la parte superior, texto debajo',
     requiresImage: true,
     maxImages: 1,
     minPlanTier: 'creator',
@@ -308,8 +320,10 @@ export const CONTENT_TEMPLATES: Record<ContentTemplateType, TemplateMetadata> = 
     category: 'content',
     namePt: 'Texto no Topo',
     nameEn: 'Text Top',
+    nameEs: 'Texto Arriba',
     descriptionPt: 'Texto na parte superior, imagem abaixo',
     descriptionEn: 'Text at top, image below',
+    descriptionEs: 'Texto en la parte superior, imagen debajo',
     requiresImage: true,
     maxImages: 1,
     minPlanTier: 'creator',
@@ -319,8 +333,10 @@ export const CONTENT_TEMPLATES: Record<ContentTemplateType, TemplateMetadata> = 
     category: 'content',
     namePt: 'Dividido 50/50',
     nameEn: 'Split 50/50',
+    nameEs: 'Dividido 50/50',
     descriptionPt: 'Imagem à esquerda, texto à direita (50/50)',
     descriptionEn: 'Image on left, text on right (50/50)',
+    descriptionEs: 'Imagen a la izquierda, texto a la derecha (50/50)',
     requiresImage: true,
     maxImages: 1,
     minPlanTier: 'creator',
@@ -404,11 +420,18 @@ export function getTemplateMetadata(
  */
 export function getTemplateName(
   templateType: CoverTemplateType | ContentTemplateType,
-  language: 'pt' | 'en' = 'pt'
+  language: 'pt' | 'en' | 'es' = 'pt'
 ): string {
   const metadata = getTemplateMetadata(templateType);
   if (!metadata) return templateType;
-  return language === 'pt' ? metadata.namePt : metadata.nameEn;
+  switch (language) {
+    case 'es':
+      return metadata.nameEs;
+    case 'en':
+      return metadata.nameEn;
+    default:
+      return metadata.namePt;
+  }
 }
 
 /**
@@ -416,11 +439,18 @@ export function getTemplateName(
  */
 export function getTemplateDescription(
   templateType: CoverTemplateType | ContentTemplateType,
-  language: 'pt' | 'en' = 'pt'
+  language: 'pt' | 'en' | 'es' = 'pt'
 ): string {
   const metadata = getTemplateMetadata(templateType);
   if (!metadata) return '';
-  return language === 'pt' ? metadata.descriptionPt : metadata.descriptionEn;
+  switch (language) {
+    case 'es':
+      return metadata.descriptionEs;
+    case 'en':
+      return metadata.descriptionEn;
+    default:
+      return metadata.descriptionPt;
+  }
 }
 
 /**

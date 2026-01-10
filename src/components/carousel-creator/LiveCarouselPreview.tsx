@@ -4,8 +4,9 @@ import { StyleType } from "./StyleSelector";
 import { FormatType } from "./FormatSelector";
 import { TemplateId, GRADIENT_PRESETS, AVAILABLE_FONTS, FontId, GradientId } from "@/lib/constants";
 import { TextAlignment } from "./AdvancedTemplateEditor";
+import { CoverTemplateType, ContentTemplateType, templateRequiresImage } from "@/lib/templates";
 import { motion } from "framer-motion";
-import { Eye, ChevronLeft, ChevronRight } from "lucide-react";
+import { Eye, ChevronLeft, ChevronRight, ImageIcon } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -24,6 +25,9 @@ interface LiveCarouselPreviewProps {
   gradientId?: GradientId;
   customGradientColors?: string[];
   textAlignment?: TextAlignment;
+  // New layout template props (Creator+ only)
+  coverTemplate?: CoverTemplateType;
+  contentTemplate?: ContentTemplateType;
 }
 
 // Sample content for different tones (simulated preview)
@@ -66,12 +70,20 @@ const LiveCarouselPreview = ({
   gradientId = 'none',
   customGradientColors,
   textAlignment = 'center',
+  coverTemplate = 'cover_full_image',
+  contentTemplate = 'content_text_only',
 }: LiveCarouselPreviewProps) => {
   const { language } = useLanguage();
   const [currentSlide, setCurrentSlide] = useState(0);
 
   const isDark = style === "BLACK_WHITE";
   const hasGradient = gradientId && gradientId !== 'none';
+
+  // Check if current slide uses a template that requires images
+  const isCoverSlide = currentSlide === 0;
+  const currentTemplateRequiresImage = isCoverSlide
+    ? templateRequiresImage(coverTemplate)
+    : templateRequiresImage(contentTemplate);
 
   // Get gradient colors
   const getGradientColors = (): string[] | null => {
@@ -178,7 +190,7 @@ const LiveCarouselPreview = ({
       {/* Preview Card */}
       <div className="relative">
         <motion.div
-          key={`${style}-${format}-${currentSlide}-${gradientId}-${fontId}-${textAlignment}`}
+          key={`${style}-${format}-${currentSlide}-${gradientId}-${fontId}-${textAlignment}-${coverTemplate}-${contentTemplate}`}
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.2 }}
@@ -245,33 +257,138 @@ const LiveCarouselPreview = ({
             </div>
           )}
 
-          {/* Content */}
-          <div
-            className={cn(
-              "absolute inset-0 flex items-center justify-center px-4",
-              textColor
-            )}
-          >
-            <div className={cn("space-y-1 w-full", textAlignClass)}>
-              {isSignatureSlide ? (
+          {/* Content - Layout varies based on template */}
+          {isCoverSlide ? (
+            // Cover slide layouts
+            <div className={cn("absolute inset-0 flex flex-col", textColor)}>
+              {coverTemplate === 'cover_split_images' ? (
+                // 2x2 grid layout
                 <>
-                  {profile.name && (
-                    <p className="text-sm font-semibold">{profile.name}</p>
-                  )}
-                  {profile.username && (
-                    <p className={cn("text-xs", mutedColor)}>@{profile.username}</p>
-                  )}
+                  <div className="grid grid-cols-2 gap-1 p-2 pt-8 flex-1">
+                    {[0, 1, 2, 3].map((i) => (
+                      <div
+                        key={i}
+                        className={cn(
+                          "rounded flex items-center justify-center",
+                          isDark ? "bg-white/10" : "bg-black/5"
+                        )}
+                      >
+                        <ImageIcon className="w-3 h-3 opacity-30" />
+                      </div>
+                    ))}
+                  </div>
+                  <div className={cn("p-2 pb-4", textAlignClass)}>
+                    <p className="text-[10px] font-semibold leading-tight">
+                      {currentContent?.text}
+                    </p>
+                  </div>
+                </>
+              ) : coverTemplate === 'cover_gradient_overlay' ? (
+                // Gradient overlay with centered text
+                <>
+                  <div className="absolute inset-0 bg-gradient-to-b from-accent/40 to-black/80" />
+                  <div className="absolute inset-0 flex items-center justify-center p-4">
+                    <p className={cn("text-xs font-bold text-center text-white drop-shadow-lg")}>
+                      {currentContent?.text}
+                    </p>
+                  </div>
                 </>
               ) : (
-                <p className="text-xs font-medium leading-relaxed px-2">
-                  {currentContent?.text}
-                </p>
+                // Default full image layout
+                <>
+                  {currentTemplateRequiresImage && (
+                    <div className={cn(
+                      "absolute inset-0 flex items-center justify-center",
+                      isDark ? "bg-white/5" : "bg-black/5"
+                    )}>
+                      <ImageIcon className="w-6 h-6 opacity-20" />
+                    </div>
+                  )}
+                  <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/60 to-transparent">
+                    <p className={cn("text-xs font-semibold text-white", textAlignClass)}>
+                      {currentContent?.text}
+                    </p>
+                  </div>
+                </>
               )}
             </div>
-          </div>
+          ) : (
+            // Content slide layouts
+            <div className={cn("absolute inset-0 flex", textColor)}>
+              {contentTemplate === 'content_image_top' ? (
+                // Image top, text bottom
+                <div className="flex flex-col w-full">
+                  <div className={cn(
+                    "flex-1 m-2 mt-8 rounded flex items-center justify-center",
+                    isDark ? "bg-white/10" : "bg-black/5"
+                  )}>
+                    <ImageIcon className="w-4 h-4 opacity-30" />
+                  </div>
+                  <div className={cn("p-2 pb-4", textAlignClass)}>
+                    <p className="text-[9px] leading-relaxed">
+                      {isSignatureSlide ? `@${profile.username}` : currentContent?.text}
+                    </p>
+                  </div>
+                </div>
+              ) : contentTemplate === 'content_text_top' ? (
+                // Text top, image bottom
+                <div className="flex flex-col w-full">
+                  <div className={cn("p-2 pt-8", textAlignClass)}>
+                    <p className="text-[9px] leading-relaxed">
+                      {isSignatureSlide ? `@${profile.username}` : currentContent?.text}
+                    </p>
+                  </div>
+                  <div className={cn(
+                    "flex-1 m-2 mb-4 rounded flex items-center justify-center",
+                    isDark ? "bg-white/10" : "bg-black/5"
+                  )}>
+                    <ImageIcon className="w-4 h-4 opacity-30" />
+                  </div>
+                </div>
+              ) : contentTemplate === 'content_split' ? (
+                // Split layout (alternating sides)
+                <div className={cn(
+                  "flex w-full pt-8 pb-4 gap-1 px-1",
+                  currentSlide % 2 === 0 ? "flex-row" : "flex-row-reverse"
+                )}>
+                  <div className={cn(
+                    "w-1/2 rounded flex items-center justify-center",
+                    isDark ? "bg-white/10" : "bg-black/5"
+                  )}>
+                    <ImageIcon className="w-3 h-3 opacity-30" />
+                  </div>
+                  <div className={cn("w-1/2 flex items-center p-1", textAlignClass)}>
+                    <p className="text-[8px] leading-relaxed">
+                      {isSignatureSlide ? `@${profile.username}` : currentContent?.text}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                // Default text only
+                <div className="flex items-center justify-center w-full px-4">
+                  <div className={cn("space-y-1 w-full", textAlignClass)}>
+                    {isSignatureSlide ? (
+                      <>
+                        {profile.name && (
+                          <p className="text-sm font-semibold">{profile.name}</p>
+                        )}
+                        {profile.username && (
+                          <p className={cn("text-xs", mutedColor)}>@{profile.username}</p>
+                        )}
+                      </>
+                    ) : (
+                      <p className="text-xs font-medium leading-relaxed px-2">
+                        {currentContent?.text}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
-          {/* Template indicator */}
-          {template === "gradient" && (
+          {/* Legacy template indicator */}
+          {template === "gradient" && !hasGradient && (
             <div className="absolute inset-0 bg-gradient-to-br from-accent/20 to-primary/20 pointer-events-none" />
           )}
         </motion.div>

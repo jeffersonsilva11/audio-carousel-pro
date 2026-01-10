@@ -2,13 +2,14 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { TextModeId } from "@/lib/constants";
 import { CreativeTone } from "@/components/carousel-creator/TextModeSelector";
+import { CoverTemplateType, ContentTemplateType } from "@/lib/templates";
 
-export type ProcessingStatus = 
-  | "QUEUED" 
-  | "TRANSCRIBING" 
-  | "SCRIPTING" 
-  | "GENERATING" 
-  | "COMPLETED" 
+export type ProcessingStatus =
+  | "QUEUED"
+  | "TRANSCRIBING"
+  | "SCRIPTING"
+  | "GENERATING"
+  | "COMPLETED"
   | "FAILED";
 
 interface Slide {
@@ -37,9 +38,8 @@ export interface ProfileIdentity {
   displayMode: 'name_and_username' | 'username_only';
 }
 
-// Layout template types (Creator+ only)
-export type CoverTemplateType = 'cover_full_image' | 'cover_split_images' | 'cover_gradient_overlay';
-export type ContentTemplateType = 'content_image_top' | 'content_text_top' | 'content_split' | 'content_text_only';
+// Re-export template types for consumers
+export type { CoverTemplateType, ContentTemplateType };
 
 export interface CarouselGenerationOptions {
   audioFile: File;
@@ -182,6 +182,17 @@ export function useCarouselGeneration() {
         slide_count: slides.length,
         image_urls: imagesData.imageUrls,
         has_watermark: hasWatermark,
+        // Save template configuration for future edits
+        template_config: customization ? {
+          fontId: customization.fontId,
+          gradientId: customization.gradientId,
+          customGradientColors: customization.customGradientColors,
+          textAlignment: customization.textAlignment,
+          showNavigationDots: customization.showNavigationDots,
+          showNavigationArrow: customization.showNavigationArrow,
+          coverTemplate: customization.coverTemplate,
+          contentTemplate: customization.contentTemplate,
+        } : null,
       }).eq("id", carouselId);
 
       const generationResult: GenerationResult = {

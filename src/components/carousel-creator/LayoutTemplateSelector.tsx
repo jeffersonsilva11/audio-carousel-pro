@@ -35,7 +35,7 @@ const LayoutTemplateSelector = ({
   const { plan } = useSubscription();
   const [activeTab, setActiveTab] = useState<"cover" | "content">("cover");
 
-  const langKey = language === "pt-BR" ? "pt" : "en";
+  const langKey = language === "pt-BR" ? "pt" : language === "es" ? "es" : "en";
 
   // Translations
   const translations = {
@@ -81,9 +81,30 @@ const LayoutTemplateSelector = ({
       default: "Default",
       imageNote: "Images will be requested in the preview step",
     },
+    es: {
+      title: "Plantillas de Diseño",
+      subtitle: "Elige el estilo visual de tu carrusel",
+      coverTab: "Portada",
+      contentTab: "Contenido",
+      coverDescription: "Plantilla para la primera diapositiva (portada)",
+      contentDescription: "Plantilla para las diapositivas de contenido",
+      requiresImage: "Requiere subir imagen",
+      noImageRequired: "No requiere imagen",
+      lockedTitle: "Plantillas de Diseño",
+      lockedDescription: "Personaliza el diseño de tus carruseles con plantillas premium",
+      lockedFeatures: [
+        "3 plantillas de portada",
+        "4 plantillas de contenido",
+        "Subida de imágenes por diapositiva",
+        "Diseños profesionales",
+      ],
+      selected: "Seleccionado",
+      default: "Predeterminado",
+      imageNote: "Las imágenes se solicitarán en el paso de vista previa",
+    },
   };
 
-  const t = translations[langKey];
+  const t = translations[langKey as keyof typeof translations];
 
   // Show locked state for non-Creator users
   if (!isCreator) {

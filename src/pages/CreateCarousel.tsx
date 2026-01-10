@@ -637,6 +637,9 @@ const CreateCarousel = () => {
           audio_duration: audioDuration,
           status: "TRANSCRIBING",
           has_watermark: !isPro,
+          // Save template selections (Creator+ only)
+          cover_template: isCreator ? coverTemplate : 'cover_full_image',
+          content_template: isCreator ? contentTemplate : 'content_text_only',
         })
         .select()
         .single();
@@ -1079,6 +1082,8 @@ const CreateCarousel = () => {
                       gradientId={templateCustomization.gradientId}
                       customGradientColors={templateCustomization.customGradientColors}
                       textAlignment={templateCustomization.textAlignment}
+                      coverTemplate={coverTemplate}
+                      contentTemplate={contentTemplate}
                     />
                   </div>
                 </div>
@@ -1097,6 +1102,8 @@ const CreateCarousel = () => {
                   gradientId={templateCustomization.gradientId}
                   customGradientColors={templateCustomization.customGradientColors}
                   textAlignment={templateCustomization.textAlignment}
+                  coverTemplate={coverTemplate}
+                  contentTemplate={contentTemplate}
                 />
               </div>
             </>
