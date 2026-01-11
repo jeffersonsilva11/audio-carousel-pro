@@ -7,7 +7,7 @@ import { TextAlignment, VerticalAlignment } from "./AdvancedTemplateEditor";
 import { CoverTemplateType, ContentTemplateType, templateRequiresImage } from "@/lib/templates";
 import { motion } from "framer-motion";
 import { Eye, ChevronLeft, ChevronRight, ImageIcon } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/hooks/useLanguage";
 import { t } from "@/lib/translations";
@@ -29,6 +29,8 @@ interface LiveCarouselPreviewProps {
   // New layout template props (Creator+ only)
   coverTemplate?: CoverTemplateType;
   contentTemplate?: ContentTemplateType;
+  // Auto-navigation: 'cover' shows slide 0, 'content' shows slide 1
+  focusSection?: 'cover' | 'content' | null;
 }
 
 // Sample content for different tones (simulated preview) - using translations
@@ -72,11 +74,21 @@ const LiveCarouselPreview = ({
   customGradientColors,
   textAlignment = 'center',
   verticalAlignment = 'middle',
-  coverTemplate = 'cover_full_image',
+  coverTemplate = 'cover_solid_color',
   contentTemplate = 'content_text_only',
+  focusSection = null,
 }: LiveCarouselPreviewProps) => {
   const { language } = useLanguage();
   const [currentSlide, setCurrentSlide] = useState(0);
+
+  // Auto-navigate to appropriate slide when focusSection changes
+  useEffect(() => {
+    if (focusSection === 'cover' && currentSlide !== 0) {
+      setCurrentSlide(0);
+    } else if (focusSection === 'content' && currentSlide === 0) {
+      setCurrentSlide(1);
+    }
+  }, [focusSection]);
 
   const isDark = style === "BLACK_WHITE";
   const hasGradient = gradientId && gradientId !== 'none';
@@ -304,9 +316,12 @@ const LiveCarouselPreview = ({
                   </div>
                 </>
               ) : coverTemplate === 'cover_solid_color' ? (
-                // Solid color with centered text (no image required)
-                <div className={cn("absolute inset-0 flex items-center justify-center p-4", verticalAlignClass)}>
-                  <p className={cn("text-xs font-bold", textAlignClass)}>
+                // Solid color with centered text (no image required) - uses both alignments
+                <div className={cn(
+                  "absolute inset-0 flex flex-col p-4",
+                  verticalAlignClass
+                )}>
+                  <p className={cn("text-xs font-bold w-full", textAlignClass)}>
                     {currentContent?.text}
                   </p>
                 </div>

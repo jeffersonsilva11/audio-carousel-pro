@@ -103,6 +103,9 @@ const CreateCarousel = () => {
   const [audioRestoredFromStorage, setAudioRestoredFromStorage] = useState(false);
   const [showRecoveryBanner, setShowRecoveryBanner] = useState(false);
 
+  // Preview focus section - auto-navigates preview when editing cover/content
+  const [previewFocusSection, setPreviewFocusSection] = useState<'cover' | 'content' | null>(null);
+
   // Profile identity state - initialized from preferences
   const [profileIdentity, setProfileIdentity] = useState<ProfileIdentity>({
     name: '',
@@ -1123,7 +1126,11 @@ const CreateCarousel = () => {
                   </div>
 
                   {/* 7. Cover Customization - Creator+ only (unified: template + background) */}
-                  <div className="border-t border-border pt-8">
+                  <div
+                    className="border-t border-border pt-8"
+                    onMouseEnter={() => setPreviewFocusSection('cover')}
+                    onFocus={() => setPreviewFocusSection('cover')}
+                  >
                     <CoverCustomization
                       selectedCoverTemplate={coverTemplate}
                       onCoverTemplateChange={setCoverTemplate}
@@ -1148,7 +1155,11 @@ const CreateCarousel = () => {
                   </div>
 
                   {/* 8. Content Customization - Creator+ only */}
-                  <div className="border-t border-border pt-8">
+                  <div
+                    className="border-t border-border pt-8"
+                    onMouseEnter={() => setPreviewFocusSection('content')}
+                    onFocus={() => setPreviewFocusSection('content')}
+                  >
                     <ContentCustomization
                       selectedContentTemplate={contentTemplate}
                       onContentTemplateChange={setContentTemplate}
@@ -1204,6 +1215,7 @@ const CreateCarousel = () => {
                       verticalAlignment={templateCustomization.verticalAlignment}
                       coverTemplate={coverTemplate}
                       contentTemplate={contentTemplate}
+                      focusSection={previewFocusSection}
                     />
                   </div>
                 </div>
@@ -1225,6 +1237,7 @@ const CreateCarousel = () => {
                   verticalAlignment={templateCustomization.verticalAlignment}
                   coverTemplate={coverTemplate}
                   contentTemplate={contentTemplate}
+                  focusSection={previewFocusSection}
                 />
               </div>
             </>
