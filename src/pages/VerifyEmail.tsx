@@ -194,11 +194,25 @@ const VerifyEmail = () => {
           variant: "destructive",
         });
       } else {
+        // Check if existing valid token was found (don't send new email)
+        const isExistingToken = response.data?.provider === "existing_token";
+        const hint = response.data?.hint;
+
         toast({
-          title: t("verifyEmail", "codeResent", language),
-          description: t("verifyEmail", "checkInbox", language),
+          title: isExistingToken
+            ? (language === "pt-BR" ? "Código já enviado" : language === "es" ? "Código ya enviado" : "Code already sent")
+            : t("verifyEmail", "codeResent", language),
+          description: hint || t("verifyEmail", "checkInbox", language),
         });
-        setResendCooldown(60); // 60 seconds cooldown
+
+        // Set cooldown based on remaining minutes for existing token
+        const remainingMinutes = response.data?.remainingMinutes;
+        if (isExistingToken && remainingMinutes) {
+          // Set a shorter cooldown for existing token case (just to prevent spam clicking)
+          setResendCooldown(30);
+        } else {
+          setResendCooldown(60); // 60 seconds cooldown for new token
+        }
       }
     } catch {
       toast({

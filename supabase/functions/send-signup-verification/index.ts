@@ -100,6 +100,40 @@ serve(async (req) => {
 
     logStep("Signup verification requested", { userId, email });
 
+    // Check if there's already a valid (unexpired, unused) token for this email
+    const { data: existingToken } = await supabaseClient
+      .from("email_verification_tokens")
+      .select("id, expires_at, created_at")
+      .eq("email", email)
+      .is("verified_at", null)
+      .gt("expires_at", new Date().toISOString())
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single();
+
+    if (existingToken) {
+      // Calculate remaining time
+      const expiresAt = new Date(existingToken.expires_at);
+      const remainingMinutes = Math.round((expiresAt.getTime() - Date.now()) / (1000 * 60));
+
+      logStep("Valid token already exists", {
+        email,
+        tokenId: existingToken.id,
+        remainingMinutes
+      });
+
+      return new Response(JSON.stringify({
+        success: true,
+        provider: "existing_token",
+        message: "Um código de verificação válido já foi enviado para seu e-mail.",
+        remainingMinutes,
+        hint: "Verifique sua caixa de entrada ou spam. O código expira em " + remainingMinutes + " minutos."
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
     // Check rate limiting - max 5 requests per 10 minutes per email
     // This allows reasonable usage while preventing abuse
     const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -20,6 +21,10 @@ import {
   CheckCircle,
   Clock,
   Info,
+  RefreshCw,
+  Eye,
+  XCircle,
+  RotateCcw,
 } from "lucide-react";
 import {
   Dialog,
@@ -34,6 +39,14 @@ import {
   AlertDescription,
   AlertTitle,
 } from "@/components/ui/alert";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface PlanCount {
   plan_id: string;
@@ -57,6 +70,13 @@ interface BroadcastJob {
   email_subject_pt?: string;
 }
 
+interface FailedRecipient {
+  id: string;
+  email: string;
+  error_message: string | null;
+  created_at: string;
+}
+
 // Character limits
 const LIMITS = {
   notificationTitle: 100,
@@ -66,6 +86,9 @@ const LIMITS = {
   emailContent: 5000,
 };
 
+// Polling interval for real-time updates (5 seconds)
+const POLLING_INTERVAL = 5000;
+
 const BroadcastManager = () => {
   const [activeTab, setActiveTab] = useState<"notifications" | "email">("notifications");
   const [planCounts, setPlanCounts] = useState<PlanCount[]>([]);
@@ -73,6 +96,18 @@ const BroadcastManager = () => {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState(false);
+
+  // Failed recipients state
+  const [failedRecipientsDialog, setFailedRecipientsDialog] = useState(false);
+  const [selectedJobForFailures, setSelectedJobForFailures] = useState<BroadcastJob | null>(null);
+  const [failedRecipients, setFailedRecipients] = useState<FailedRecipient[]>([]);
+  const [loadingFailures, setLoadingFailures] = useState(false);
+
+  // Reprocessing state
+  const [reprocessingJobId, setReprocessingJobId] = useState<string | null>(null);
+
+  // Polling ref for cleanup
+  const pollingRef = useRef<NodeJS.Timeout | null>(null);
 
   // Notification form state
   const [notifForm, setNotifForm] = useState({
@@ -106,36 +141,156 @@ const BroadcastManager = () => {
 
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchData();
+  // Fetch jobs data (used for initial load and polling)
+  const fetchJobs = useCallback(async () => {
+    const { data: jobs } = await supabase
+      .from("broadcast_jobs")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(20);
+
+    setRecentJobs(jobs || []);
+    return jobs || [];
   }, []);
 
-  const fetchData = async () => {
-    try {
-      // Fetch user counts by plan
-      const { data: counts, error: countsError } = await supabase.rpc("get_users_count_by_plan");
+  // Initial data fetch
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      try {
+        // Fetch user counts by plan
+        const { data: counts, error: countsError } = await supabase.rpc("get_users_count_by_plan");
 
-      if (countsError) {
-        // If function doesn't exist yet, use fallback query
-        const { data: users } = await supabase.from("profiles").select("id");
-        setPlanCounts([{ plan_id: "all", plan_name: "Todos", user_count: users?.length || 0 }]);
-      } else {
-        setPlanCounts(counts || []);
+        if (countsError) {
+          // If function doesn't exist yet, use fallback query
+          const { data: users } = await supabase.from("profiles").select("id");
+          setPlanCounts([{ plan_id: "all", plan_name: "Todos", user_count: users?.length || 0 }]);
+        } else {
+          setPlanCounts(counts || []);
+        }
+
+        // Fetch recent broadcast jobs
+        await fetchJobs();
+      } catch (error) {
+        console.error("Error fetching broadcast data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchInitialData();
+  }, [fetchJobs]);
+
+  // Polling for real-time job updates
+  useEffect(() => {
+    const hasActiveJobs = recentJobs.some(
+      (job) => job.status === "processing" || job.status === "pending"
+    );
+
+    if (hasActiveJobs) {
+      // Start polling if there are active jobs
+      pollingRef.current = setInterval(() => {
+        fetchJobs();
+      }, POLLING_INTERVAL);
+    } else if (pollingRef.current) {
+      // Stop polling if no active jobs
+      clearInterval(pollingRef.current);
+      pollingRef.current = null;
+    }
+
+    return () => {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+      }
+    };
+  }, [recentJobs, fetchJobs]);
+
+  // Fetch failed recipients for a job
+  const fetchFailedRecipients = async (jobId: string) => {
+    setLoadingFailures(true);
+    try {
+      const { data, error } = await supabase
+        .from("broadcast_recipients")
+        .select("id, email, error_message, created_at")
+        .eq("job_id", jobId)
+        .eq("status", "failed")
+        .order("created_at", { ascending: true });
+
+      if (error) throw error;
+      setFailedRecipients(data || []);
+    } catch (error) {
+      console.error("Error fetching failed recipients:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar os destinatários que falharam.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingFailures(false);
+    }
+  };
+
+  // Open failed recipients dialog
+  const handleViewFailures = async (job: BroadcastJob) => {
+    setSelectedJobForFailures(job);
+    setFailedRecipientsDialog(true);
+    await fetchFailedRecipients(job.id);
+  };
+
+  // Reprocess failed recipients for a job
+  const handleReprocessFailed = async (jobId: string) => {
+    setReprocessingJobId(jobId);
+    try {
+      // Reset failed recipients to pending
+      const { error: resetError } = await supabase
+        .from("broadcast_recipients")
+        .update({ status: "pending", error_message: null })
+        .eq("job_id", jobId)
+        .eq("status", "failed");
+
+      if (resetError) throw resetError;
+
+      // Update job status to processing
+      const { error: jobError } = await supabase
+        .from("broadcast_jobs")
+        .update({ status: "processing" })
+        .eq("id", jobId);
+
+      if (jobError) throw jobError;
+
+      // Trigger processing via edge function
+      const { error: processError } = await supabase.functions.invoke("process-broadcast", {
+        body: { jobId },
+      });
+
+      if (processError) {
+        console.error("Process error:", processError);
       }
 
-      // Fetch recent broadcast jobs
-      const { data: jobs } = await supabase
-        .from("broadcast_jobs")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(10);
+      toast({
+        title: "Reprocessamento iniciado",
+        description: "Os envios falhos estão sendo reprocessados.",
+      });
 
-      setRecentJobs(jobs || []);
+      // Refresh jobs list
+      await fetchJobs();
+
+      // Close dialog if open
+      setFailedRecipientsDialog(false);
     } catch (error) {
-      console.error("Error fetching broadcast data:", error);
+      console.error("Error reprocessing:", error);
+      toast({
+        title: "Erro ao reprocessar",
+        description: "Não foi possível reprocessar os envios falhos.",
+        variant: "destructive",
+      });
     } finally {
-      setLoading(false);
+      setReprocessingJobId(null);
     }
+  };
+
+  // Legacy fetchData for compatibility
+  const fetchData = async () => {
+    await fetchJobs();
   };
 
   const getTotalRecipients = (selectedPlans: string[], allUsers: boolean): number => {
@@ -741,47 +896,107 @@ const BroadcastManager = () => {
       {/* Recent Jobs */}
       {recentJobs.length > 0 && (
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-lg">Histórico de Broadcasts</CardTitle>
+            <Button variant="ghost" size="sm" onClick={fetchJobs} className="gap-2">
+              <RefreshCw className="w-4 h-4" />
+              Atualizar
+            </Button>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               {recentJobs.map((job) => (
                 <div
                   key={job.id}
-                  className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
+                  className="p-4 bg-muted/50 rounded-lg space-y-3"
                 >
-                  <div className="flex items-center gap-3">
-                    {job.type === "notification" ? (
-                      <Bell className="w-4 h-4 text-muted-foreground" />
-                    ) : (
-                      <Mail className="w-4 h-4 text-muted-foreground" />
-                    )}
-                    <div>
-                      <p className="text-sm font-medium">
-                        {job.type === "notification"
-                          ? job.notification_title_pt
-                          : job.email_subject_pt}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(job.created_at).toLocaleString("pt-BR")}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-right text-xs">
-                      <p className="text-muted-foreground">
-                        {job.success_count}/{job.total_recipients}
-                      </p>
-                      {job.status === "processing" && (
-                        <Progress
-                          value={(job.processed_count / job.total_recipients) * 100}
-                          className="w-20 h-1 mt-1"
-                        />
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      {job.type === "notification" ? (
+                        <Bell className="w-4 h-4 text-muted-foreground" />
+                      ) : (
+                        <Mail className="w-4 h-4 text-muted-foreground" />
                       )}
+                      <div>
+                        <p className="text-sm font-medium">
+                          {job.type === "notification"
+                            ? job.notification_title_pt
+                            : job.email_subject_pt}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(job.created_at).toLocaleString("pt-BR")}
+                        </p>
+                      </div>
                     </div>
                     {getStatusBadge(job.status)}
                   </div>
+
+                  {/* Progress Section */}
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>Progresso: {job.processed_count}/{job.total_recipients}</span>
+                      <span>
+                        {job.total_recipients > 0
+                          ? Math.round((job.processed_count / job.total_recipients) * 100)
+                          : 0}%
+                      </span>
+                    </div>
+                    <Progress
+                      value={job.total_recipients > 0 ? (job.processed_count / job.total_recipients) * 100 : 0}
+                      className="h-2"
+                    />
+                  </div>
+
+                  {/* Stats Row */}
+                  <div className="flex items-center gap-4 text-xs">
+                    <div className="flex items-center gap-1">
+                      <CheckCircle className="w-3 h-3 text-green-500" />
+                      <span className="text-green-600">{job.success_count} sucesso</span>
+                    </div>
+                    {job.failed_count > 0 && (
+                      <div className="flex items-center gap-1">
+                        <XCircle className="w-3 h-3 text-red-500" />
+                        <span className="text-red-600">{job.failed_count} falhou</span>
+                      </div>
+                    )}
+                    {(job.status === "processing" || job.status === "pending") && (
+                      <div className="flex items-center gap-1">
+                        <Clock className="w-3 h-3 text-yellow-500" />
+                        <span className="text-yellow-600">
+                          {job.total_recipients - job.processed_count} pendentes
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Action Buttons */}
+                  {job.failed_count > 0 && (
+                    <div className="flex items-center gap-2 pt-2 border-t border-border/50">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-2"
+                        onClick={() => handleViewFailures(job)}
+                      >
+                        <Eye className="w-3 h-3" />
+                        Ver falhas ({job.failed_count})
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-2"
+                        onClick={() => handleReprocessFailed(job.id)}
+                        disabled={reprocessingJobId === job.id || job.status === "processing"}
+                      >
+                        {reprocessingJobId === job.id ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <RotateCcw className="w-3 h-3" />
+                        )}
+                        Reprocessar falhas
+                      </Button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -815,6 +1030,92 @@ const BroadcastManager = () => {
               )}
               Confirmar Envio
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Failed Recipients Dialog */}
+      <Dialog open={failedRecipientsDialog} onOpenChange={setFailedRecipientsDialog}>
+        <DialogContent className="max-w-2xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-red-500" />
+              Destinatários com Falha
+            </DialogTitle>
+            <DialogDescription>
+              {selectedJobForFailures && (
+                <>
+                  Job: {selectedJobForFailures.type === "notification"
+                    ? selectedJobForFailures.notification_title_pt
+                    : selectedJobForFailures.email_subject_pt}
+                  <br />
+                  <span className="text-red-500">
+                    {selectedJobForFailures.failed_count} envios falharam
+                  </span>
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+
+          {loadingFailures ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : failedRecipients.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <CheckCircle className="w-12 h-12 mx-auto mb-2 text-green-500" />
+              <p>Nenhum destinatário com falha encontrado.</p>
+            </div>
+          ) : (
+            <ScrollArea className="max-h-[400px]">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Erro</TableHead>
+                    <TableHead className="w-[120px]">Data</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {failedRecipients.map((recipient) => (
+                    <TableRow key={recipient.id}>
+                      <TableCell className="font-mono text-sm">
+                        {recipient.email}
+                      </TableCell>
+                      <TableCell className="text-sm text-red-500 max-w-[300px] truncate">
+                        {recipient.error_message || "Erro desconhecido"}
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {new Date(recipient.created_at).toLocaleString("pt-BR")}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </ScrollArea>
+          )}
+
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setFailedRecipientsDialog(false)}
+            >
+              Fechar
+            </Button>
+            {failedRecipients.length > 0 && selectedJobForFailures && (
+              <Button
+                onClick={() => handleReprocessFailed(selectedJobForFailures.id)}
+                disabled={reprocessingJobId === selectedJobForFailures.id}
+                className="gap-2"
+              >
+                {reprocessingJobId === selectedJobForFailures.id ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <RotateCcw className="w-4 h-4" />
+                )}
+                Reprocessar {failedRecipients.length} falhas
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
