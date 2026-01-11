@@ -102,32 +102,29 @@ BEGIN
   RETURN QUERY
   WITH user_effective_plans AS (
     -- Get each user's effective plan (manual subscription takes priority)
-    SELECT DISTINCT ON (u.id)
-      u.id as user_id,
+    SELECT DISTINCT ON (p.user_id)
+      p.user_id,
       COALESCE(
         ms.plan_tier,  -- Manual subscription has priority
         s.plan_id,     -- Then Stripe subscription
         'free'         -- Default to free
       ) as plan_tier
-    FROM auth.users u
-    LEFT JOIN manual_subscriptions ms ON ms.user_id = u.id
+    FROM profiles p
+    LEFT JOIN manual_subscriptions ms ON ms.user_id = p.user_id
       AND ms.is_active = true
       AND (ms.expires_at IS NULL OR ms.expires_at > NOW())
-    LEFT JOIN subscriptions s ON s.user_id = u.id AND s.status = 'active'
+    LEFT JOIN subscriptions s ON s.user_id = p.user_id AND s.status = 'active'
   ),
   all_plans AS (
-    -- Get all configured plans
-    SELECT tier, name_pt, display_order FROM plans_config WHERE is_active = true
-    UNION ALL
-    -- Ensure 'free' always appears
-    SELECT 'free'::TEXT, 'Gratuito'::VARCHAR, 0 WHERE NOT EXISTS (
-      SELECT 1 FROM plans_config WHERE tier = 'free' AND is_active = true
-    )
+    -- Get all configured plans from plans_config
+    SELECT pc.tier, pc.name_pt, pc.display_order
+    FROM plans_config pc
+    WHERE pc.is_active = true
   )
   SELECT
     ap.tier::TEXT as plan_id,
     ap.name_pt::TEXT as plan_name,
-    COALESCE(COUNT(uep.user_id), 0)::BIGINT as user_count
+    COUNT(uep.user_id)::BIGINT as user_count
   FROM all_plans ap
   LEFT JOIN user_effective_plans uep ON uep.plan_tier = ap.tier
   GROUP BY ap.tier, ap.name_pt, ap.display_order
