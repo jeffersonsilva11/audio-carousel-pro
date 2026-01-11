@@ -90,19 +90,19 @@ ON CONFLICT (section_key, content_key) DO UPDATE SET
   content_type = EXCLUDED.content_type,
   updated_at = NOW();
 
--- Social Proof Stats (Impact Numbers)
+-- Social Proof Stats (Product Metrics - not user numbers for launch phase)
 INSERT INTO landing_content (section_key, content_key, value_pt, value_en, value_es, content_type) VALUES
-('stats', 'stat1_value', '2.500+', '2,500+', '2.500+', 'text'),
-('stats', 'stat1_label', 'Criadores ativos', 'Active creators', 'Creadores activos', 'text'),
+('stats', 'stat1_value', '10x', '10x', '10x', 'text'),
+('stats', 'stat1_label', 'Mais rápido que manual', 'Faster than manual', 'Más rápido que manual', 'text'),
 
-('stats', 'stat2_value', '50.000+', '50,000+', '50.000+', 'text'),
-('stats', 'stat2_label', 'Carrosséis gerados', 'Carousels generated', 'Carruseles generados', 'text'),
+('stats', 'stat2_value', '30s', '30s', '30s', 'text'),
+('stats', 'stat2_label', 'Para criar um carrossel', 'To create a carousel', 'Para crear un carrusel', 'text'),
 
-('stats', 'stat3_value', '97%', '97%', '97%', 'text'),
-('stats', 'stat3_label', 'Taxa de satisfação', 'Satisfaction rate', 'Tasa de satisfacción', 'text'),
+('stats', 'stat3_value', '6-10', '6-10', '6-10', 'text'),
+('stats', 'stat3_label', 'Slides por áudio', 'Slides per audio', 'Slides por audio', 'text'),
 
-('stats', 'stat4_value', '10x', '10x', '10x', 'text'),
-('stats', 'stat4_label', 'Mais rápido que manual', 'Faster than manual', 'Más rápido que manual', 'text')
+('stats', 'stat4_value', '3', '3', '3', 'text'),
+('stats', 'stat4_label', 'Tons de voz únicos', 'Unique voice tones', 'Tonos de voz únicos', 'text')
 ON CONFLICT (section_key, content_key) DO UPDATE SET
   value_pt = EXCLUDED.value_pt,
   value_en = EXCLUDED.value_en,
@@ -173,17 +173,19 @@ ON CONFLICT (section_key, content_key) DO UPDATE SET
   content_type = EXCLUDED.content_type,
   updated_at = NOW();
 
--- Scarcity Section (Value-based, not fake urgency)
+-- Scarcity Section (Early Access - real counter from database)
 INSERT INTO landing_content (section_key, content_key, value_pt, value_en, value_es, content_type) VALUES
 ('scarcity', 'enabled', 'true', 'true', 'true', 'text'),
-('scarcity', 'badge', 'OFERTA DE LANÇAMENTO', 'LAUNCH OFFER', 'OFERTA DE LANZAMIENTO', 'text'),
-('scarcity', 'title', 'Preço de lançamento para os primeiros 500 assinantes', 'Launch price for the first 500 subscribers', 'Precio de lanzamiento para los primeros 500 suscriptores', 'text'),
+('scarcity', 'badge', 'ACESSO ANTECIPADO', 'EARLY ACCESS', 'ACCESO ANTICIPADO', 'text'),
+('scarcity', 'title', 'Seja um dos primeiros 500 a garantir o preço de lançamento', 'Be one of the first 500 to lock in launch pricing', 'Sé uno de los primeros 500 en asegurar el precio de lanzamiento', 'text'),
 
 ('scarcity', 'benefit1', 'Preço travado para sempre', 'Price locked forever', 'Precio bloqueado para siempre', 'text'),
 ('scarcity', 'benefit2', 'Acesso antecipado a novos recursos', 'Early access to new features', 'Acceso anticipado a nuevas funciones', 'text'),
 ('scarcity', 'benefit3', 'Badge "Early Adopter" exclusivo', 'Exclusive "Early Adopter" badge', 'Badge "Early Adopter" exclusivo', 'text'),
 
-('scarcity', 'spots_filled', '347', '347', '347', 'text'),
+-- spots_filled is now fetched from real database count (subscriptions table)
+-- This fallback is only used if the query fails
+('scarcity', 'spots_filled', '0', '0', '0', 'text'),
 ('scarcity', 'spots_total', '500', '500', '500', 'text'),
 ('scarcity', 'spots_label', 'vagas preenchidas', 'spots filled', 'plazas ocupadas', 'text')
 ON CONFLICT (section_key, content_key) DO UPDATE SET
