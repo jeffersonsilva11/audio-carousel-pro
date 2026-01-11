@@ -10,7 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Mic2, Plus, LogOut, Loader2, Image as ImageIcon, Calendar,
-  Sparkles, FolderOpen, Crown, CreditCard, RefreshCw, AlertTriangle, Globe, User, History, Shield, Clock, Bell, X, Headphones, Menu
+  Sparkles, FolderOpen, Crown, CreditCard, RefreshCw, AlertTriangle, Globe, User, History, Shield, Clock, Bell, X, Headphones, Menu,
+  ChevronLeft, ChevronRight, Filter, Search
 } from "lucide-react";
 import { useNotifications } from "@/hooks/useNotifications";
 import NotificationBell from "@/components/NotificationBell";
@@ -51,6 +52,10 @@ interface Carousel {
   has_watermark: boolean | null;
 }
 
+// Pagination and filter constants
+const PAGE_SIZE_OPTIONS = [6, 12, 24, 48];
+const DEFAULT_PAGE_SIZE = 6;
+
 const Dashboard = () => {
   const { user, loading, signOut, isEmailConfirmed } = useAuth();
   const { isAdmin } = useAdminAccess();
@@ -65,6 +70,15 @@ const Dashboard = () => {
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [regeneratingId, setRegeneratingId] = useState<string | null>(null);
   const [showPlansModal, setShowPlansModal] = useState(false);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const [totalCount, setTotalCount] = useState(0);
+
+  // Filter state
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [toneFilter, setToneFilter] = useState<string>("all");
 
 
   // Handle subscription callback
@@ -165,23 +179,52 @@ const Dashboard = () => {
     if (user) {
       fetchCarousels();
     }
-  }, [user]);
+  }, [user, currentPage, pageSize, statusFilter, toneFilter]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter, toneFilter, pageSize]);
 
   const fetchCarousels = async () => {
+    setLoadingCarousels(true);
     try {
-      const { data, error } = await supabase
+      // Build query with filters
+      let query = supabase
         .from("carousels")
-        .select("*")
-        .order("created_at", { ascending: false });
+        .select("*", { count: "exact" });
+
+      // Apply status filter
+      if (statusFilter !== "all") {
+        query = query.eq("status", statusFilter);
+      }
+
+      // Apply tone filter
+      if (toneFilter !== "all") {
+        query = query.eq("tone", toneFilter);
+      }
+
+      // Calculate pagination
+      const from = (currentPage - 1) * pageSize;
+      const to = from + pageSize - 1;
+
+      // Execute query with ordering and pagination
+      const { data, error, count } = await query
+        .order("created_at", { ascending: false })
+        .range(from, to);
 
       if (error) throw error;
       setCarousels(data || []);
+      setTotalCount(count || 0);
     } catch (error) {
       console.error("Error fetching carousels:", error);
     } finally {
       setLoadingCarousels(false);
     }
   };
+
+  // Calculate total pages
+  const totalPages = Math.ceil(totalCount / pageSize);
 
   const handleSignOut = async () => {
     await signOut();
@@ -579,19 +622,101 @@ const Dashboard = () => {
 
         {/* Carousels grid */}
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <h2 className="text-xl font-semibold">{t("dashboard", "yourCarousels", language)}</h2>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <span className="text-sm text-muted-foreground">
-                {formatCount(carousels.length, language)} {carousels.length !== 1 ? t("dashboard", "carouselsCount", language) : t("dashboard", "carouselCount", language)}
+                {formatCount(totalCount, language)} {totalCount !== 1 ? t("dashboard", "carouselsCount", language) : t("dashboard", "carouselCount", language)}
               </span>
-              {isPro && carousels.length > 0 && (
+              {isPro && totalCount > 0 && (
                 <Button variant="outline" size="sm" onClick={() => navigate("/history")}>
                   <History className="w-4 h-4 mr-2" />
                   {t("history", "viewHistory", language)}
                 </Button>
               )}
             </div>
+          </div>
+
+          {/* Filters */}
+          <div className="flex flex-wrap items-center gap-3 p-4 bg-muted/30 rounded-lg">
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm font-medium text-muted-foreground">
+                {language === "pt-BR" ? "Filtros:" : language === "es" ? "Filtros:" : "Filters:"}
+              </span>
+            </div>
+
+            {/* Status Filter */}
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[140px] h-8">
+                <SelectValue placeholder={language === "pt-BR" ? "Status" : "Status"} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">
+                  {language === "pt-BR" ? "Todos os status" : language === "es" ? "Todos los estados" : "All status"}
+                </SelectItem>
+                <SelectItem value="COMPLETED">
+                  {language === "pt-BR" ? "Concluídos" : language === "es" ? "Completados" : "Completed"}
+                </SelectItem>
+                <SelectItem value="PROCESSING">
+                  {language === "pt-BR" ? "Processando" : language === "es" ? "Procesando" : "Processing"}
+                </SelectItem>
+                <SelectItem value="FAILED">
+                  {language === "pt-BR" ? "Falhou" : language === "es" ? "Fallidos" : "Failed"}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Tone Filter */}
+            <Select value={toneFilter} onValueChange={setToneFilter}>
+              <SelectTrigger className="w-[140px] h-8">
+                <SelectValue placeholder={language === "pt-BR" ? "Tom" : language === "es" ? "Tono" : "Tone"} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">
+                  {language === "pt-BR" ? "Todos os tons" : language === "es" ? "Todos los tonos" : "All tones"}
+                </SelectItem>
+                <SelectItem value="EMOTIONAL">
+                  {t("toneShowcase", "emotional", language)}
+                </SelectItem>
+                <SelectItem value="PROFESSIONAL">
+                  {t("toneShowcase", "professional", language)}
+                </SelectItem>
+                <SelectItem value="PROVOCATIVE">
+                  {t("toneShowcase", "provocative", language)}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Page Size */}
+            <Select value={String(pageSize)} onValueChange={(val) => setPageSize(Number(val))}>
+              <SelectTrigger className="w-[100px] h-8">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PAGE_SIZE_OPTIONS.map((size) => (
+                  <SelectItem key={size} value={String(size)}>
+                    {size} {language === "pt-BR" ? "por página" : language === "es" ? "por página" : "per page"}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Clear Filters */}
+            {(statusFilter !== "all" || toneFilter !== "all") && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 text-xs"
+                onClick={() => {
+                  setStatusFilter("all");
+                  setToneFilter("all");
+                }}
+              >
+                <X className="w-3 h-3 mr-1" />
+                {language === "pt-BR" ? "Limpar" : language === "es" ? "Limpiar" : "Clear"}
+              </Button>
+            )}
           </div>
 
           {loadingCarousels ? (
@@ -728,6 +853,109 @@ const Dashboard = () => {
                 </Card>
               ))}
             </div>
+          )}
+
+          {/* Pagination */}
+          {totalCount > 0 && totalPages > 1 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-border/50">
+              <div className="text-sm text-muted-foreground">
+                {language === "pt-BR"
+                  ? `Mostrando ${(currentPage - 1) * pageSize + 1}-${Math.min(currentPage * pageSize, totalCount)} de ${totalCount}`
+                  : language === "es"
+                    ? `Mostrando ${(currentPage - 1) * pageSize + 1}-${Math.min(currentPage * pageSize, totalCount)} de ${totalCount}`
+                    : `Showing ${(currentPage - 1) * pageSize + 1}-${Math.min(currentPage * pageSize, totalCount)} of ${totalCount}`}
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  <ChevronLeft className="w-4 h-4 -ml-2" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "default" : "outline"}
+                        size="sm"
+                        className="w-8 h-8 p-0"
+                        onClick={() => setCurrentPage(pageNum)}
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                >
+                  <ChevronRight className="w-4 h-4" />
+                  <ChevronRight className="w-4 h-4 -ml-2" />
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Empty state message for filtered results */}
+          {!loadingCarousels && totalCount === 0 && (statusFilter !== "all" || toneFilter !== "all") && (
+            <Card className="border-dashed">
+              <CardContent className="flex flex-col items-center justify-center py-8 text-center">
+                <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3">
+                  <Filter className="w-6 h-6 text-muted-foreground" />
+                </div>
+                <p className="text-muted-foreground mb-3">
+                  {language === "pt-BR"
+                    ? "Nenhum carrossel encontrado com os filtros selecionados"
+                    : language === "es"
+                      ? "No se encontraron carruseles con los filtros seleccionados"
+                      : "No carousels found with selected filters"}
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setStatusFilter("all");
+                    setToneFilter("all");
+                  }}
+                >
+                  <X className="w-4 h-4 mr-2" />
+                  {language === "pt-BR" ? "Limpar filtros" : language === "es" ? "Limpiar filtros" : "Clear filters"}
+                </Button>
+              </CardContent>
+            </Card>
           )}
         </div>
       </main>

@@ -100,6 +100,17 @@ serve(async (req) => {
 
     logStep("Signup verification requested", { userId, email });
 
+    // Check if there's already a valid (unexpired, unused) token for this email
+    const { data: existingToken } = await supabaseClient
+      .from("email_verification_tokens")
+      .select("id, token, expires_at, created_at")
+      .eq("email", email)
+      .is("verified_at", null)
+      .gt("expires_at", new Date().toISOString())
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single();
+
     // Check rate limiting - max 5 requests per 10 minutes per email
     // This allows reasonable usage while preventing abuse
     const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
@@ -119,22 +130,37 @@ serve(async (req) => {
       });
     }
 
-    // Generate OTP and save to database (expires in 24 hours)
-    const otp = generateOTP();
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    // Use existing valid token or generate a new one
+    let otp: string;
+    let isResend = false;
 
-    const { error: insertError } = await supabaseClient
-      .from("email_verification_tokens")
-      .insert({
-        user_id: userId,
-        email,
-        token: otp,
-        expires_at: expiresAt.toISOString(),
-      });
+    if (existingToken) {
+      // Reuse existing valid token (within 24h)
+      otp = existingToken.token;
+      isResend = true;
+      const remainingMinutes = Math.round(
+        (new Date(existingToken.expires_at).getTime() - Date.now()) / (1000 * 60)
+      );
+      logStep("Resending existing token", { email, remainingMinutes });
+    } else {
+      // Generate new OTP and save to database (expires in 24 hours)
+      otp = generateOTP();
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-    if (insertError) {
-      logStep("Error saving token", { error: insertError.message });
-      throw new Error("Erro ao gerar código de verificação");
+      const { error: insertError } = await supabaseClient
+        .from("email_verification_tokens")
+        .insert({
+          user_id: userId,
+          email,
+          token: otp,
+          expires_at: expiresAt.toISOString(),
+        });
+
+      if (insertError) {
+        logStep("Error saving token", { error: insertError.message });
+        throw new Error("Erro ao gerar código de verificação");
+      }
+      logStep("New token created", { email });
     }
 
     // Get email settings
@@ -263,7 +289,10 @@ serve(async (req) => {
     return new Response(JSON.stringify({
       success: true,
       provider: "smtp",
-      message: "E-mail de verificação enviado com sucesso"
+      isResend,
+      message: isResend
+        ? "Código reenviado com sucesso. Use o mesmo código enviado anteriormente."
+        : "E-mail de verificação enviado com sucesso"
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,

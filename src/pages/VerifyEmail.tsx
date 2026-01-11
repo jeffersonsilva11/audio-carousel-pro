@@ -194,10 +194,22 @@ const VerifyEmail = () => {
           variant: "destructive",
         });
       } else {
+        // Check if it was a resend (same code) or new code
+        const isResend = response.data?.isResend;
+
         toast({
-          title: t("verifyEmail", "codeResent", language),
-          description: t("verifyEmail", "checkInbox", language),
+          title: isResend
+            ? (language === "pt-BR" ? "Código reenviado" : language === "es" ? "Código reenviado" : "Code resent")
+            : t("verifyEmail", "codeResent", language),
+          description: isResend
+            ? (language === "pt-BR"
+                ? "O mesmo código foi reenviado para seu e-mail."
+                : language === "es"
+                  ? "El mismo código fue reenviado a tu correo."
+                  : "The same code was resent to your email.")
+            : t("verifyEmail", "checkInbox", language),
         });
+
         setResendCooldown(60); // 60 seconds cooldown
       }
     } catch {

@@ -14,6 +14,7 @@ interface Activity {
 interface SocialProofSettings {
   enabled: boolean;
   interval_seconds: number;
+  position: "left" | "right";
 }
 
 const SocialProofToast = () => {
@@ -21,7 +22,7 @@ const SocialProofToast = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [currentActivity, setCurrentActivity] = useState<Activity | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
-  const [settings, setSettings] = useState<SocialProofSettings>({ enabled: true, interval_seconds: 8 });
+  const [settings, setSettings] = useState<SocialProofSettings>({ enabled: true, interval_seconds: 8, position: "left" });
   const [dismissed, setDismissed] = useState(false);
 
   // Fetch settings
@@ -30,15 +31,17 @@ const SocialProofToast = () => {
       const { data } = await supabase
         .from("app_settings")
         .select("key, value")
-        .in("key", ["social_proof_enabled", "social_proof_interval_seconds"]);
+        .in("key", ["social_proof_enabled", "social_proof_interval_seconds", "social_proof_position"]);
 
       if (data) {
         const enabled = data.find((d) => d.key === "social_proof_enabled")?.value;
         const interval = data.find((d) => d.key === "social_proof_interval_seconds")?.value;
+        const position = data.find((d) => d.key === "social_proof_position")?.value;
 
         setSettings({
           enabled: enabled !== "false",
           interval_seconds: parseInt(interval || "8", 10),
+          position: (position === "right" ? "right" : "left") as "left" | "right",
         });
       }
     };
@@ -215,7 +218,7 @@ const SocialProofToast = () => {
           initial={{ opacity: 0, y: 50, x: 0 }}
           animate={{ opacity: 1, y: 0, x: 0 }}
           exit={{ opacity: 0, y: 50 }}
-          className="fixed bottom-4 left-4 z-40 max-w-sm"
+          className={`fixed bottom-4 z-40 max-w-sm ${settings.position === "right" ? "right-4" : "left-4"}`}
         >
           <div className="bg-card border border-border rounded-xl shadow-lg p-4 flex items-start gap-3">
             {/* Icon */}
