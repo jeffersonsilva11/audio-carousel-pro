@@ -45,14 +45,6 @@ const StructuredData = () => {
             "description": "50 carrosséis por dia com todas as funcionalidades"
           }
         ],
-        "aggregateRating": {
-          "@type": "AggregateRating",
-          "ratingValue": "4.9",
-          "bestRating": "5",
-          "worstRating": "1",
-          "ratingCount": "2500",
-          "reviewCount": "850"
-        },
         "featureList": [
           "Transcrição de áudio com IA",
           "Roteirização automática em 3 tons de voz",

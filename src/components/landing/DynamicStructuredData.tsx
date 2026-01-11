@@ -139,14 +139,6 @@ const DynamicStructuredData = () => {
             description: content.plans.agency.description,
           },
         ],
-        aggregateRating: {
-          '@type': 'AggregateRating',
-          ratingValue: '4.9',
-          bestRating: '5',
-          worstRating: '1',
-          ratingCount: '2500',
-          reviewCount: '850',
-        },
         featureList: content.features,
       },
       {
