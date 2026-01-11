@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { ArrowRight, Play, Sparkles, Check, Zap, Shield, Instagram, Linkedin, X } from "lucide-react";
+import { ArrowRight, Play, Sparkles, Check, Zap, Shield, Instagram, Linkedin, X, Loader2 } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
 import { t } from "@/lib/translations";
 import { BRAND } from "@/lib/constants";
@@ -22,24 +22,26 @@ const Hero = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [demoVideoUrl, setDemoVideoUrl] = useState("https://www.youtube.com/embed/dQw4w9WgXcQ");
-  
+  const [spotsRemaining, setSpotsRemaining] = useState<number | null>(null);
+  const [loadingSpots, setLoadingSpots] = useState(true);
+
   // Parallax effect
   const { scrollYProgress } = useScroll();
   const y = useTransform(scrollYProgress, [0, 0.5], [0, -100]);
   const opacity = useTransform(scrollYProgress, [0, 0.3], [1, 0]);
 
-  // Fetch demo video URL from settings
+  // Fetch demo video URL and subscriber count
   useEffect(() => {
-    const fetchVideoUrl = async () => {
-      const { data } = await supabase
+    const fetchData = async () => {
+      // Fetch video URL
+      const { data: videoData } = await supabase
         .from('app_settings')
         .select('value')
         .eq('key', 'demo_video_url')
         .maybeSingle();
-      
-      if (data?.value) {
-        // Convert to embed URL if needed
-        let url = data.value;
+
+      if (videoData?.value) {
+        let url = videoData.value;
         if (url.includes('youtube.com/watch?v=')) {
           const videoId = url.split('v=')[1]?.split('&')[0];
           url = `https://www.youtube.com/embed/${videoId}`;
@@ -49,9 +51,28 @@ const Hero = () => {
         }
         setDemoVideoUrl(url);
       }
+
+      // Fetch subscriber count for early access offer
+      try {
+        const { count, error } = await supabase
+          .from("subscriptions")
+          .select("*", { count: "exact", head: true })
+          .in("tier", ["creator", "agency"])
+          .eq("status", "active");
+
+        if (!error) {
+          const total = 500;
+          const filled = count || 0;
+          setSpotsRemaining(Math.max(total - filled, 0));
+        }
+      } catch (err) {
+        console.error("Error fetching spots:", err);
+      } finally {
+        setLoadingSpots(false);
+      }
     };
-    
-    fetchVideoUrl();
+
+    fetchData();
   }, []);
 
   // Get dynamic content with fallback
@@ -136,19 +157,32 @@ const Hero = () => {
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             {/* Left Column - Content */}
             <div className="text-center lg:text-left">
-              {/* Urgency Badge - Scarcity */}
-              <motion.div 
+              {/* Urgency Badge - Early Access Scarcity */}
+              <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-500/10 border border-amber-500/20 mb-6"
               >
                 <Zap className="w-4 h-4 text-amber-500" />
                 <span className="text-sm font-medium text-amber-600 dark:text-amber-400">
-                  {language === "pt-BR" 
-                    ? "🔥 Oferta por tempo limitado — 50% OFF no primeiro mês" 
-                    : language === "es"
-                      ? "🔥 Oferta por tiempo limitado — 50% OFF en el primer mes"
-                      : "🔥 Limited time offer — 50% OFF first month"}
+                  {loadingSpots ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      {language === "pt-BR" ? "Carregando..." : language === "es" ? "Cargando..." : "Loading..."}
+                    </span>
+                  ) : spotsRemaining !== null && spotsRemaining > 0 ? (
+                    language === "pt-BR"
+                      ? `🔥 ${spotsRemaining} vagas restantes de 500 — Preço fixo para sempre`
+                      : language === "es"
+                        ? `🔥 ${spotsRemaining} plazas restantes de 500 — Precio fijo para siempre`
+                        : `🔥 ${spotsRemaining} spots left of 500 — Price locked forever`
+                  ) : (
+                    language === "pt-BR"
+                      ? "🔥 Últimas vagas — Preço fixo para sempre"
+                      : language === "es"
+                        ? "🔥 Últimas plazas — Precio fijo para siempre"
+                        : "🔥 Last spots — Price locked forever"
+                  )}
                 </span>
               </motion.div>
 

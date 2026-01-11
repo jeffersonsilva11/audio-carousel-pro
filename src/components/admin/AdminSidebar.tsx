@@ -35,6 +35,7 @@ import {
   Mail,
   ChevronLeft,
   Sparkles,
+  Globe,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BRAND } from "@/lib/constants";
@@ -97,6 +98,7 @@ const AdminSidebar = ({ activeSection, onSectionChange }: AdminSidebarProps) => 
       label: language === "pt-BR" ? "Configurações" : "Settings",
       items: [
         { id: "settings", icon: Settings, label: language === "pt-BR" ? "Geral" : "General" },
+        { id: "seo", icon: Globe, label: "SEO" },
         { id: "flags", icon: Flag, label: "Features" },
         { id: "api", icon: DollarSign, label: "API" },
       ],
