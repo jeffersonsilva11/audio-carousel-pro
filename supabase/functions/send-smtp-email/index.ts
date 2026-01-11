@@ -1,12 +1,16 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
+import { getCorsHeaders } from "../_shared/cors.ts";
+import { checkRateLimit } from "../_shared/rate-limiter.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+const corsHeaders = getCorsHeaders();
+
+// Email validation regex
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// Rate limit: 20 emails per hour per user
+const EMAIL_RATE_LIMIT = { windowMs: 60 * 60 * 1000, max: 20 };
 
 const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
@@ -216,17 +220,83 @@ serve(async (req) => {
   }
 
   try {
+    // Get client IP for rate limiting
+    const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      req.headers.get("cf-connecting-ip") ||
+      "unknown";
+
+    // Check IP-based rate limit first
+    const ipRateLimitResult = checkRateLimit(`email_ip_${clientIp}`, EMAIL_RATE_LIMIT);
+    if (!ipRateLimitResult.allowed) {
+      logStep("Rate limit exceeded for IP", { ip: clientIp });
+      return new Response(
+        JSON.stringify({
+          error: "Limite de envio de emails excedido. Tente novamente mais tarde.",
+          retryAfter: ipRateLimitResult.retryAfter,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 429 }
+      );
+    }
+
+    // Validate authorization header
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      logStep("Missing or invalid authorization header");
+      return new Response(
+        JSON.stringify({ error: "Autenticação necessária" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
+      );
+    }
+
+    // Create Supabase client with service role for admin operations
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      { auth: { persistSession: false } }
+    );
+
+    // Verify the user token
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+
+    if (authError || !user) {
+      logStep("Invalid token", { error: authError?.message });
+      return new Response(
+        JSON.stringify({ error: "Token inválido ou expirado" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
+      );
+    }
+
+    // User-based rate limit
+    const userRateLimitResult = checkRateLimit(`email_user_${user.id}`, EMAIL_RATE_LIMIT);
+    if (!userRateLimitResult.allowed) {
+      logStep("Rate limit exceeded for user", { userId: user.id });
+      return new Response(
+        JSON.stringify({
+          error: "Limite de envio de emails excedido. Tente novamente mais tarde.",
+          retryAfter: userRateLimitResult.retryAfter,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 429 }
+      );
+    }
+
+    logStep("User authenticated", { userId: user.id });
+
     const body = await req.json();
     const { to, subject, template, templateData, smtpConfig } = body;
 
     logStep("Received request", { to, template, hasSmtpConfig: !!smtpConfig });
 
-    // Create Supabase client
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-      { auth: { persistSession: false } }
-    );
+    // Validate email format
+    if (!to || !EMAIL_REGEX.test(to)) {
+      return new Response(
+        JSON.stringify({ error: "Endereço de e-mail inválido" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+      );
+    }
+
+    // Create Supabase client for DB operations
+    const supabaseClient = supabaseAdmin;
 
     // Get SMTP config from request or from stored settings
     let smtp = smtpConfig;
@@ -348,14 +418,10 @@ serve(async (req) => {
 
       logStep("Email sent successfully", { to });
     } catch (smtpError: any) {
-      logStep("SMTP ERROR DETAILS", {
+      // Log error without exposing sensitive SMTP config details
+      logStep("SMTP ERROR", {
         message: smtpError?.message,
         name: smtpError?.name,
-        stack: smtpError?.stack?.slice(0, 500),
-        host: smtp.host,
-        port: smtp.port,
-        secure: smtp.secure,
-        user: smtp.user
       });
 
       // Provide helpful error messages

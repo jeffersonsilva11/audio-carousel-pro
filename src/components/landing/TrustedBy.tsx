@@ -3,6 +3,7 @@ import DOMPurify from "dompurify";
 import { motion } from "framer-motion";
 import { useLanguage } from "@/hooks/useLanguage";
 import { supabase } from "@/integrations/supabase/client";
+import { useLandingContent } from "@/hooks/useLandingContent";
 
 // Configure DOMPurify to allow safe SVG elements and attributes
 const sanitizeSvg = (svg: string): string => {
@@ -68,8 +69,17 @@ const fallbackCompanies = [
 
 const TrustedBy = () => {
   const { language } = useLanguage();
+  const { getContent } = useLandingContent();
   const [companies, setCompanies] = useState<TrustedCompany[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Get dynamic content from database
+  const sectionTitle = getContent("trusted_by", "title", language) || (
+    language === "pt-BR" ? "Tecnologia usada por" : language === "es" ? "Tecnología usada por" : "Technology used by"
+  );
+  const sectionSubtitle = getContent("trusted_by", "subtitle", language) || (
+    language === "pt-BR" ? "Powered by tecnologias de IA líderes do mercado" : language === "es" ? "Powered by tecnologías de IA líderes del mercado" : "Powered by market-leading AI technologies"
+  );
 
   useEffect(() => {
     fetchCompanies();
@@ -122,11 +132,7 @@ const TrustedBy = () => {
           className="text-center mb-12"
         >
           <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-            {language === "pt-BR" 
-              ? "Tecnologia usada por" 
-              : language === "es" 
-              ? "Tecnología usada por" 
-              : "Technology used by"}
+            {sectionTitle}
           </span>
         </motion.div>
 
@@ -158,11 +164,7 @@ const TrustedBy = () => {
           viewport={{ once: true }}
           className="text-center text-xs text-muted-foreground/50 mt-8"
         >
-          {language === "pt-BR"
-            ? "* Powered by tecnologias de IA líderes do mercado"
-            : language === "es"
-            ? "* Powered by tecnologías de IA líderes del mercado"
-            : "* Powered by market-leading AI technologies"}
+          * {sectionSubtitle}
         </motion.p>
       </div>
     </section>
