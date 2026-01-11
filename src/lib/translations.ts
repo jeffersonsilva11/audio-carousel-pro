@@ -3852,6 +3852,127 @@ export const translations = {
     },
   },
 
+  // Privacy Settings (Profile)
+  privacy: {
+    // Export Data
+    exportTitle: {
+      "pt-BR": "Exportar Meus Dados",
+      en: "Export My Data",
+      es: "Exportar Mis Datos",
+    },
+    exportDescription: {
+      "pt-BR": "Baixe uma cópia de todos os seus dados armazenados na plataforma (LGPD Art. 18).",
+      en: "Download a copy of all your data stored on the platform (LGPD Art. 18).",
+      es: "Descarga una copia de todos tus datos almacenados en la plataforma (LGPD Art. 18).",
+    },
+    exportButton: {
+      "pt-BR": "Baixar Meus Dados",
+      en: "Download My Data",
+      es: "Descargar Mis Datos",
+    },
+    exporting: {
+      "pt-BR": "Exportando...",
+      en: "Exporting...",
+      es: "Exportando...",
+    },
+
+    // Delete Account
+    deleteTitle: {
+      "pt-BR": "Excluir Minha Conta",
+      en: "Delete My Account",
+      es: "Eliminar Mi Cuenta",
+    },
+    deleteDescription: {
+      "pt-BR": "Exclua permanentemente sua conta e todos os dados associados. Esta ação não pode ser desfeita.",
+      en: "Permanently delete your account and all associated data. This action cannot be undone.",
+      es: "Elimina permanentemente tu cuenta y todos los datos asociados. Esta acción no se puede deshacer.",
+    },
+    deleteWarningTitle: {
+      "pt-BR": "Atenção: Esta ação é irreversível!",
+      en: "Warning: This action is irreversible!",
+      es: "Advertencia: ¡Esta acción es irreversible!",
+    },
+    deleteWarning1: {
+      "pt-BR": "Todos os seus carrosséis serão excluídos",
+      en: "All your carousels will be deleted",
+      es: "Todos tus carruseles serán eliminados",
+    },
+    deleteWarning2: {
+      "pt-BR": "Seu histórico e estatísticas serão removidos",
+      en: "Your history and statistics will be removed",
+      es: "Tu historial y estadísticas serán eliminados",
+    },
+    deleteWarning3: {
+      "pt-BR": "Sua assinatura será cancelada sem reembolso",
+      en: "Your subscription will be canceled without refund",
+      es: "Tu suscripción será cancelada sin reembolso",
+    },
+    deleteWarning4: {
+      "pt-BR": "Você não poderá recuperar nenhum dado",
+      en: "You will not be able to recover any data",
+      es: "No podrás recuperar ningún dato",
+    },
+    deleteButton: {
+      "pt-BR": "Excluir Minha Conta",
+      en: "Delete My Account",
+      es: "Eliminar Mi Cuenta",
+    },
+
+    // Delete Confirmation Dialog
+    deleteConfirmTitle: {
+      "pt-BR": "Confirmar Exclusão",
+      en: "Confirm Deletion",
+      es: "Confirmar Eliminación",
+    },
+    deleteConfirmDescription: {
+      "pt-BR": "Para confirmar a exclusão permanente da sua conta, digite seu email abaixo:",
+      en: "To confirm the permanent deletion of your account, type your email below:",
+      es: "Para confirmar la eliminación permanente de tu cuenta, escribe tu email a continuación:",
+    },
+    typeEmail: {
+      "pt-BR": "Digite",
+      en: "Type",
+      es: "Escribe",
+    },
+    typeEmailHint: {
+      "pt-BR": "Digite exatamente como mostrado acima para confirmar.",
+      en: "Type exactly as shown above to confirm.",
+      es: "Escribe exactamente como se muestra arriba para confirmar.",
+    },
+    cancel: {
+      "pt-BR": "Cancelar",
+      en: "Cancel",
+      es: "Cancelar",
+    },
+    confirmDelete: {
+      "pt-BR": "Excluir Permanentemente",
+      en: "Delete Permanently",
+      es: "Eliminar Permanentemente",
+    },
+    deleting: {
+      "pt-BR": "Excluindo...",
+      en: "Deleting...",
+      es: "Eliminando...",
+    },
+
+    // Privacy Policy Link
+    policyTitle: {
+      "pt-BR": "Política de Privacidade",
+      en: "Privacy Policy",
+      es: "Política de Privacidad",
+    },
+    policyDescription: {
+      "pt-BR": "Saiba como tratamos seus dados",
+      en: "Learn how we handle your data",
+      es: "Descubre cómo manejamos tus datos",
+    },
+    viewPolicy: {
+      "pt-BR": "Ver Política",
+      en: "View Policy",
+      es: "Ver Política",
+    },
+  },
+
   // Plans Modal
   plansModal: {
     choosePlan: {
