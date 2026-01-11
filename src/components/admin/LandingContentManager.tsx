@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Save, Globe, FileText, Sparkles, MessageSquare, Layout, Users, Languages } from "lucide-react";
+import { Loader2, Save, Globe, FileText, Sparkles, MessageSquare, Layout, Users, Languages, AlertTriangle, DollarSign, BookOpen, BarChart3, Play, Zap } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 interface LandingContent {
@@ -22,31 +22,117 @@ interface LandingContent {
 
 const SECTIONS = [
   { key: "hero", label: "Hero", icon: Sparkles, description: "Título principal, subtítulo e CTAs" },
+  { key: "stats", label: "Estatísticas", icon: BarChart3, description: "Números de impacto social" },
+  { key: "problem", label: "O Problema", icon: AlertTriangle, description: "Seção de identificação do problema (Aversão à Perda)" },
+  { key: "demo", label: "Demo Interativa", icon: Play, description: "Demonstração passo a passo" },
+  { key: "trusted_by", label: "Empresas", icon: Globe, description: "Seção de logos de empresas" },
+  { key: "testimonials", label: "Depoimentos", icon: Users, description: "Títulos da seção de depoimentos" },
+  { key: "price_anchor", label: "Ancoragem de Preço", icon: DollarSign, description: "Comparação de custos (Gatilho de Ancoragem)" },
+  { key: "scarcity", label: "Escassez", icon: Zap, description: "Banner de oferta limitada" },
+  { key: "origin_story", label: "Nossa História", icon: BookOpen, description: "História de origem do produto" },
   { key: "how_it_works", label: "Como Funciona", icon: Layout, description: "Passos do processo" },
   { key: "cta", label: "CTA Final", icon: MessageSquare, description: "Chamada para ação no final" },
-  { key: "testimonials", label: "Depoimentos", icon: Users, description: "Títulos da seção de depoimentos" },
-  { key: "trusted_by", label: "Empresas", icon: Globe, description: "Seção de logos de empresas" },
 ];
 
 const FIELD_LABELS: Record<string, string> = {
+  // General
   badge: "Badge (texto pequeno no topo)",
-  title_part1: "Título - Parte 1",
-  title_highlight: "Título - Palavra destacada",
-  title_part2: "Título - Parte 2",
-  subtitle: "Subtítulo",
-  cta_primary: "Botão principal",
-  cta_secondary: "Botão secundário",
-  section_title: "Título da seção",
   title: "Título principal",
-  step1_title: "Passo 1 - Título",
-  step1_desc: "Passo 1 - Descrição",
-  step2_title: "Passo 2 - Título",
-  step2_desc: "Passo 2 - Descrição",
-  step3_title: "Passo 3 - Título",
-  step3_desc: "Passo 3 - Descrição",
+  subtitle: "Subtítulo",
+  section_title: "Título da seção",
   button: "Texto do botão",
   disclaimer: "Disclaimer (texto pequeno)",
   enabled: "Ativar seção",
+  cta_text: "Texto do CTA",
+
+  // Hero
+  title_part1: "Título - Parte 1",
+  title_highlight: "Título - Palavra destacada",
+  title_part2: "Título - Parte 2",
+  cta_primary: "Botão principal",
+  cta_secondary: "Botão secundário",
+  loss_aversion_text: "Texto de Aversão à Perda",
+  why_text: "Círculo Dourado - Por quê",
+  how_text: "Círculo Dourado - Como",
+  social_proof_text: "Texto de prova social",
+  cta_micro: "CTA micro-compromisso",
+
+  // Stats
+  stat1_value: "Estatística 1 - Valor",
+  stat1_label: "Estatística 1 - Label",
+  stat2_value: "Estatística 2 - Valor",
+  stat2_label: "Estatística 2 - Label",
+  stat3_value: "Estatística 3 - Valor",
+  stat3_label: "Estatística 3 - Label",
+  stat4_value: "Estatística 4 - Valor",
+  stat4_label: "Estatística 4 - Label",
+
+  // Problem Section
+  point1_icon: "Ponto 1 - Ícone (clock, trending-down, users)",
+  point1_title: "Ponto 1 - Título",
+  point1_description: "Ponto 1 - Descrição",
+  point2_icon: "Ponto 2 - Ícone",
+  point2_title: "Ponto 2 - Título",
+  point2_description: "Ponto 2 - Descrição",
+  point3_icon: "Ponto 3 - Ícone",
+  point3_title: "Ponto 3 - Título",
+  point3_description: "Ponto 3 - Descrição",
+  solution_badge: "Solução - Badge",
+  solution_title: "Solução - Título",
+  solution_description: "Solução - Descrição",
+
+  // Demo
+  step1_title: "Passo 1 - Título",
+  step1_description: "Passo 1 - Descrição",
+  step1_duration: "Passo 1 - Duração",
+  step2_title: "Passo 2 - Título",
+  step2_description: "Passo 2 - Descrição",
+  step2_duration: "Passo 2 - Duração",
+  step3_title: "Passo 3 - Título",
+  step3_description: "Passo 3 - Descrição",
+  step3_duration: "Passo 3 - Duração",
+  step1_desc: "Passo 1 - Descrição",
+  step2_desc: "Passo 2 - Descrição",
+  step3_desc: "Passo 3 - Descrição",
+
+  // Price Anchor
+  cost1_label: "Custo 1 - Label",
+  cost1_value: "Custo 1 - Valor",
+  cost2_label: "Custo 2 - Label",
+  cost2_value: "Custo 2 - Valor",
+  cost3_label: "Custo 3 - Label",
+  cost3_value: "Custo 3 - Valor",
+  total_label: "Total - Label",
+  total_value: "Total - Valor",
+  audisell_label: "Audisell - Label",
+  audisell_value: "Audisell - Valor",
+  savings_label: "Economia - Label",
+  savings_percentage: "Economia - Porcentagem",
+
+  // Scarcity
+  benefit1: "Benefício 1",
+  benefit2: "Benefício 2",
+  benefit3: "Benefício 3",
+  spots_filled: "Vagas preenchidas",
+  spots_total: "Total de vagas",
+  spots_label: "Label das vagas",
+
+  // Origin Story
+  before_label: "Antes - Label",
+  before_text: "Antes - Texto",
+  turning_point_label: "Ponto de Virada - Label",
+  turning_point_text: "Ponto de Virada - Texto",
+  after_label: "Agora - Label",
+  after_text: "Agora - Texto",
+  founder_name: "Nome do fundador",
+  founder_role: "Cargo do fundador",
+
+  // Testimonials
+  before_after_badge: "Badge Before/After",
+  before_label: "Label Antes",
+  after_label: "Label Depois",
+  time_saved_label: "Label tempo economizado",
+  engagement_label: "Label engajamento",
 };
 
 const LandingContentManager = () => {
@@ -297,7 +383,12 @@ const LandingContentManager = () => {
                   <div className="grid gap-4">
                     {sectionContent.map((item) => {
                       const valueField = activeTab === "pt" ? "value_pt" : activeTab === "en" ? "value_en" : "value_es";
-                      const isLongText = item.content_key.includes("desc") || item.content_key.includes("subtitle") || item.content_key.includes("disclaimer");
+                      const isLongText = item.content_key.includes("desc") ||
+                        item.content_key.includes("subtitle") ||
+                        item.content_key.includes("disclaimer") ||
+                        item.content_key.includes("_text") ||
+                        item.content_key.includes("solution_description") ||
+                        item.content_key.includes("quote");
 
                       return (
                         <div key={item.id} className="space-y-2">
