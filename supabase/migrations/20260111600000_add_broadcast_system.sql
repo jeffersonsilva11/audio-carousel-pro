@@ -69,7 +69,13 @@ CREATE INDEX IF NOT EXISTS idx_broadcast_recipients_user_id ON broadcast_recipie
 ALTER TABLE broadcast_jobs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE broadcast_recipients ENABLE ROW LEVEL SECURITY;
 
--- 5. RLS Policies - Only admins can access
+-- 5. RLS Policies - Only admins can access (drop first if exists for idempotency)
+DROP POLICY IF EXISTS "Admins can view broadcast jobs" ON broadcast_jobs;
+DROP POLICY IF EXISTS "Admins can insert broadcast jobs" ON broadcast_jobs;
+DROP POLICY IF EXISTS "Admins can update broadcast jobs" ON broadcast_jobs;
+DROP POLICY IF EXISTS "Admins can view broadcast recipients" ON broadcast_recipients;
+DROP POLICY IF EXISTS "Service role can manage broadcast recipients" ON broadcast_recipients;
+
 CREATE POLICY "Admins can view broadcast jobs" ON broadcast_jobs
   FOR SELECT USING (public.is_admin());
 
