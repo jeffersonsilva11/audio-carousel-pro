@@ -105,10 +105,10 @@ BEGIN
     SELECT DISTINCT ON (p.user_id)
       p.user_id,
       COALESCE(
-        ms.plan_tier,  -- Manual subscription has priority
-        s.plan_id,     -- Then Stripe subscription
-        'free'         -- Default to free
-      ) as plan_tier
+        ms.plan_tier,           -- Manual subscription has priority
+        s.plan_tier::TEXT,      -- Then Stripe subscription (plan_tier column)
+        'free'                  -- Default to free
+      ) as effective_plan
     FROM profiles p
     LEFT JOIN manual_subscriptions ms ON ms.user_id = p.user_id
       AND ms.is_active = true
@@ -126,7 +126,7 @@ BEGIN
     ap.name_pt::TEXT as plan_name,
     COUNT(uep.user_id)::BIGINT as user_count
   FROM all_plans ap
-  LEFT JOIN user_effective_plans uep ON uep.plan_tier = ap.tier
+  LEFT JOIN user_effective_plans uep ON uep.effective_plan = ap.tier
   GROUP BY ap.tier, ap.name_pt, ap.display_order
   ORDER BY ap.display_order, ap.tier;
 END;
@@ -169,7 +169,7 @@ BEGIN
       ('free' = ANY(v_target_plans) AND s.id IS NULL AND ms.id IS NULL)
       OR
       -- Users with specific Stripe plan
-      (s.plan_id = ANY(v_target_plans))
+      (s.plan_tier::TEXT = ANY(v_target_plans))
       OR
       -- Users with specific manual subscription plan
       (ms.plan_tier = ANY(v_target_plans))
