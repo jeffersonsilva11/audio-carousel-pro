@@ -18,7 +18,11 @@ import {
   Target,
   TrendingUp,
   ExternalLink,
+  Play,
+  CheckCircle,
+  AlertCircle,
 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Accordion,
@@ -117,6 +121,9 @@ const GrowthSettingsCard = () => {
   // Email Sequences
   const [sequences, setSequences] = useState<EmailSequence[]>([]);
   const [sequenceSteps, setSequenceSteps] = useState<SequenceStep[]>([]);
+  const [processingQueue, setProcessingQueue] = useState(false);
+  const [queueResult, setQueueResult] = useState<{ processed: number; failed: number } | null>(null);
+  const [activeEnrollments, setActiveEnrollments] = useState(0);
 
   useEffect(() => {
     fetchAllSettings();
@@ -190,6 +197,13 @@ const GrowthSettingsCard = () => {
         .select("*")
         .order("sequence_id, step_order");
       setSequenceSteps(stepsData || []);
+
+      // Fetch active enrollment count
+      const { count: enrollmentCount } = await supabase
+        .from("email_sequence_enrollments")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "active");
+      setActiveEnrollments(enrollmentCount || 0);
     } catch (error) {
       console.error("Error fetching settings:", error);
     } finally {
@@ -282,6 +296,69 @@ const GrowthSettingsCard = () => {
       setSequenceSteps((prev) =>
         prev.map((s) => (s.id === stepId ? { ...s, is_active: isActive } : s))
       );
+    }
+  };
+
+  const updateStepDelay = async (stepId: string, delayHours: number) => {
+    const { error } = await supabase
+      .from("email_sequence_steps")
+      .update({ delay_hours: delayHours })
+      .eq("id", stepId);
+
+    if (!error) {
+      setSequenceSteps((prev) =>
+        prev.map((s) => (s.id === stepId ? { ...s, delay_hours: delayHours } : s))
+      );
+      toast({
+        title: "Delay atualizado",
+        description: `O tempo de envio foi alterado para ${delayHours === 0 ? "imediato" : delayHours + "h"}.`,
+      });
+    } else {
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar o delay.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const processEmailQueue = async () => {
+    setProcessingQueue(true);
+    setQueueResult(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("process-email-queue");
+
+      if (error) throw error;
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      setQueueResult({
+        processed: data.processed || 0,
+        failed: data.failed || 0,
+      });
+
+      toast({
+        title: "Fila processada",
+        description: `${data.processed || 0} e-mail(s) enviado(s)${data.failed ? `, ${data.failed} falha(s)` : ""}.`,
+      });
+
+      // Refresh enrollment count
+      const { count: enrollmentCount } = await supabase
+        .from("email_sequence_enrollments")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "active");
+      setActiveEnrollments(enrollmentCount || 0);
+    } catch (error) {
+      console.error("Error processing queue:", error);
+      toast({
+        title: "Erro",
+        description: error instanceof Error ? error.message : "Não foi possível processar a fila.",
+        variant: "destructive",
+      });
+    } finally {
+      setProcessingQueue(false);
     }
   };
 
@@ -641,13 +718,31 @@ const GrowthSettingsCard = () => {
                                 <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center text-sm font-medium">
                                   {step.step_order}
                                 </div>
-                                <div>
+                                <div className="flex-1">
                                   <p className="text-sm font-medium">{step.subject_pt}</p>
-                                  <p className="text-xs text-muted-foreground">
-                                    {step.delay_hours === 0
-                                      ? "Imediato"
-                                      : `${step.delay_hours}h após anterior`}
-                                  </p>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <span className="text-xs text-muted-foreground">Enviar:</span>
+                                    {step.step_order === 1 ? (
+                                      <span className="text-xs text-green-600 font-medium">Imediato</span>
+                                    ) : (
+                                      <div className="flex items-center gap-1">
+                                        <Input
+                                          type="number"
+                                          min="0"
+                                          max="168"
+                                          value={step.delay_hours}
+                                          onChange={(e) => {
+                                            const value = parseInt(e.target.value, 10);
+                                            if (!isNaN(value) && value >= 0) {
+                                              updateStepDelay(step.id, value);
+                                            }
+                                          }}
+                                          className="w-16 h-6 text-xs px-2"
+                                        />
+                                        <span className="text-xs text-muted-foreground">h após anterior</span>
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                               <Switch
@@ -663,10 +758,49 @@ const GrowthSettingsCard = () => {
               </div>
             )}
 
+            {/* Queue Processing */}
+            <div className="p-4 bg-muted/50 rounded-lg border space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-medium text-sm">Processamento da Fila</h4>
+                  <p className="text-xs text-muted-foreground">
+                    {activeEnrollments} usuário(s) com e-mails pendentes
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {queueResult && (
+                    <Badge variant={queueResult.failed > 0 ? "destructive" : "secondary"} className="gap-1">
+                      {queueResult.failed > 0 ? (
+                        <AlertCircle className="w-3 h-3" />
+                      ) : (
+                        <CheckCircle className="w-3 h-3" />
+                      )}
+                      {queueResult.processed} enviado(s)
+                    </Badge>
+                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={processEmailQueue}
+                    disabled={processingQueue}
+                    className="gap-2"
+                  >
+                    {processingQueue ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Play className="w-4 h-4" />
+                    )}
+                    Processar Agora
+                  </Button>
+                </div>
+              </div>
+            </div>
+
             <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
               <p className="text-sm text-blue-700 dark:text-blue-400">
-                💡 Os e-mails são enviados automaticamente via trigger do banco de dados.
-                Configure um cron job ou use Supabase Edge Functions para processar a fila.
+                💡 Para envio automático, configure um cron job que chame a função{" "}
+                <code className="bg-blue-500/20 px-1 rounded">process-email-queue</code> a cada 5 minutos.
+                Veja as instruções na migration SQL.
               </p>
             </div>
           </TabsContent>

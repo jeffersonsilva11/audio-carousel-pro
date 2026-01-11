@@ -21,15 +21,36 @@ import {
   Settings,
   FileText,
   Edit3,
+  Clock,
+  Sparkles,
 } from "lucide-react";
 import EmailTemplateEditor from "./EmailTemplateEditor";
 import { useSystemSettings } from "@/hooks/useSystemSettings";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+
+interface EmailTemplate {
+  id: string;
+  template_key: string;
+  name: string;
+  description: string | null;
+  is_active: boolean;
+}
+
+interface SequenceStep {
+  id: string;
+  step_order: number;
+  delay_hours: number;
+  template_id: string | null;
+}
 
 const EmailSettingsCard = () => {
   const { settings, loading, updateSettings } = useSystemSettings();
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
+  const [templates, setTemplates] = useState<EmailTemplate[]>([]);
+  const [sequenceSteps, setSequenceSteps] = useState<SequenceStep[]>([]);
+  const [loadingTemplates, setLoadingTemplates] = useState(true);
 
   // Email verification settings
   const [emailVerificationEnabled, setEmailVerificationEnabled] = useState(true);
@@ -54,6 +75,38 @@ const EmailSettingsCard = () => {
   // Template editor state
   const [showTemplateEditor, setShowTemplateEditor] = useState(false);
 
+  // Fetch email templates and sequence steps from database
+  const fetchTemplates = async () => {
+    try {
+      // Fetch templates
+      const { data: templatesData, error: templatesError } = await supabase
+        .from("email_templates")
+        .select("id, template_key, name, description, is_active")
+        .order("template_key");
+
+      if (templatesError) throw templatesError;
+      setTemplates(templatesData || []);
+
+      // Fetch sequence steps for timing info
+      const { data: stepsData } = await supabase
+        .from("email_sequence_steps")
+        .select("id, step_order, delay_hours, template_id")
+        .order("step_order");
+
+      setSequenceSteps(stepsData || []);
+    } catch (error) {
+      console.error("Error fetching templates:", error);
+    } finally {
+      setLoadingTemplates(false);
+    }
+  };
+
+  // Get delay hours for a template
+  const getTemplateDelay = (templateKey: string): number => {
+    const step = sequenceSteps.find(s => s.template_id === templateKey);
+    return step?.delay_hours ?? 0;
+  };
+
   // Sync local state with fetched settings
   useEffect(() => {
     if (!loading) {
@@ -67,6 +120,11 @@ const EmailSettingsCard = () => {
       setSmtpSecure(settings.smtpSecure);
     }
   }, [settings, loading]);
+
+  // Fetch templates on mount
+  useEffect(() => {
+    fetchTemplates();
+  }, []);
 
   const handleSave = async () => {
     setSaving(true);
@@ -183,6 +241,27 @@ const EmailSettingsCard = () => {
       });
     } finally {
       setTestingEmail(false);
+    }
+  };
+
+  const getTemplateIcon = (key: string) => {
+    switch (key) {
+      case "test":
+        return <Mail className="w-4 h-4 text-purple-500" />;
+      case "verification":
+        return <CheckCircle className="w-4 h-4 text-blue-500" />;
+      case "password_reset":
+        return <AlertCircle className="w-4 h-4 text-amber-500" />;
+      case "welcome":
+        return <FileText className="w-4 h-4 text-green-500" />;
+      case "onboarding_welcome":
+        return <Mail className="w-4 h-4 text-indigo-500" />;
+      case "onboarding_success_story":
+        return <FileText className="w-4 h-4 text-pink-500" />;
+      case "onboarding_limited_offer":
+        return <AlertCircle className="w-4 h-4 text-red-500" />;
+      default:
+        return <Mail className="w-4 h-4 text-gray-500" />;
     }
   };
 
@@ -467,7 +546,10 @@ const EmailSettingsCard = () => {
         {/* Templates Tab */}
         <TabsContent value="templates">
           {showTemplateEditor ? (
-            <EmailTemplateEditor onBack={() => setShowTemplateEditor(false)} />
+            <EmailTemplateEditor onBack={() => {
+              setShowTemplateEditor(false);
+              fetchTemplates(); // Refresh templates after editing
+            }} />
           ) : (
             <Card>
               <CardHeader>
@@ -475,7 +557,7 @@ const EmailSettingsCard = () => {
                   <div>
                     <CardTitle className="text-lg">Templates de E-mail</CardTitle>
                     <CardDescription>
-                      Templates pré-configurados para diferentes tipos de e-mail
+                      {templates.length} templates configurados
                     </CardDescription>
                   </div>
                   <Button onClick={() => setShowTemplateEditor(true)} className="gap-2">
@@ -485,51 +567,96 @@ const EmailSettingsCard = () => {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="p-4 border rounded-lg">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Mail className="w-4 h-4 text-blue-500" />
-                      <h4 className="font-medium">Verificação de Conta</h4>
-                    </div>
-                    <p className="text-sm text-muted-foreground mb-3">
-                      Enviado quando usuário se cadastra para confirmar o e-mail
-                    </p>
-                    <Badge variant="secondary">Automático</Badge>
+                {loadingTemplates ? (
+                  <div className="py-10 flex items-center justify-center">
+                    <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
                   </div>
+                ) : (
+                  <>
+                    {/* Transactional Templates */}
+                    <div className="space-y-3">
+                      <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                        <Mail className="w-4 h-4" />
+                        E-mails Transacionais
+                      </h4>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        {templates
+                          .filter(t => !t.template_key.startsWith("onboarding_"))
+                          .map((template) => (
+                            <div key={template.id} className="p-4 border rounded-lg">
+                              <div className="flex items-center gap-2 mb-2">
+                                {getTemplateIcon(template.template_key)}
+                                <h4 className="font-medium">{template.name}</h4>
+                              </div>
+                              <p className="text-sm text-muted-foreground mb-3">
+                                {template.description || "Sem descrição"}
+                              </p>
+                              <div className="flex items-center gap-2">
+                                <Badge variant={template.is_active ? "secondary" : "outline"}>
+                                  {template.is_active ? "Ativo" : "Inativo"}
+                                </Badge>
+                                <Badge variant="outline" className="text-xs">Automático</Badge>
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
 
-                  <div className="p-4 border rounded-lg">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Lock className="w-4 h-4 text-amber-500" />
-                      <h4 className="font-medium">Recuperação de Senha</h4>
-                    </div>
-                    <p className="text-sm text-muted-foreground mb-3">
-                      Enviado quando usuário solicita redefinição de senha
-                    </p>
-                    <Badge variant="secondary">Automático</Badge>
-                  </div>
+                    {/* Onboarding Sequence Templates */}
+                    {templates.some(t => t.template_key.startsWith("onboarding_")) && (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                            <Sparkles className="w-4 h-4" />
+                            Sequência de Onboarding
+                          </h4>
+                          <span className="text-xs text-muted-foreground">
+                            Tempo de envio editável em Growth → E-mails
+                          </span>
+                        </div>
+                        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                          {templates
+                            .filter(t => t.template_key.startsWith("onboarding_"))
+                            .map((template, index) => {
+                              const delayHours = getTemplateDelay(template.template_key);
+                              return (
+                                <div key={template.id} className="p-4 border rounded-lg bg-gradient-to-br from-purple-500/5 to-pink-500/5">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <div className="w-6 h-6 rounded-full bg-purple-500/20 text-purple-600 flex items-center justify-center text-xs font-bold">
+                                      {index + 1}
+                                    </div>
+                                    <h4 className="font-medium text-sm">{template.name}</h4>
+                                  </div>
+                                  <p className="text-xs text-muted-foreground mb-3">
+                                    {template.description || "Sem descrição"}
+                                  </p>
+                                  <div className="flex items-center gap-2">
+                                    <Badge variant={template.is_active ? "secondary" : "outline"} className="text-xs">
+                                      {template.is_active ? "Ativo" : "Inativo"}
+                                    </Badge>
+                                    <Badge variant="outline" className="text-xs gap-1">
+                                      <Clock className="w-3 h-3" />
+                                      {delayHours === 0 ? "Imediato" : `${delayHours}h`}
+                                    </Badge>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                        </div>
+                      </div>
+                    )}
 
-                  <div className="p-4 border rounded-lg">
-                    <div className="flex items-center gap-2 mb-2">
-                      <CheckCircle className="w-4 h-4 text-green-500" />
-                      <h4 className="font-medium">Boas-vindas</h4>
-                    </div>
-                    <p className="text-sm text-muted-foreground mb-3">
-                      Enviado após confirmação de conta bem-sucedida
-                    </p>
-                    <Badge variant="secondary">Automático</Badge>
-                  </div>
-
-                  <div className="p-4 border rounded-lg">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Settings className="w-4 h-4 text-gray-500" />
-                      <h4 className="font-medium">E-mail de Teste</h4>
-                    </div>
-                    <p className="text-sm text-muted-foreground mb-3">
-                      Usado para testar configurações SMTP
-                    </p>
-                    <Badge variant="outline">Manual</Badge>
-                  </div>
-                </div>
+                    {templates.length === 0 && (
+                      <div className="py-10 text-center">
+                        <Mail className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                        <h3 className="font-medium mb-2">Nenhum template encontrado</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Execute a migração do banco de dados para criar os templates.
+                        </p>
+                      </div>
+                    )}
+                  </>
+                )}
 
                 <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
                   <div className="flex items-start gap-3">
