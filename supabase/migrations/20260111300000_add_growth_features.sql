@@ -86,7 +86,23 @@ INSERT INTO app_settings (key, value, description) VALUES
   ('early_access_total_spots', '500', 'Total spots for early access'),
   ('early_access_plan_id', '', 'Stripe plan ID for early access offer'),
   ('early_access_checkout_url', '', 'Specific checkout URL for early access'),
-  ('exit_intent_settings', '{"enabled":true,"title_pt":"Espere! Não vá embora ainda...","title_en":"Wait! Don'\''t leave yet...","title_es":"¡Espera! No te vayas todavía...","subtitle_pt":"Que tal criar seu primeiro carrossel grátis antes de sair?","subtitle_en":"How about creating your first free carousel before leaving?","subtitle_es":"¿Qué tal crear tu primer carrusel gratis antes de irte?","cta_pt":"Quero meu carrossel grátis","cta_en":"I want my free carousel","cta_es":"Quiero mi carrusel gratis","offer_pt":"Cadastre-se agora e ganhe 3 carrosséis extras no plano gratuito!","offer_en":"Sign up now and get 3 extra carousels on the free plan!","offer_es":"¡Regístrate ahora y obtén 3 carruseles extra en el plan gratuito!","delay_seconds":0,"show_once_per_session":true}', 'Exit intent popup settings'),
+  ('exit_intent_settings', $json${
+    "enabled": true,
+    "title_pt": "Espere! Não vá embora ainda...",
+    "title_en": "Wait! Don''t leave yet...",
+    "title_es": "¡Espera! No te vayas todavía...",
+    "subtitle_pt": "Que tal criar seu primeiro carrossel grátis antes de sair?",
+    "subtitle_en": "How about creating your first free carousel before leaving?",
+    "subtitle_es": "¿Qué tal crear tu primer carrusel gratis antes de irte?",
+    "cta_pt": "Quero meu carrossel grátis",
+    "cta_en": "I want my free carousel",
+    "cta_es": "Quiero mi carrusel gratis",
+    "offer_pt": "Cadastre-se agora e ganhe 3 carrosséis extras no plano gratuito!",
+    "offer_en": "Sign up now and get 3 extra carousels on the free plan!",
+    "offer_es": "¡Regístrate ahora y obtén 3 carruseles extra en el plan gratuito!",
+    "delay_seconds": 0,
+    "show_once_per_session": true
+  }$json$, 'Exit intent popup settings'),
   ('social_proof_enabled', 'true', 'Enable/disable real-time social proof notifications'),
   ('social_proof_interval_seconds', '8', 'Interval between social proof notifications')
 ON CONFLICT (key) DO NOTHING;
