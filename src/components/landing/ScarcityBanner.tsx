@@ -1,33 +1,96 @@
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Zap, Check, ArrowRight } from "lucide-react";
+import { Zap, Check, ArrowRight, Loader2 } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useLandingContent } from "@/hooks/useLandingContent";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 
 const ScarcityBanner = () => {
   const { language } = useLanguage();
   const { getContent } = useLandingContent();
+  const [realSpotsFilled, setRealSpotsFilled] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
 
   // Check if scarcity is enabled
   const enabled = getContent("scarcity", "enabled", language) === "true";
 
+  // Fetch real subscriber count from database
+  useEffect(() => {
+    const fetchSubscriberCount = async () => {
+      try {
+        // Count active subscriptions for creator and agency tiers
+        const { count, error } = await supabase
+          .from("subscriptions")
+          .select("*", { count: "exact", head: true })
+          .in("tier", ["creator", "agency"])
+          .eq("status", "active");
+
+        if (error) {
+          console.error("Error fetching subscriber count:", error);
+          setRealSpotsFilled(null);
+        } else {
+          setRealSpotsFilled(count || 0);
+        }
+      } catch (err) {
+        console.error("Error:", err);
+        setRealSpotsFilled(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (enabled) {
+      fetchSubscriberCount();
+    } else {
+      setLoading(false);
+    }
+  }, [enabled]);
+
   if (!enabled) return null;
 
   // Get dynamic content
-  const badge = getContent("scarcity", "badge", language) || "OFERTA DE LANÇAMENTO";
-  const title = getContent("scarcity", "title", language) || "Preço de lançamento para os primeiros 500 assinantes";
+  const badge = getContent("scarcity", "badge", language) || (
+    language === "pt-BR" ? "ACESSO ANTECIPADO" :
+    language === "es" ? "ACCESO ANTICIPADO" :
+    "EARLY ACCESS"
+  );
+
+  const title = getContent("scarcity", "title", language) || (
+    language === "pt-BR" ? "Seja um dos primeiros 500 a garantir o preço de lançamento" :
+    language === "es" ? "Sé uno de los primeros 500 en asegurar el precio de lanzamiento" :
+    "Be one of the first 500 to lock in launch pricing"
+  );
 
   const benefits = [
-    getContent("scarcity", "benefit1", language) || "Preço travado para sempre",
-    getContent("scarcity", "benefit2", language) || "Acesso antecipado a novos recursos",
-    getContent("scarcity", "benefit3", language) || "Badge 'Early Adopter' exclusivo",
+    getContent("scarcity", "benefit1", language) || (
+      language === "pt-BR" ? "Preço travado para sempre" :
+      language === "es" ? "Precio bloqueado para siempre" :
+      "Price locked forever"
+    ),
+    getContent("scarcity", "benefit2", language) || (
+      language === "pt-BR" ? "Acesso antecipado a novos recursos" :
+      language === "es" ? "Acceso anticipado a nuevas funciones" :
+      "Early access to new features"
+    ),
+    getContent("scarcity", "benefit3", language) || (
+      language === "pt-BR" ? "Badge 'Early Adopter' exclusivo" :
+      language === "es" ? "Badge 'Early Adopter' exclusivo" :
+      "Exclusive 'Early Adopter' badge"
+    ),
   ];
 
-  const spotsFilled = parseInt(getContent("scarcity", "spots_filled", language) || "347");
+  // Use real data if available, otherwise fall back to content
   const spotsTotal = parseInt(getContent("scarcity", "spots_total", language) || "500");
-  const spotsLabel = getContent("scarcity", "spots_label", language) || "vagas preenchidas";
+  const spotsFilled = realSpotsFilled !== null ? realSpotsFilled : parseInt(getContent("scarcity", "spots_filled", language) || "0");
+  const spotsLabel = getContent("scarcity", "spots_label", language) || (
+    language === "pt-BR" ? "vagas preenchidas" :
+    language === "es" ? "plazas ocupadas" :
+    "spots filled"
+  );
 
-  const percentage = (spotsFilled / spotsTotal) * 100;
+  const percentage = Math.min((spotsFilled / spotsTotal) * 100, 100);
+  const spotsRemaining = Math.max(spotsTotal - spotsFilled, 0);
 
   return (
     <section className="py-16 relative overflow-hidden">
@@ -100,68 +163,84 @@ const ScarcityBanner = () => {
               {/* Right side - Progress */}
               <div className="lg:w-64">
                 <div className="bg-secondary/50 rounded-2xl p-6 border border-border">
-                  {/* Progress circle */}
-                  <div className="relative w-32 h-32 mx-auto mb-4">
-                    <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
-                      {/* Background circle */}
-                      <circle
-                        cx="50"
-                        cy="50"
-                        r="45"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="8"
-                        className="text-muted/30"
-                      />
-                      {/* Progress circle */}
-                      <motion.circle
-                        cx="50"
-                        cy="50"
-                        r="45"
-                        fill="none"
-                        stroke="url(#progressGradient)"
-                        strokeWidth="8"
-                        strokeLinecap="round"
-                        initial={{ strokeDasharray: "0 283" }}
-                        whileInView={{ strokeDasharray: `${percentage * 2.83} 283` }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 1.5, ease: "easeOut" }}
-                      />
-                      <defs>
-                        <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                          <stop offset="0%" stopColor="#f59e0b" />
-                          <stop offset="50%" stopColor="#f97316" />
-                          <stop offset="100%" stopColor="#ef4444" />
-                        </linearGradient>
-                      </defs>
-                    </svg>
-                    {/* Center text */}
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-3xl font-bold">{spotsFilled}</span>
-                      <span className="text-xs text-muted-foreground">/ {spotsTotal}</span>
+                  {loading ? (
+                    <div className="flex items-center justify-center h-40">
+                      <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
                     </div>
-                  </div>
+                  ) : (
+                    <>
+                      {/* Progress circle */}
+                      <div className="relative w-32 h-32 mx-auto mb-4">
+                        <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
+                          {/* Background circle */}
+                          <circle
+                            cx="50"
+                            cy="50"
+                            r="45"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="8"
+                            className="text-muted/30"
+                          />
+                          {/* Progress circle */}
+                          <motion.circle
+                            cx="50"
+                            cy="50"
+                            r="45"
+                            fill="none"
+                            stroke="url(#progressGradient)"
+                            strokeWidth="8"
+                            strokeLinecap="round"
+                            initial={{ strokeDasharray: "0 283" }}
+                            whileInView={{ strokeDasharray: `${percentage * 2.83} 283` }}
+                            viewport={{ once: true }}
+                            transition={{ duration: 1.5, ease: "easeOut" }}
+                          />
+                          <defs>
+                            <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                              <stop offset="0%" stopColor="#f59e0b" />
+                              <stop offset="50%" stopColor="#f97316" />
+                              <stop offset="100%" stopColor="#ef4444" />
+                            </linearGradient>
+                          </defs>
+                        </svg>
+                        {/* Center text */}
+                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                          <span className="text-3xl font-bold">{spotsFilled}</span>
+                          <span className="text-xs text-muted-foreground">/ {spotsTotal}</span>
+                        </div>
+                      </div>
 
-                  {/* Label */}
-                  <p className="text-center text-sm text-muted-foreground">
-                    {spotsLabel}
-                  </p>
+                      {/* Label */}
+                      <p className="text-center text-sm text-muted-foreground">
+                        {spotsLabel}
+                      </p>
 
-                  {/* Urgency indicator */}
-                  <motion.div
-                    animate={{ opacity: [0.5, 1, 0.5] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                    className="mt-4 text-center"
-                  >
-                    <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-600 dark:text-amber-400">
-                      <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                      {language === "pt-BR"
-                        ? "Enchendo rápido"
-                        : language === "es"
-                          ? "Llenándose rápido"
-                          : "Filling up fast"}
-                    </span>
-                  </motion.div>
+                      {/* Remaining spots */}
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="mt-4 text-center"
+                      >
+                        <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-600 dark:text-amber-400">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                          {spotsRemaining > 0 ? (
+                            language === "pt-BR"
+                              ? `${spotsRemaining} vagas restantes`
+                              : language === "es"
+                                ? `${spotsRemaining} plazas restantes`
+                                : `${spotsRemaining} spots remaining`
+                          ) : (
+                            language === "pt-BR"
+                              ? "Últimas vagas!"
+                              : language === "es"
+                                ? "¡Últimas plazas!"
+                                : "Last spots!"
+                          )}
+                        </span>
+                      </motion.div>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
