@@ -37,11 +37,19 @@ interface EmailTemplate {
   is_active: boolean;
 }
 
+interface SequenceStep {
+  id: string;
+  step_order: number;
+  delay_hours: number;
+  template_id: string | null;
+}
+
 const EmailSettingsCard = () => {
   const { settings, loading, updateSettings } = useSystemSettings();
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
+  const [sequenceSteps, setSequenceSteps] = useState<SequenceStep[]>([]);
   const [loadingTemplates, setLoadingTemplates] = useState(true);
 
   // Email verification settings
@@ -67,21 +75,36 @@ const EmailSettingsCard = () => {
   // Template editor state
   const [showTemplateEditor, setShowTemplateEditor] = useState(false);
 
-  // Fetch email templates from database
+  // Fetch email templates and sequence steps from database
   const fetchTemplates = async () => {
     try {
-      const { data, error } = await supabase
+      // Fetch templates
+      const { data: templatesData, error: templatesError } = await supabase
         .from("email_templates")
         .select("id, template_key, name, description, is_active")
         .order("template_key");
 
-      if (error) throw error;
-      setTemplates(data || []);
+      if (templatesError) throw templatesError;
+      setTemplates(templatesData || []);
+
+      // Fetch sequence steps for timing info
+      const { data: stepsData } = await supabase
+        .from("email_sequence_steps")
+        .select("id, step_order, delay_hours, template_id")
+        .order("step_order");
+
+      setSequenceSteps(stepsData || []);
     } catch (error) {
       console.error("Error fetching templates:", error);
     } finally {
       setLoadingTemplates(false);
     }
+  };
+
+  // Get delay hours for a template
+  const getTemplateDelay = (templateKey: string): number => {
+    const step = sequenceSteps.find(s => s.template_id === templateKey);
+    return step?.delay_hours ?? 0;
   };
 
   // Sync local state with fetched settings
@@ -582,35 +605,43 @@ const EmailSettingsCard = () => {
                     {/* Onboarding Sequence Templates */}
                     {templates.some(t => t.template_key.startsWith("onboarding_")) && (
                       <div className="space-y-3">
-                        <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                          <Sparkles className="w-4 h-4" />
-                          Sequência de Onboarding
-                        </h4>
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                            <Sparkles className="w-4 h-4" />
+                            Sequência de Onboarding
+                          </h4>
+                          <span className="text-xs text-muted-foreground">
+                            Tempo de envio editável em Growth → E-mails
+                          </span>
+                        </div>
                         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                           {templates
                             .filter(t => t.template_key.startsWith("onboarding_"))
-                            .map((template, index) => (
-                              <div key={template.id} className="p-4 border rounded-lg bg-gradient-to-br from-purple-500/5 to-pink-500/5">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <div className="w-6 h-6 rounded-full bg-purple-500/20 text-purple-600 flex items-center justify-center text-xs font-bold">
-                                    {index + 1}
+                            .map((template, index) => {
+                              const delayHours = getTemplateDelay(template.template_key);
+                              return (
+                                <div key={template.id} className="p-4 border rounded-lg bg-gradient-to-br from-purple-500/5 to-pink-500/5">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <div className="w-6 h-6 rounded-full bg-purple-500/20 text-purple-600 flex items-center justify-center text-xs font-bold">
+                                      {index + 1}
+                                    </div>
+                                    <h4 className="font-medium text-sm">{template.name}</h4>
                                   </div>
-                                  <h4 className="font-medium text-sm">{template.name}</h4>
+                                  <p className="text-xs text-muted-foreground mb-3">
+                                    {template.description || "Sem descrição"}
+                                  </p>
+                                  <div className="flex items-center gap-2">
+                                    <Badge variant={template.is_active ? "secondary" : "outline"} className="text-xs">
+                                      {template.is_active ? "Ativo" : "Inativo"}
+                                    </Badge>
+                                    <Badge variant="outline" className="text-xs gap-1">
+                                      <Clock className="w-3 h-3" />
+                                      {delayHours === 0 ? "Imediato" : `${delayHours}h`}
+                                    </Badge>
+                                  </div>
                                 </div>
-                                <p className="text-xs text-muted-foreground mb-3">
-                                  {template.description || "Sem descrição"}
-                                </p>
-                                <div className="flex items-center gap-2">
-                                  <Badge variant={template.is_active ? "secondary" : "outline"} className="text-xs">
-                                    {template.is_active ? "Ativo" : "Inativo"}
-                                  </Badge>
-                                  <Badge variant="outline" className="text-xs gap-1">
-                                    <Clock className="w-3 h-3" />
-                                    {index === 0 ? "Imediato" : index === 1 ? "24h" : "48h"}
-                                  </Badge>
-                                </div>
-                              </div>
-                            ))}
+                              );
+                            })}
                         </div>
                       </div>
                     )}

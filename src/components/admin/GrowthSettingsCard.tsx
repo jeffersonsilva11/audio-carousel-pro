@@ -285,6 +285,29 @@ const GrowthSettingsCard = () => {
     }
   };
 
+  const updateStepDelay = async (stepId: string, delayHours: number) => {
+    const { error } = await supabase
+      .from("email_sequence_steps")
+      .update({ delay_hours: delayHours })
+      .eq("id", stepId);
+
+    if (!error) {
+      setSequenceSteps((prev) =>
+        prev.map((s) => (s.id === stepId ? { ...s, delay_hours: delayHours } : s))
+      );
+      toast({
+        title: "Delay atualizado",
+        description: `O tempo de envio foi alterado para ${delayHours === 0 ? "imediato" : delayHours + "h"}.`,
+      });
+    } else {
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar o delay.",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (loading) {
     return (
       <Card>
@@ -641,13 +664,31 @@ const GrowthSettingsCard = () => {
                                 <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center text-sm font-medium">
                                   {step.step_order}
                                 </div>
-                                <div>
+                                <div className="flex-1">
                                   <p className="text-sm font-medium">{step.subject_pt}</p>
-                                  <p className="text-xs text-muted-foreground">
-                                    {step.delay_hours === 0
-                                      ? "Imediato"
-                                      : `${step.delay_hours}h após anterior`}
-                                  </p>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <span className="text-xs text-muted-foreground">Enviar:</span>
+                                    {step.step_order === 1 ? (
+                                      <span className="text-xs text-green-600 font-medium">Imediato</span>
+                                    ) : (
+                                      <div className="flex items-center gap-1">
+                                        <Input
+                                          type="number"
+                                          min="0"
+                                          max="168"
+                                          value={step.delay_hours}
+                                          onChange={(e) => {
+                                            const value = parseInt(e.target.value, 10);
+                                            if (!isNaN(value) && value >= 0) {
+                                              updateStepDelay(step.id, value);
+                                            }
+                                          }}
+                                          className="w-16 h-6 text-xs px-2"
+                                        />
+                                        <span className="text-xs text-muted-foreground">h após anterior</span>
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                               <Switch
