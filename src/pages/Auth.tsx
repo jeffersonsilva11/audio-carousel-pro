@@ -21,8 +21,10 @@ const Auth = () => {
   const { language } = useLanguage();
   const [searchParams] = useSearchParams();
   const mode = searchParams.get('mode');
+  const signupSource = searchParams.get('source') || 'direct';
+  const prefillEmail = searchParams.get('email') || '';
   const [isLogin, setIsLogin] = useState(mode !== 'signup');
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(prefillEmail);
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -287,7 +289,7 @@ const Auth = () => {
           setIsRedirectingToVerify(true);
         }
 
-        const { error } = await signUp(email, password, name);
+        const { error } = await signUp(email, password, name, signupSource);
         if (error) {
           // Reset flag on error
           setIsRedirectingToVerify(false);

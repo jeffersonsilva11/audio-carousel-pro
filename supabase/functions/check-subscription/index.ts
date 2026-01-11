@@ -123,7 +123,7 @@ serve(async (req) => {
     logStep("User authenticated", { userId: user.id });
 
     // Run initial checks in parallel for better performance
-    const [roleResult, manualSubResult, localSubResult, retentionOfferResult] = await Promise.all([
+    const [roleResult, manualSubResult, localSubResult, retentionOfferResult, profileResult] = await Promise.all([
       // Check admin role
       supabaseClient.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").maybeSingle(),
       // Check manual subscription
@@ -132,11 +132,17 @@ serve(async (req) => {
       supabaseClient.from("subscriptions").select("*").eq("user_id", user.id).maybeSingle(),
       // Check if user can receive retention offer
       supabaseClient.rpc("can_receive_retention_offer", { p_user_id: user.id }),
+      // Get user's bonus carousels from profile
+      supabaseClient.from("profiles").select("bonus_carousels, signup_source").eq("user_id", user.id).maybeSingle(),
     ]);
 
     // Extract retention offer status
     const canReceiveRetentionOffer = retentionOfferResult.data ?? true;
     const retentionOfferUsedAt = localSubResult.data?.retention_offer_used_at || null;
+
+    // Extract bonus carousels
+    const bonusCarousels = profileResult.data?.bonus_carousels || 0;
+    const signupSource = profileResult.data?.signup_source || 'direct';
 
     // 1. CHECK ADMIN FIRST
     if (roleResult.data) {
@@ -284,6 +290,8 @@ serve(async (req) => {
         ...FREE_PLAN,
         period_used: dailyUsed,
         daily_used: dailyUsed,
+        bonus_carousels: bonusCarousels,
+        signup_source: signupSource,
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
@@ -301,6 +309,8 @@ serve(async (req) => {
         ...FREE_PLAN,
         period_used: dailyUsed,
         daily_used: dailyUsed,
+        bonus_carousels: bonusCarousels,
+        signup_source: signupSource,
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
@@ -321,6 +331,8 @@ serve(async (req) => {
         ...FREE_PLAN,
         period_used: dailyUsed,
         daily_used: dailyUsed,
+        bonus_carousels: bonusCarousels,
+        signup_source: signupSource,
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,

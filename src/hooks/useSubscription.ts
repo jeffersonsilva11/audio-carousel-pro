@@ -77,6 +77,7 @@ interface SubscriptionState {
   status: string;
   canReceiveRetentionOffer: boolean;
   retentionOfferUsedAt: string | null;
+  bonusCarousels: number; // Bonus carousels from exit intent signup
 }
 
 export function useSubscription() {
@@ -100,6 +101,7 @@ export function useSubscription() {
     status: "active",
     canReceiveRetentionOffer: true,
     retentionOfferUsedAt: null,
+    bonusCarousels: 0,
   });
 
   const checkSubscription = useCallback(async (forceRefresh = false) => {
@@ -123,6 +125,7 @@ export function useSubscription() {
         status: "active",
         canReceiveRetentionOffer: true,
         retentionOfferUsedAt: null,
+        bonusCarousels: 0,
       });
       return;
     }
@@ -153,6 +156,7 @@ export function useSubscription() {
           status: (cachedData.status as string) || "active",
           canReceiveRetentionOffer: (cachedData.can_receive_retention_offer as boolean) ?? true,
           retentionOfferUsedAt: (cachedData.retention_offer_used_at as string) || null,
+          bonusCarousels: (cachedData.bonus_carousels as number) || 0,
         });
         return;
       }
@@ -194,6 +198,7 @@ export function useSubscription() {
           status: "active",
           canReceiveRetentionOffer: true,
           retentionOfferUsedAt: null,
+          bonusCarousels: 0,
         });
         return;
       }
@@ -220,6 +225,7 @@ export function useSubscription() {
           status: "active",
           canReceiveRetentionOffer: true,
           retentionOfferUsedAt: null,
+          bonusCarousels: 0,
         });
         return;
       }
@@ -249,6 +255,7 @@ export function useSubscription() {
         status: data.status || "active",
         canReceiveRetentionOffer: data.can_receive_retention_offer ?? true,
         retentionOfferUsedAt: data.retention_offer_used_at || null,
+        bonusCarousels: data.bonus_carousels || 0,
       });
     } catch (error) {
       console.error("Error checking subscription:", error);
@@ -272,6 +279,7 @@ export function useSubscription() {
         status: "active",
         canReceiveRetentionOffer: true,
         retentionOfferUsedAt: null,
+        bonusCarousels: 0,
       });
     }
   }, [user, session]);
@@ -347,15 +355,28 @@ export function useSubscription() {
 
   const canCreateCarousel = () => {
     if (state.plan === "free") {
-      // Free users: 1 carousel total
-      return state.periodUsed < 1;
+      // Free users: 1 carousel + bonus carousels
+      const effectiveLimit = 1 + state.bonusCarousels;
+      return state.periodUsed < effectiveLimit;
     }
     // Paid users: check against period limit
     return state.periodUsed < state.dailyLimit;
   };
 
   const getRemainingCarousels = () => {
+    if (state.plan === "free") {
+      // Free users: include bonus carousels
+      const effectiveLimit = 1 + state.bonusCarousels;
+      return Math.max(0, effectiveLimit - state.periodUsed);
+    }
     return Math.max(0, state.dailyLimit - state.periodUsed);
+  };
+
+  const getEffectiveLimit = () => {
+    if (state.plan === "free") {
+      return 1 + state.bonusCarousels;
+    }
+    return state.dailyLimit;
   };
 
   const getPeriodLabel = (language: string = "pt-BR") => {
@@ -427,6 +448,7 @@ export function useSubscription() {
     openCustomerPortal,
     canCreateCarousel,
     getRemainingCarousels,
+    getEffectiveLimit,
     getPeriodLabel,
     getDaysRemaining,
     isCancelled,
