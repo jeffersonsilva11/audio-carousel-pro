@@ -40,6 +40,7 @@ import AdvancedOptionsEditor from "@/components/carousel-creator/AdvancedOptions
 import CoverCustomization from "@/components/carousel-creator/CoverCustomization";
 import ContentCustomization from "@/components/carousel-creator/ContentCustomization";
 import SlideImageUploader from "@/components/carousel-creator/SlideImageUploader";
+import AudioRecoveryBanner from "@/components/carousel-creator/AudioRecoveryBanner";
 import {
   CoverTemplateType,
   ContentTemplateType,
@@ -100,6 +101,7 @@ const CreateCarousel = () => {
   const [audioDuration, setAudioDuration] = useState<number | null>(null);
   const [isRecordingAudio, setIsRecordingAudio] = useState(false);
   const [audioRestoredFromStorage, setAudioRestoredFromStorage] = useState(false);
+  const [showRecoveryBanner, setShowRecoveryBanner] = useState(false);
 
   // Profile identity state - initialized from preferences
   const [profileIdentity, setProfileIdentity] = useState<ProfileIdentity>({
@@ -395,9 +397,10 @@ const CreateCarousel = () => {
         setAudioFile(file);
         setAudioDuration(parseFloat(savedAudioDuration));
 
-        // Restore step if it was on customize
+        // Restore step if it was on customize and show recovery banner
         if (savedStep === 'customize') {
           setCurrentStep('customize');
+          setShowRecoveryBanner(true);
         }
 
         toast({
@@ -1025,7 +1028,39 @@ const CreateCarousel = () => {
                   {t("create", "customizeSubtitle", siteLanguage)}
                 </p>
               </div>
-              
+
+              {/* Audio Recovery Banner - shows when audio was recovered from session */}
+              {showRecoveryBanner && audioFile && audioDuration && (
+                <AudioRecoveryBanner
+                  audioFile={audioFile}
+                  audioDuration={audioDuration}
+                  onDiscard={() => {
+                    setAudioFile(null);
+                    setAudioDuration(null);
+                    setShowRecoveryBanner(false);
+                    setCurrentStep("upload");
+                    // Clear sessionStorage
+                    sessionStorage.removeItem('carousel_audio_data');
+                    sessionStorage.removeItem('carousel_audio_duration');
+                    sessionStorage.removeItem('carousel_audio_name');
+                    sessionStorage.removeItem('carousel_audio_type');
+                    sessionStorage.removeItem('carousel_current_step');
+                  }}
+                  onRecordNew={() => {
+                    setAudioFile(null);
+                    setAudioDuration(null);
+                    setShowRecoveryBanner(false);
+                    setCurrentStep("upload");
+                    // Clear sessionStorage
+                    sessionStorage.removeItem('carousel_audio_data');
+                    sessionStorage.removeItem('carousel_audio_duration');
+                    sessionStorage.removeItem('carousel_audio_name');
+                    sessionStorage.removeItem('carousel_audio_type');
+                    sessionStorage.removeItem('carousel_current_step');
+                  }}
+                />
+              )}
+
               <div className="lg:grid lg:grid-cols-[1fr,280px] lg:gap-8">
                 {/* Form options - Organized in logical order */}
                 <div className="space-y-8">
