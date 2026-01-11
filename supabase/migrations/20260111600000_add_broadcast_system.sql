@@ -100,33 +100,38 @@ RETURNS TABLE (
 ) AS $$
 BEGIN
   RETURN QUERY
-  WITH user_plans AS (
-    -- First, get users with active Stripe subscriptions
-    SELECT DISTINCT
+  WITH user_effective_plans AS (
+    -- Get each user's effective plan (manual subscription takes priority)
+    SELECT DISTINCT ON (u.id)
       u.id as user_id,
-      COALESCE(s.plan_id, 'free') as plan_tier
+      COALESCE(
+        ms.plan_tier,  -- Manual subscription has priority
+        s.plan_id,     -- Then Stripe subscription
+        'free'         -- Default to free
+      ) as plan_tier
     FROM auth.users u
-    LEFT JOIN subscriptions s ON s.user_id = u.id AND s.status = 'active'
-    -- Override with manual subscriptions if active
     LEFT JOIN manual_subscriptions ms ON ms.user_id = u.id
       AND ms.is_active = true
       AND (ms.expires_at IS NULL OR ms.expires_at > NOW())
+    LEFT JOIN subscriptions s ON s.user_id = u.id AND s.status = 'active'
+  ),
+  all_plans AS (
+    -- Get all configured plans
+    SELECT tier, name_pt, display_order FROM plans_config WHERE is_active = true
+    UNION ALL
+    -- Ensure 'free' always appears
+    SELECT 'free'::TEXT, 'Gratuito'::VARCHAR, 0 WHERE NOT EXISTS (
+      SELECT 1 FROM plans_config WHERE tier = 'free' AND is_active = true
+    )
   )
   SELECT
-    COALESCE(up.plan_tier, 'free')::TEXT as plan_id,
-    COALESCE(pc.name_pt, 'Gratuito')::TEXT as plan_name,
-    COUNT(DISTINCT up.user_id)::BIGINT as user_count
-  FROM user_plans up
-  LEFT JOIN plans_config pc ON pc.tier = up.plan_tier
-  GROUP BY COALESCE(up.plan_tier, 'free'), COALESCE(pc.name_pt, 'Gratuito')
-  ORDER BY
-    CASE COALESCE(up.plan_tier, 'free')
-      WHEN 'free' THEN 1
-      WHEN 'starter' THEN 2
-      WHEN 'creator' THEN 3
-      WHEN 'agency' THEN 4
-      ELSE 5
-    END;
+    ap.tier::TEXT as plan_id,
+    ap.name_pt::TEXT as plan_name,
+    COALESCE(COUNT(uep.user_id), 0)::BIGINT as user_count
+  FROM all_plans ap
+  LEFT JOIN user_effective_plans uep ON uep.plan_tier = ap.tier
+  GROUP BY ap.tier, ap.name_pt, ap.display_order
+  ORDER BY ap.display_order, ap.tier;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
