@@ -3850,6 +3850,22 @@ export const translations = {
       en: "When are you going to stop fooling yourself?",
       es: "¿Cuándo vas a dejar de engañarte?",
     },
+    // Slide navigation
+    previousSlide: {
+      "pt-BR": "Slide anterior",
+      en: "Previous slide",
+      es: "Diapositiva anterior",
+    },
+    nextSlide: {
+      "pt-BR": "Próximo slide",
+      en: "Next slide",
+      es: "Siguiente diapositiva",
+    },
+    slideOf: {
+      "pt-BR": "de",
+      en: "of",
+      es: "de",
+    },
   },
 
   // Privacy Settings (Profile)
@@ -4046,24 +4062,6 @@ export const translations = {
     },
   },
 
-  // Live Preview (CreateCarousel)
-  livePreview: {
-    previousSlide: {
-      "pt-BR": "Slide anterior",
-      en: "Previous slide",
-      es: "Diapositiva anterior",
-    },
-    nextSlide: {
-      "pt-BR": "Próximo slide",
-      en: "Next slide",
-      es: "Siguiente diapositiva",
-    },
-    slideOf: {
-      "pt-BR": "de",
-      en: "of",
-      es: "de",
-    },
-  },
 } as const;
 
 export type TranslationKey = keyof typeof translations;
