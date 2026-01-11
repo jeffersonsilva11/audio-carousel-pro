@@ -44,8 +44,8 @@ const SlideImageUploader = ({
   // Translations
   const translations = {
     pt: {
-      title: "Imagens dos Slides",
-      subtitle: "Faça upload das imagens para cada slide que requer imagem",
+      title: "Imagens do Conteúdo",
+      subtitle: "Faça upload das imagens para os slides de conteúdo",
       coverSlide: "Capa",
       contentSlide: "Slide",
       uploadImage: "Enviar imagem",
@@ -65,8 +65,8 @@ const SlideImageUploader = ({
       noImagesDesc: "Os templates selecionados não requerem upload de imagens.",
     },
     en: {
-      title: "Slide Images",
-      subtitle: "Upload images for each slide that requires an image",
+      title: "Content Images",
+      subtitle: "Upload images for content slides",
       coverSlide: "Cover",
       contentSlide: "Slide",
       uploadImage: "Upload image",
@@ -86,8 +86,8 @@ const SlideImageUploader = ({
       noImagesDesc: "The selected templates don't require image uploads.",
     },
     es: {
-      title: "Imágenes de Diapositivas",
-      subtitle: "Sube imágenes para cada diapositiva que requiera una imagen",
+      title: "Imágenes del Contenido",
+      subtitle: "Sube imágenes para las diapositivas de contenido",
       coverSlide: "Portada",
       contentSlide: "Diapositiva",
       uploadImage: "Subir imagen",
