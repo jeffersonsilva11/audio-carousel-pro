@@ -137,6 +137,7 @@ const CreateCarousel = () => {
     customGradientColors: undefined,
     slideImages: [],
     textAlignment: 'center',
+    verticalAlignment: 'middle',
     showNavigationDots: true,
     showNavigationArrow: true,
   });
@@ -264,6 +265,7 @@ const CreateCarousel = () => {
                         })
                       : templateCustomization.slideImages,
                     textAlignment: templateCustomization.textAlignment,
+                    verticalAlignment: templateCustomization.verticalAlignment,
                     showNavigationDots: templateCustomization.showNavigationDots,
                     showNavigationArrow: templateCustomization.showNavigationArrow,
                     coverTemplate,
@@ -543,6 +545,7 @@ const CreateCarousel = () => {
           customGradientColors: config.customGradientColors as string[] | undefined,
           slideImages: config.slideImages as (string | null)[] | undefined,
           textAlignment: (config.textAlignment as 'left' | 'center' | 'right') || 'center',
+          verticalAlignment: (config.verticalAlignment as 'top' | 'middle' | 'bottom') || 'middle',
           showNavigationDots: config.showNavigationDots !== false,
           showNavigationArrow: config.showNavigationArrow !== false,
         });
@@ -747,6 +750,7 @@ const CreateCarousel = () => {
               })
             : templateCustomization.slideImages,
           textAlignment: templateCustomization.textAlignment,
+          verticalAlignment: templateCustomization.verticalAlignment,
           showNavigationDots: templateCustomization.showNavigationDots,
           showNavigationArrow: templateCustomization.showNavigationArrow,
           coverTemplate,
@@ -1061,6 +1065,8 @@ const CreateCarousel = () => {
                       onFontChange={(fontId) => setTemplateCustomization({ ...templateCustomization, fontId })}
                       textAlignment={templateCustomization.textAlignment}
                       onTextAlignmentChange={(textAlignment) => setTemplateCustomization({ ...templateCustomization, textAlignment })}
+                      verticalAlignment={templateCustomization.verticalAlignment}
+                      onVerticalAlignmentChange={(verticalAlignment) => setTemplateCustomization({ ...templateCustomization, verticalAlignment })}
                       isCreator={isCreator}
                     />
                   </div>
@@ -1160,6 +1166,7 @@ const CreateCarousel = () => {
                       gradientId={templateCustomization.gradientId}
                       customGradientColors={templateCustomization.customGradientColors}
                       textAlignment={templateCustomization.textAlignment}
+                      verticalAlignment={templateCustomization.verticalAlignment}
                       coverTemplate={coverTemplate}
                       contentTemplate={contentTemplate}
                     />
@@ -1180,6 +1187,7 @@ const CreateCarousel = () => {
                   gradientId={templateCustomization.gradientId}
                   customGradientColors={templateCustomization.customGradientColors}
                   textAlignment={templateCustomization.textAlignment}
+                  verticalAlignment={templateCustomization.verticalAlignment}
                   coverTemplate={coverTemplate}
                   contentTemplate={contentTemplate}
                 />

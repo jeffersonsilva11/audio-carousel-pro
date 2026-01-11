@@ -1,4 +1,4 @@
-import { Minimize2, Sparkles, FileText, CheckCircle2, Heart, Briefcase, Zap, AlignLeft, AlignCenter, AlignRight, Type, Lock } from "lucide-react";
+import { Minimize2, Sparkles, FileText, CheckCircle2, Heart, Briefcase, Zap, AlignLeft, AlignCenter, AlignRight, AlignVerticalJustifyStart, AlignVerticalJustifyCenter, AlignVerticalJustifyEnd, Type, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TEXT_MODES, TextModeId, getTextModeLabel, AVAILABLE_FONTS, FontId } from "@/lib/constants";
 import { useLanguage, useTranslation } from "@/hooks/useLanguage";
@@ -8,6 +8,7 @@ import { LockedFeature } from "@/components/ui/locked-feature";
 
 export type CreativeTone = "emotional" | "professional" | "provocative";
 export type TextAlignment = 'left' | 'center' | 'right';
+export type VerticalAlignment = 'top' | 'middle' | 'bottom';
 
 interface TextModeSelectorProps {
   selectedMode: TextModeId;
@@ -19,6 +20,8 @@ interface TextModeSelectorProps {
   onFontChange?: (fontId: FontId) => void;
   textAlignment?: TextAlignment;
   onTextAlignmentChange?: (alignment: TextAlignment) => void;
+  verticalAlignment?: VerticalAlignment;
+  onVerticalAlignmentChange?: (alignment: VerticalAlignment) => void;
   isCreator?: boolean;
 }
 
@@ -37,6 +40,8 @@ const TextModeSelector = ({
   onFontChange,
   textAlignment = 'center',
   onTextAlignmentChange,
+  verticalAlignment = 'middle',
+  onVerticalAlignmentChange,
   isCreator = false,
 }: TextModeSelectorProps) => {
   const { language } = useLanguage();
@@ -206,10 +211,10 @@ const TextModeSelector = ({
 
         {isCreator ? (
           <div className="space-y-4">
-            {/* Text Alignment */}
+            {/* Horizontal Alignment */}
             <div className="space-y-2">
               <p className="text-sm font-medium">
-                {t("textMode", "textAlignment")}
+                {t("textMode", "horizontalAlignment")}
               </p>
               <div className="flex gap-2">
                 {([
@@ -223,6 +228,34 @@ const TextModeSelector = ({
                     className={cn(
                       "flex-1 flex flex-col items-center gap-1 p-3 rounded-lg border-2 transition-all",
                       textAlignment === value
+                        ? "border-accent bg-accent/10"
+                        : "border-border hover:border-accent/50"
+                    )}
+                  >
+                    <Icon className="w-5 h-5" />
+                    <span className="text-xs">{label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Vertical Alignment */}
+            <div className="space-y-2">
+              <p className="text-sm font-medium">
+                {t("textMode", "verticalAlignment")}
+              </p>
+              <div className="flex gap-2">
+                {([
+                  { value: 'top' as VerticalAlignment, icon: AlignVerticalJustifyStart, label: t("textMode", "top") },
+                  { value: 'middle' as VerticalAlignment, icon: AlignVerticalJustifyCenter, label: t("textMode", "middle") },
+                  { value: 'bottom' as VerticalAlignment, icon: AlignVerticalJustifyEnd, label: t("textMode", "bottom") }
+                ]).map(({ value, icon: Icon, label }) => (
+                  <button
+                    key={value}
+                    onClick={() => onVerticalAlignmentChange?.(value)}
+                    className={cn(
+                      "flex-1 flex flex-col items-center gap-1 p-3 rounded-lg border-2 transition-all",
+                      verticalAlignment === value
                         ? "border-accent bg-accent/10"
                         : "border-border hover:border-accent/50"
                     )}

@@ -1686,6 +1686,31 @@ export const translations = {
       en: "Right",
       es: "Derecha",
     },
+    horizontalAlignment: {
+      "pt-BR": "Alinhamento Horizontal",
+      en: "Horizontal Alignment",
+      es: "Alineación Horizontal",
+    },
+    verticalAlignment: {
+      "pt-BR": "Alinhamento Vertical",
+      en: "Vertical Alignment",
+      es: "Alineación Vertical",
+    },
+    top: {
+      "pt-BR": "Topo",
+      en: "Top",
+      es: "Arriba",
+    },
+    middle: {
+      "pt-BR": "Meio",
+      en: "Middle",
+      es: "Medio",
+    },
+    bottom: {
+      "pt-BR": "Baixo",
+      en: "Bottom",
+      es: "Abajo",
+    },
     font: {
       "pt-BR": "Fonte",
       en: "Font",

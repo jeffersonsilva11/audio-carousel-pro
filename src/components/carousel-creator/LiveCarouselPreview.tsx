@@ -3,7 +3,7 @@ import { ProfileIdentity } from "./ProfileIdentitySelector";
 import { StyleType } from "./StyleSelector";
 import { FormatType } from "./FormatSelector";
 import { TemplateId, GRADIENT_PRESETS, AVAILABLE_FONTS, FontId, GradientId } from "@/lib/constants";
-import { TextAlignment } from "./AdvancedTemplateEditor";
+import { TextAlignment, VerticalAlignment } from "./AdvancedTemplateEditor";
 import { CoverTemplateType, ContentTemplateType, templateRequiresImage } from "@/lib/templates";
 import { motion } from "framer-motion";
 import { Eye, ChevronLeft, ChevronRight, ImageIcon } from "lucide-react";
@@ -25,6 +25,7 @@ interface LiveCarouselPreviewProps {
   gradientId?: GradientId;
   customGradientColors?: string[];
   textAlignment?: TextAlignment;
+  verticalAlignment?: VerticalAlignment;
   // New layout template props (Creator+ only)
   coverTemplate?: CoverTemplateType;
   contentTemplate?: ContentTemplateType;
@@ -70,6 +71,7 @@ const LiveCarouselPreview = ({
   gradientId = 'none',
   customGradientColors,
   textAlignment = 'center',
+  verticalAlignment = 'middle',
   coverTemplate = 'cover_full_image',
   contentTemplate = 'content_text_only',
 }: LiveCarouselPreviewProps) => {
@@ -114,12 +116,19 @@ const LiveCarouselPreview = ({
   const mutedColor = useWhiteText ? "text-white/70" : "text-[#0A0A0A]/70";
   const borderColor = useWhiteText ? "border-white/10" : "border-[#0A0A0A]/10";
 
-  // Text alignment - only horizontal, keep vertical centered
+  // Horizontal text alignment
   const textAlignClass = {
     'left': 'text-left',
     'center': 'text-center',
     'right': 'text-right',
   }[textAlignment] || 'text-center';
+
+  // Vertical text alignment
+  const verticalAlignClass = {
+    'top': 'justify-start pt-16',
+    'middle': 'justify-center',
+    'bottom': 'justify-end pb-16',
+  }[verticalAlignment] || 'justify-center';
 
   // Get aspect ratio based on format
   const getAspectRatio = () => {
@@ -191,7 +200,7 @@ const LiveCarouselPreview = ({
       {/* Preview Card */}
       <div className="relative">
         <motion.div
-          key={`${style}-${format}-${currentSlide}-${gradientId}-${fontId}-${textAlignment}-${coverTemplate}-${contentTemplate}`}
+          key={`${style}-${format}-${currentSlide}-${gradientId}-${fontId}-${textAlignment}-${verticalAlignment}-${coverTemplate}-${contentTemplate}`}
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.2 }}
@@ -365,8 +374,8 @@ const LiveCarouselPreview = ({
                   </div>
                 </div>
               ) : (
-                // Default text only
-                <div className="flex items-center justify-center w-full px-4">
+                // Default text only - uses vertical alignment
+                <div className={cn("flex flex-col items-center w-full px-4", verticalAlignClass)}>
                   <div className={cn("space-y-1 w-full", textAlignClass)}>
                     {isSignatureSlide ? (
                       <>
