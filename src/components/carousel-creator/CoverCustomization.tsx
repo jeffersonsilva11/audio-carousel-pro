@@ -606,6 +606,17 @@ const CoverCustomization = ({
 // Cover template preview components
 const CoverTemplatePreview = ({ type }: { type: CoverTemplateType }) => {
   switch (type) {
+    case "cover_solid_color":
+      return (
+        <div className="w-full h-full p-3 flex flex-col items-center justify-center">
+          <div className="w-full h-full bg-muted-foreground/20 rounded-md flex flex-col items-center justify-center p-2">
+            <div className="space-y-1 text-center">
+              <div className="w-16 h-2 bg-foreground/60 rounded mx-auto" />
+              <div className="w-12 h-1.5 bg-foreground/40 rounded mx-auto" />
+            </div>
+          </div>
+        </div>
+      );
     case "cover_full_image":
       return (
         <div className="w-full h-full p-3 flex flex-col items-center justify-center">
