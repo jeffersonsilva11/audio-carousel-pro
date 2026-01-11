@@ -15,12 +15,16 @@ import CTA from "@/components/landing/CTA";
 import Footer from "@/components/landing/Footer";
 import DynamicStructuredData from "@/components/landing/DynamicStructuredData";
 import SEOHead from "@/components/SEOHead";
+import ExitIntentPopup from "@/components/landing/ExitIntentPopup";
+import SocialProofToast from "@/components/landing/SocialProofToast";
 
 const Index = () => {
   return (
     <>
       <SEOHead canonicalPath="" />
       <DynamicStructuredData />
+      <ExitIntentPopup />
+      <SocialProofToast />
       <div className="min-h-screen bg-background">
         <Header />
         <main>

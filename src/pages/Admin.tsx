@@ -39,6 +39,8 @@ import SystemControlCard from "@/components/admin/SystemControlCard";
 import SupportSettingsCard from "@/components/admin/SupportSettingsCard";
 import EmailSettingsCard from "@/components/admin/EmailSettingsCard";
 import PromptsManager from "@/components/admin/PromptsManager";
+import SEOSettingsCard from "@/components/admin/SEOSettingsCard";
+import GrowthSettingsCard from "@/components/admin/GrowthSettingsCard";
 
 const Admin = () => {
   const { user, loading: authLoading } = useAuth();
@@ -108,6 +110,8 @@ const Admin = () => {
         return <PlansConfigManager />;
       case "manual-subs":
         return <ManualSubscriptionManager />;
+      case "growth":
+        return <GrowthSettingsCard />;
       case "users":
         return <UsersTable />;
       case "roles":
@@ -120,6 +124,8 @@ const Admin = () => {
         return <PromptsManager />;
       case "settings":
         return <AppSettingsCard />;
+      case "seo":
+        return <SEOSettingsCard />;
       case "flags":
         return <FeatureFlagsCard />;
       case "api":
@@ -144,12 +150,14 @@ const Admin = () => {
       companies: { pt: "Empresas Parceiras", en: "Partner Companies" },
       plans: { pt: "Configuração de Planos", en: "Plans Configuration" },
       "manual-subs": { pt: "Assinaturas Manuais", en: "Manual Subscriptions" },
+      growth: { pt: "Configurações de Growth", en: "Growth Settings" },
       users: { pt: "Usuários", en: "Users" },
       roles: { pt: "Permissões e Roles", en: "Permissions & Roles" },
       email: { pt: "Configurações de E-mail", en: "Email Settings" },
       support: { pt: "Configurações de Suporte", en: "Support Settings" },
       prompts: { pt: "Prompts de IA", en: "AI Prompts" },
       settings: { pt: "Configurações Gerais", en: "General Settings" },
+      seo: { pt: "SEO & Redes Sociais", en: "SEO & Social Media" },
       flags: { pt: "Feature Flags", en: "Feature Flags" },
       api: { pt: "Uso da API", en: "API Usage" },
       logs: { pt: "Logs de Uso", en: "Usage Logs" },

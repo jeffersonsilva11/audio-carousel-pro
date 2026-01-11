@@ -38,8 +38,8 @@ const TermsOfService = () => {
           content: "Alguns recursos do serviço requerem pagamento. Ao assinar um plano pago, você concorda em pagar todas as taxas aplicáveis. As assinaturas são renovadas automaticamente até o cancelamento. Você pode cancelar sua assinatura a qualquer momento através das configurações da conta."
         },
         {
-          title: "7. Política de Reembolso",
-          content: "Oferecemos um período de teste gratuito. Após a contratação de um plano pago, não oferecemos reembolsos, exceto em casos de falha técnica comprovada de nossa parte ou conforme exigido por lei."
+          title: "7. Política de Reembolso e Garantia",
+          content: `Oferecemos garantia de satisfação de 7 (sete) dias a partir da data da primeira cobrança. Durante este período, se você não estiver satisfeito com o serviço, poderá solicitar o reembolso integral entrando em contato com nosso suporte. Após o período de 7 dias, não oferecemos reembolsos, exceto em casos de: (a) falha técnica comprovada de nossa parte que impeça o uso do serviço; (b) cobrança indevida ou duplicada; (c) situações exigidas por lei. Você pode cancelar sua assinatura a qualquer momento, e ela permanecerá ativa até o final do período já pago, sem cobranças adicionais.`
         },
         {
           title: "8. Limitação de Responsabilidade",
@@ -88,8 +88,8 @@ const TermsOfService = () => {
           content: "Some features of the service require payment. By subscribing to a paid plan, you agree to pay all applicable fees. Subscriptions are automatically renewed until canceled. You can cancel your subscription at any time through account settings."
         },
         {
-          title: "7. Refund Policy",
-          content: "We offer a free trial period. After subscribing to a paid plan, we do not offer refunds, except in cases of proven technical failure on our part or as required by law."
+          title: "7. Refund Policy and Guarantee",
+          content: `We offer a 7 (seven) day satisfaction guarantee from the date of the first charge. During this period, if you are not satisfied with the service, you can request a full refund by contacting our support. After the 7-day period, we do not offer refunds, except in cases of: (a) proven technical failure on our part that prevents use of the service; (b) undue or duplicate charges; (c) situations required by law. You can cancel your subscription at any time, and it will remain active until the end of the already paid period, without additional charges.`
         },
         {
           title: "8. Limitation of Liability",
@@ -138,8 +138,8 @@ const TermsOfService = () => {
           content: "Algunas funciones del servicio requieren pago. Al suscribirse a un plan pago, usted acepta pagar todas las tarifas aplicables. Las suscripciones se renuevan automáticamente hasta su cancelación. Puede cancelar su suscripción en cualquier momento a través de la configuración de la cuenta."
         },
         {
-          title: "7. Política de Reembolso",
-          content: "Ofrecemos un período de prueba gratuito. Después de contratar un plan pago, no ofrecemos reembolsos, excepto en casos de falla técnica comprobada de nuestra parte o según lo exija la ley."
+          title: "7. Política de Reembolso y Garantía",
+          content: `Ofrecemos una garantía de satisfacción de 7 (siete) días a partir de la fecha del primer cobro. Durante este período, si no está satisfecho con el servicio, puede solicitar un reembolso completo contactando a nuestro soporte. Después del período de 7 días, no ofrecemos reembolsos, excepto en casos de: (a) falla técnica comprobada de nuestra parte que impida el uso del servicio; (b) cobros indebidos o duplicados; (c) situaciones requeridas por ley. Puede cancelar su suscripción en cualquier momento, y permanecerá activa hasta el final del período ya pagado, sin cargos adicionales.`
         },
         {
           title: "8. Limitación de Responsabilidad",
