@@ -33,6 +33,7 @@ import {
 
 interface ExitIntentSettings {
   enabled: boolean;
+  position: "left" | "center" | "right";
   title_pt: string;
   title_en: string;
   title_es: string;
@@ -81,6 +82,7 @@ interface SequenceStep {
 
 const DEFAULT_EXIT_INTENT: ExitIntentSettings = {
   enabled: true,
+  position: "center",
   title_pt: "Espere! Não vá embora ainda...",
   title_en: "Wait! Don't leave yet...",
   title_es: "¡Espera! No te vayas todavía...",
@@ -420,7 +422,39 @@ const GrowthSettingsCard = () => {
             </div>
 
             {exitIntent.enabled && (
-              <Accordion type="single" collapsible className="space-y-2">
+              <>
+                {/* Position selector */}
+                <div className="space-y-2 mb-6">
+                  <Label>Posição do Popup</Label>
+                  <div className="grid grid-cols-3 gap-2">
+                    <Button
+                      type="button"
+                      variant={exitIntent.position === "left" ? "default" : "outline"}
+                      onClick={() => setExitIntent({ ...exitIntent, position: "left" })}
+                      className="w-full"
+                    >
+                      Esquerda
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={exitIntent.position === "center" ? "default" : "outline"}
+                      onClick={() => setExitIntent({ ...exitIntent, position: "center" })}
+                      className="w-full"
+                    >
+                      Centro
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={exitIntent.position === "right" ? "default" : "outline"}
+                      onClick={() => setExitIntent({ ...exitIntent, position: "right" })}
+                      className="w-full"
+                    >
+                      Direita
+                    </Button>
+                  </div>
+                </div>
+
+                <Accordion type="single" collapsible className="space-y-2">
                 <AccordionItem value="pt-br">
                   <AccordionTrigger>🇧🇷 Português</AccordionTrigger>
                   <AccordionContent className="space-y-4 pt-4">
@@ -529,6 +563,7 @@ const GrowthSettingsCard = () => {
                   </AccordionContent>
                 </AccordionItem>
               </Accordion>
+              </>
             )}
 
             <div className="grid grid-cols-2 gap-4">
