@@ -60,9 +60,13 @@ export default function ApiUsageCard() {
       if (error) throw error;
 
       const whisperData = (data || []).filter((d) => d.api_name === "whisper");
-      // Support both "openai" and "gemini" api_name for backwards compatibility
+      // Support various api_name formats for backwards compatibility
       const openaiData = (data || []).filter((d) =>
-        d.api_name === "openai" || d.api_name === "gemini" || d.api_name === "gpt-4o-mini"
+        d.api_name === "openai" ||
+        d.api_name === "gemini" ||
+        d.api_name === "gpt-4o-mini" ||
+        d.api_name === "openai-gpt4o-mini" ||
+        (d.api_name && d.api_name.includes("gpt"))
       );
 
       // Whisper charges per minute, not second

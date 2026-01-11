@@ -46,12 +46,30 @@ const SocialProofToast = () => {
     fetchSettings();
   }, []);
 
+  // Generate demo activities for fallback when no real data exists
+  const generateDemoActivities = (): Activity[] => {
+    const names = [
+      "João S.", "Maria L.", "Pedro C.", "Ana R.", "Carlos M.",
+      "Fernanda B.", "Lucas P.", "Juliana A.", "Roberto F.", "Patricia N.",
+      "John D.", "Sarah M.", "Mike R.", "Emma L.", "David K."
+    ];
+    const now = Date.now();
+
+    return names.slice(0, 10).map((name, index) => ({
+      id: `demo-${index}`,
+      display_name: name,
+      activity_type: "carousel_created",
+      // Spread activities over the last hour with random intervals
+      created_at: new Date(now - Math.random() * 3600000).toISOString(),
+    }));
+  };
+
   // Fetch recent activities
   useEffect(() => {
     if (!settings.enabled) return;
 
     const fetchActivities = async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("activity_feed")
         .select("id, display_name, activity_type, created_at")
         .eq("is_public", true)
@@ -61,6 +79,9 @@ const SocialProofToast = () => {
 
       if (data && data.length > 0) {
         setActivities(data);
+      } else {
+        // Use demo data as fallback when no real activities exist
+        setActivities(generateDemoActivities());
       }
     };
 

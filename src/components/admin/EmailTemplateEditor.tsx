@@ -166,6 +166,9 @@ const EmailTemplateEditor = ({ onBack }: EmailTemplateEditorProps) => {
       port: "587",
       secure: "Sim",
       siteUrl: "https://audisell.com",
+      dashboardUrl: "https://audisell.com/dashboard",
+      earlyAccessUrl: "https://audisell.com/pricing",
+      spotsRemaining: "127",
       year: new Date().getFullYear().toString(),
     };
 
@@ -186,6 +189,13 @@ const EmailTemplateEditor = ({ onBack }: EmailTemplateEditorProps) => {
         return <AlertCircle className="w-4 h-4 text-amber-500" />;
       case "welcome":
         return <FileText className="w-4 h-4 text-green-500" />;
+      // Onboarding sequence templates
+      case "onboarding_welcome":
+        return <Mail className="w-4 h-4 text-indigo-500" />;
+      case "onboarding_success_story":
+        return <FileText className="w-4 h-4 text-pink-500" />;
+      case "onboarding_limited_offer":
+        return <AlertCircle className="w-4 h-4 text-red-500" />;
       default:
         return <Mail className="w-4 h-4 text-gray-500" />;
     }
