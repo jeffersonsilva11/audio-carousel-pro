@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { ArrowRight, Play, Sparkles, Check, Users, Zap, Shield, TrendingUp, Instagram, Linkedin, X } from "lucide-react";
+import { ArrowRight, Play, Sparkles, Check, Zap, Shield, Instagram, Linkedin, X } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
 import { t } from "@/lib/translations";
 import { BRAND } from "@/lib/constants";
@@ -114,12 +114,6 @@ const Hero = () => {
     return () => clearInterval(interval);
   }, [demoSlides.length]);
 
-  // Stats for social proof
-  const stats = [
-    { value: "2.500+", label: language === "pt-BR" ? "Criadores ativos" : language === "es" ? "Creadores activos" : "Active creators" },
-    { value: "50K+", label: language === "pt-BR" ? "Carrosséis gerados" : language === "es" ? "Carruseles generados" : "Carousels generated" },
-    { value: "4.9/5", label: language === "pt-BR" ? "Avaliação média" : language === "es" ? "Calificación promedio" : "Average rating" },
-  ];
 
   // Platform badges
   const platforms = [
@@ -128,17 +122,6 @@ const Hero = () => {
     { name: "TikTok", icon: TikTokIcon },
   ];
 
-  // Testimonial for authority
-  const testimonial = {
-    quote: language === "pt-BR" 
-      ? "Economizo 5 horas por semana com o Audisell. Meu engajamento aumentou 340%."
-      : language === "es"
-        ? "Ahorro 5 horas por semana con Audisell. Mi engagement aumentó 340%."
-        : "I save 5 hours per week with Audisell. My engagement increased 340%.",
-    author: "Marina Silva",
-    role: language === "pt-BR" ? "Social Media Manager" : language === "es" ? "Social Media Manager" : "Social Media Manager",
-    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face",
-  };
 
   return (
     <>
@@ -227,8 +210,8 @@ const Hero = () => {
                   {language === "pt-BR" ? "Cancele quando quiser" : language === "es" ? "Cancela cuando quieras" : "Cancel anytime"}
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Users className="w-4 h-4 text-green-500" />
-                  {language === "pt-BR" ? "2.500+ usuários" : language === "es" ? "2.500+ usuarios" : "2,500+ users"}
+                  <Zap className="w-4 h-4 text-green-500" />
+                  {language === "pt-BR" ? "Resultados em 30s" : language === "es" ? "Resultados en 30s" : "Results in 30s"}
                 </div>
               </motion.div>
 
@@ -256,23 +239,6 @@ const Hero = () => {
                 </Button>
               </motion.div>
 
-              {/* Micro-testimonial - Social Proof */}
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
-                className="flex items-center gap-3 p-4 rounded-2xl bg-card border border-border max-w-md mx-auto lg:mx-0"
-              >
-                <img 
-                  src={testimonial.avatar} 
-                  alt={testimonial.author}
-                  className="w-12 h-12 rounded-full object-cover ring-2 ring-accent/20"
-                />
-                <div className="text-left">
-                  <p className="text-sm text-muted-foreground italic">"{testimonial.quote}"</p>
-                  <p className="text-xs font-medium mt-1">{testimonial.author} — {testimonial.role}</p>
-                </div>
-              </motion.div>
             </div>
 
             {/* Right Column - Demo Carousel with Auto-Slide */}
@@ -306,15 +272,13 @@ const Hero = () => {
                           <div className="absolute inset-0 flex flex-col p-6">
                             {/* Profile header */}
                             <div className="flex items-center gap-3 mb-auto">
-                              <img 
-                                src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face" 
-                                alt="Profile"
-                                className="w-10 h-10 rounded-full object-cover ring-2 ring-white/30"
-                              />
+                              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-white/40 to-white/20 ring-2 ring-white/30 flex items-center justify-center">
+                                <span className="text-white font-bold text-sm">SC</span>
+                              </div>
                               <div className="text-white">
                                 <p className="font-semibold text-sm">@seuconteudo</p>
                                 <p className="text-xs text-white/70">
-                                  {language === "pt-BR" ? "Criador de Conteúdo" : language === "es" ? "Creador de Contenido" : "Content Creator"}
+                                  {language === "pt-BR" ? "Exemplo de carrossel" : language === "es" ? "Ejemplo de carrusel" : "Carousel example"}
                                 </p>
                               </div>
                             </div>
@@ -373,7 +337,7 @@ const Hero = () => {
                   </div>
                 </motion.div>
 
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.7 }}
@@ -381,12 +345,12 @@ const Hero = () => {
                 >
                   <div className="flex items-center gap-2">
                     <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center">
-                      <TrendingUp className="w-4 h-4 text-accent" />
+                      <Sparkles className="w-4 h-4 text-accent" />
                     </div>
                     <div>
-                      <p className="text-xs font-semibold">+340%</p>
+                      <p className="text-xs font-semibold">{language === "pt-BR" ? "IA" : "AI"}</p>
                       <p className="text-[10px] text-muted-foreground">
-                        {language === "pt-BR" ? "Engajamento" : language === "es" ? "Engagement" : "Engagement"}
+                        {language === "pt-BR" ? "Powered" : language === "es" ? "Powered" : "Powered"}
                       </p>
                     </div>
                   </div>
@@ -395,26 +359,6 @@ const Hero = () => {
             </motion.div>
           </div>
 
-          {/* Stats Bar - Social Proof */}
-          <motion.div 
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
-            className="mt-16 grid grid-cols-3 gap-8 max-w-2xl mx-auto"
-          >
-            {stats.map((stat, index) => (
-              <motion.div 
-                key={stat.label}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.7 + index * 0.1 }}
-                className="text-center"
-              >
-                <p className="text-2xl md:text-3xl font-bold text-gradient">{stat.value}</p>
-                <p className="text-sm text-muted-foreground">{stat.label}</p>
-              </motion.div>
-            ))}
-          </motion.div>
         </div>
       </section>
 

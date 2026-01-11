@@ -69,25 +69,25 @@ const Testimonials = () => {
     return t.metric_label_pt || "";
   };
 
-  // Success metrics
+  // Product metrics (not user claims)
   const metrics = [
     {
-      value: "340%",
-      label: language === "pt-BR" ? "Aumento médio no engajamento" : language === "es" ? "Aumento promedio en engagement" : "Average engagement increase",
-      icon: TrendingUp,
+      value: "30s",
+      label: language === "pt-BR" ? "Para criar um carrossel" : language === "es" ? "Para crear un carrusel" : "To create a carousel",
+      icon: Clock,
       color: "text-emerald-500",
       bgColor: "bg-emerald-500/10",
     },
     {
-      value: "5h",
-      label: language === "pt-BR" ? "Economizadas por semana" : language === "es" ? "Ahorradas por semana" : "Saved per week",
-      icon: Clock,
+      value: "6-10",
+      label: language === "pt-BR" ? "Slides por áudio" : language === "es" ? "Slides por audio" : "Slides per audio",
+      icon: TrendingUp,
       color: "text-blue-500",
       bgColor: "bg-blue-500/10",
     },
     {
-      value: "12s",
-      label: language === "pt-BR" ? "Tempo médio de geração" : language === "es" ? "Tiempo promedio de generación" : "Average generation time",
+      value: "3",
+      label: language === "pt-BR" ? "Tons de voz disponíveis" : language === "es" ? "Tonos de voz disponibles" : "Voice tones available",
       icon: Zap,
       color: "text-amber-500",
       bgColor: "bg-amber-500/10",
@@ -294,26 +294,6 @@ const Testimonials = () => {
           </div>
         </div>
 
-        {/* Trust badges */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="mt-16 text-center"
-        >
-          <p className="text-sm text-muted-foreground mb-4">
-            {language === "pt-BR" 
-              ? "Avaliação média de 4.9/5 baseada em +500 avaliações"
-              : language === "es"
-                ? "Calificación promedio de 4.9/5 basada en +500 reseñas"
-                : "Average rating of 4.9/5 based on +500 reviews"}
-          </p>
-          <div className="flex items-center justify-center gap-1">
-            {[...Array(5)].map((_, i) => (
-              <Star key={i} className="w-6 h-6 fill-amber-400 text-amber-400" />
-            ))}
-          </div>
-        </motion.div>
       </div>
     </section>
   );
