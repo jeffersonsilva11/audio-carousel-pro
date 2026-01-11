@@ -94,15 +94,33 @@ RETURNS TABLE (
 ) AS $$
 BEGIN
   RETURN QUERY
+  WITH user_plans AS (
+    -- First, get users with active Stripe subscriptions
+    SELECT DISTINCT
+      u.id as user_id,
+      COALESCE(s.plan_id, 'free') as plan_tier
+    FROM auth.users u
+    LEFT JOIN subscriptions s ON s.user_id = u.id AND s.status = 'active'
+    -- Override with manual subscriptions if active
+    LEFT JOIN manual_subscriptions ms ON ms.user_id = u.id
+      AND ms.is_active = true
+      AND (ms.expires_at IS NULL OR ms.expires_at > NOW())
+  )
   SELECT
-    COALESCE(s.plan_id, 'free') as plan_id,
-    COALESCE(p.name, 'Free') as plan_name,
-    COUNT(DISTINCT u.id)::BIGINT as user_count
-  FROM auth.users u
-  LEFT JOIN subscriptions s ON s.user_id = u.id AND s.status = 'active'
-  LEFT JOIN plans p ON p.id = s.plan_id
-  GROUP BY COALESCE(s.plan_id, 'free'), COALESCE(p.name, 'Free')
-  ORDER BY user_count DESC;
+    COALESCE(up.plan_tier, 'free')::TEXT as plan_id,
+    COALESCE(pc.name_pt, 'Gratuito')::TEXT as plan_name,
+    COUNT(DISTINCT up.user_id)::BIGINT as user_count
+  FROM user_plans up
+  LEFT JOIN plans_config pc ON pc.tier = up.plan_tier
+  GROUP BY COALESCE(up.plan_tier, 'free'), COALESCE(pc.name_pt, 'Gratuito')
+  ORDER BY
+    CASE COALESCE(up.plan_tier, 'free')
+      WHEN 'free' THEN 1
+      WHEN 'starter' THEN 2
+      WHEN 'creator' THEN 3
+      WHEN 'agency' THEN 4
+      ELSE 5
+    END;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
@@ -129,18 +147,24 @@ BEGIN
     WHERE u.email IS NOT NULL
     ON CONFLICT DO NOTHING;
   ELSE
-    -- Users in specific plans
+    -- Users in specific plans (considering both Stripe and manual subscriptions)
     INSERT INTO broadcast_recipients (job_id, user_id, email)
     SELECT DISTINCT p_job_id, u.id, u.email
     FROM auth.users u
     LEFT JOIN subscriptions s ON s.user_id = u.id AND s.status = 'active'
+    LEFT JOIN manual_subscriptions ms ON ms.user_id = u.id
+      AND ms.is_active = true
+      AND (ms.expires_at IS NULL OR ms.expires_at > NOW())
     WHERE u.email IS NOT NULL
     AND (
-      -- Free users (no active subscription)
-      ('free' = ANY(v_target_plans) AND s.id IS NULL)
+      -- Free users (no active subscription - neither Stripe nor manual)
+      ('free' = ANY(v_target_plans) AND s.id IS NULL AND ms.id IS NULL)
       OR
-      -- Users with specific plan
+      -- Users with specific Stripe plan
       (s.plan_id = ANY(v_target_plans))
+      OR
+      -- Users with specific manual subscription plan
+      (ms.plan_tier = ANY(v_target_plans))
     )
     ON CONFLICT DO NOTHING;
   END IF;

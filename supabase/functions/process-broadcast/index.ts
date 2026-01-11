@@ -102,26 +102,50 @@ serve(async (req) => {
         const { data: allUsers } = await supabaseAdmin.auth.admin.listUsers();
         targetUsers = allUsers?.users?.map((u) => ({ id: u.id, email: u.email! })) || [];
       } else {
-        // Get users by plan
-        const { data: usersWithSubs } = await supabaseAdmin
+        // Get users by plan (considering both Stripe and manual subscriptions)
+        const { data: stripeSubscriptions } = await supabaseAdmin
           .from("subscriptions")
           .select("user_id, plan_id")
           .eq("status", "active");
 
+        const { data: manualSubscriptions } = await supabaseAdmin
+          .from("manual_subscriptions")
+          .select("user_id, plan_tier")
+          .eq("is_active", true)
+          .or("expires_at.is.null,expires_at.gt." + new Date().toISOString());
+
         const { data: allUsers } = await supabaseAdmin.auth.admin.listUsers();
 
-        const activeSubUserIds = new Set(usersWithSubs?.map((s) => s.user_id) || []);
-        const userPlanMap = new Map(usersWithSubs?.map((s) => [s.user_id, s.plan_id]) || []);
+        // Build user plan maps
+        const stripeUserPlanMap = new Map(stripeSubscriptions?.map((s) => [s.user_id, s.plan_id]) || []);
+        const manualUserPlanMap = new Map(manualSubscriptions?.map((s) => [s.user_id, s.plan_tier]) || []);
+
+        // Get all user IDs with any subscription
+        const usersWithSubscription = new Set([
+          ...(stripeSubscriptions?.map((s) => s.user_id) || []),
+          ...(manualSubscriptions?.map((s) => s.user_id) || []),
+        ]);
 
         targetUsers = (allUsers?.users || [])
           .filter((u) => {
-            if (job.target_plans.includes("free")) {
-              // Include users without active subscription
-              if (!activeSubUserIds.has(u.id)) return true;
+            // Manual subscription takes priority
+            const manualPlan = manualUserPlanMap.get(u.id);
+            if (manualPlan && job.target_plans.includes(manualPlan)) {
+              return true;
             }
-            // Include users with matching plan
-            const userPlan = userPlanMap.get(u.id);
-            return userPlan && job.target_plans.includes(userPlan);
+
+            // Then check Stripe subscription
+            const stripePlan = stripeUserPlanMap.get(u.id);
+            if (stripePlan && job.target_plans.includes(stripePlan)) {
+              return true;
+            }
+
+            // Free users (no active subscription of any type)
+            if (job.target_plans.includes("free") && !usersWithSubscription.has(u.id)) {
+              return true;
+            }
+
+            return false;
           })
           .map((u) => ({ id: u.id, email: u.email! }));
       }
