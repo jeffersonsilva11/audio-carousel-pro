@@ -87,11 +87,9 @@
 - [x] Verificação de assinatura Stripe webhook ✅
 - [x] CORS configurado nas edge functions
 - [x] ErrorBoundary para captura de erros React
-- [x] Sentry configurado para monitoramento ✅
 
 ### Monitoramento
 - [x] Google Analytics pronto (adicionar GA_ID)
-- [x] Sentry error tracking ✅
 - [x] Logs detalhados nas edge functions
 
 ---
@@ -100,7 +98,6 @@
 
 ### Variáveis de Ambiente Frontend
 ```
-VITE_SENTRY_DSN=✅ Configurado
 VITE_GA_ID=✅ Configurado
 ```
 
@@ -195,7 +192,7 @@ RECAPTCHA_SECRET_KEY=✅ Configurado
 ## 🎉 PÓS-LANÇAMENTO
 
 ### Semana 1
-- [ ] Monitorar Sentry para erros
+- [ ] Monitorar logs das Edge Functions para erros
 - [ ] Responder feedback de usuários
 - [ ] Ajustar textos baseado em conversões
 

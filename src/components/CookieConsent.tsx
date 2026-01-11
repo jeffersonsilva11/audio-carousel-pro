@@ -5,7 +5,6 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { t } from "@/lib/translations";
 import { cn } from "@/lib/utils";
 import { initGA } from "@/hooks/useAnalytics";
-import { initSentry } from "@/lib/sentry";
 
 const COOKIE_CONSENT_KEY = "cookie_consent";
 
@@ -28,7 +27,6 @@ export const CookieConsent = () => {
     } else if (consent === "accepted") {
       // User has previously consented - initialize analytics
       initGA();
-      initSentry();
     }
   }, []);
 
@@ -40,7 +38,6 @@ export const CookieConsent = () => {
     // Initialize analytics services if user accepted
     if (status === "accepted") {
       initGA();
-      initSentry();
     }
   };
 

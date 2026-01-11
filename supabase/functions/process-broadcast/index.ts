@@ -105,7 +105,7 @@ serve(async (req) => {
         // Get users by plan (considering both Stripe and manual subscriptions)
         const { data: stripeSubscriptions } = await supabaseAdmin
           .from("subscriptions")
-          .select("user_id, plan_id")
+          .select("user_id, plan_tier")
           .eq("status", "active");
 
         const { data: manualSubscriptions } = await supabaseAdmin
@@ -117,7 +117,7 @@ serve(async (req) => {
         const { data: allUsers } = await supabaseAdmin.auth.admin.listUsers();
 
         // Build user plan maps
-        const stripeUserPlanMap = new Map(stripeSubscriptions?.map((s) => [s.user_id, s.plan_id]) || []);
+        const stripeUserPlanMap = new Map(stripeSubscriptions?.map((s) => [s.user_id, s.plan_tier]) || []);
         const manualUserPlanMap = new Map(manualSubscriptions?.map((s) => [s.user_id, s.plan_tier]) || []);
 
         // Get all user IDs with any subscription

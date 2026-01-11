@@ -1,5 +1,4 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { captureException, addBreadcrumb } from '@/lib/sentry';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 
@@ -27,25 +26,6 @@ class ErrorBoundary extends Component<Props, State> {
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     this.setState({ errorInfo });
-
-    // Add breadcrumb
-    addBreadcrumb({
-      category: 'error',
-      message: 'React Error Boundary caught an error',
-      level: 'error',
-      data: {
-        componentStack: errorInfo.componentStack,
-      },
-    });
-
-    // Send to Sentry
-    captureException(error, {
-      tags: { source: 'ErrorBoundary' },
-      extra: {
-        componentStack: errorInfo.componentStack,
-      },
-    });
-
     console.error('ErrorBoundary caught an error:', error, errorInfo);
   }
 
