@@ -41,6 +41,8 @@ import EmailSettingsCard from "@/components/admin/EmailSettingsCard";
 import PromptsManager from "@/components/admin/PromptsManager";
 import SEOSettingsCard from "@/components/admin/SEOSettingsCard";
 import GrowthSettingsCard from "@/components/admin/GrowthSettingsCard";
+import SocialProofSettingsCard from "@/components/admin/SocialProofSettingsCard";
+import BroadcastManager from "@/components/admin/BroadcastManager";
 
 const Admin = () => {
   const { user, loading: authLoading } = useAuth();
@@ -112,6 +114,8 @@ const Admin = () => {
         return <ManualSubscriptionManager />;
       case "growth":
         return <GrowthSettingsCard />;
+      case "broadcast":
+        return <BroadcastManager />;
       case "users":
         return <UsersTable />;
       case "roles":
@@ -123,7 +127,12 @@ const Admin = () => {
       case "prompts":
         return <PromptsManager />;
       case "settings":
-        return <AppSettingsCard />;
+        return (
+          <div className="grid gap-6">
+            <AppSettingsCard />
+            <SocialProofSettingsCard />
+          </div>
+        );
       case "seo":
         return <SEOSettingsCard />;
       case "flags":
@@ -151,6 +160,7 @@ const Admin = () => {
       plans: { pt: "Configuração de Planos", en: "Plans Configuration" },
       "manual-subs": { pt: "Assinaturas Manuais", en: "Manual Subscriptions" },
       growth: { pt: "Configurações de Growth", en: "Growth Settings" },
+      broadcast: { pt: "Central de Broadcasts", en: "Broadcast Center" },
       users: { pt: "Usuários", en: "Users" },
       roles: { pt: "Permissões e Roles", en: "Permissions & Roles" },
       email: { pt: "Configurações de E-mail", en: "Email Settings" },
