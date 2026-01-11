@@ -303,8 +303,15 @@ const LiveCarouselPreview = ({
                     </p>
                   </div>
                 </>
+              ) : coverTemplate === 'cover_solid_color' ? (
+                // Solid color with centered text (no image required)
+                <div className={cn("absolute inset-0 flex items-center justify-center p-4", verticalAlignClass)}>
+                  <p className={cn("text-xs font-bold", textAlignClass)}>
+                    {currentContent?.text}
+                  </p>
+                </div>
               ) : (
-                // Default full image layout
+                // Default full image layout (cover_full_image)
                 <>
                   {currentTemplateRequiresImage && (
                     <div className={cn(

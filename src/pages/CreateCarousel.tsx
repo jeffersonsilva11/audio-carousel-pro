@@ -145,7 +145,7 @@ const CreateCarousel = () => {
   });
 
   // Layout templates (Creator+ only)
-  const [coverTemplate, setCoverTemplate] = useState<CoverTemplateType>('cover_full_image');
+  const [coverTemplate, setCoverTemplate] = useState<CoverTemplateType>('cover_solid_color');
   const [contentTemplate, setContentTemplate] = useState<ContentTemplateType>('content_text_only');
 
   // Per-slide images for templates (Creator+ only)

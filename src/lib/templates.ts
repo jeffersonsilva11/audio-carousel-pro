@@ -7,9 +7,10 @@
 
 // Cover template types - for the first slide
 export type CoverTemplateType =
-  | 'cover_full_image'      // Full background image with text overlay
-  | 'cover_split_images'    // Split layout with multiple images (grid)
-  | 'cover_gradient_overlay'; // Gradient overlay on background image
+  | 'cover_solid_color'        // Solid color background with text (no image required)
+  | 'cover_full_image'         // Full background image with text overlay
+  | 'cover_split_images'       // Split layout with multiple images (grid)
+  | 'cover_gradient_overlay';  // Gradient overlay on background image
 
 // Content template types - for body slides
 export type ContentTemplateType =
@@ -323,6 +324,19 @@ export interface TemplateMetadata {
 }
 
 export const COVER_TEMPLATES: Record<CoverTemplateType, TemplateMetadata> = {
+  cover_solid_color: {
+    id: 'cover_solid_color',
+    category: 'cover',
+    namePt: 'Cor Sólida',
+    nameEn: 'Solid Color',
+    nameEs: 'Color Sólido',
+    descriptionPt: 'Fundo sólido com texto centralizado, sem imagem',
+    descriptionEn: 'Solid background with centered text, no image',
+    descriptionEs: 'Fondo sólido con texto centrado, sin imagen',
+    requiresImage: false,
+    maxImages: 0,
+    minPlanTier: 'creator',
+  },
   cover_full_image: {
     id: 'cover_full_image',
     category: 'cover',
