@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Check, Sparkles, Zap, Loader2, Crown, Building2 } from "lucide-react";
+import { Check, Sparkles, Zap, Loader2, Crown, Building2, Shield } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -203,8 +203,20 @@ const Pricing = () => {
           })}
         </div>
 
-        {/* Trust Elements */}
-        <div className="mt-16 text-center">
+        {/* Trust Elements with Guarantee */}
+        <div className="mt-16 text-center space-y-6">
+          {/* Guarantee Badge */}
+          <div className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+            <Shield className="w-5 h-5 text-emerald-500" />
+            <span className="font-medium text-emerald-700 dark:text-emerald-400">
+              {language === "pt-BR"
+                ? "Garantia de 7 dias — Devolução total se não gostar"
+                : language === "es"
+                ? "Garantía de 7 días — Devolución total si no te gusta"
+                : "7-day guarantee — Full refund if you don't like it"}
+            </span>
+          </div>
+
           <div className="inline-flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">
             <span className="flex items-center gap-2">
               <Check className="w-4 h-4 text-success" />

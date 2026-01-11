@@ -40,6 +40,7 @@ import SupportSettingsCard from "@/components/admin/SupportSettingsCard";
 import EmailSettingsCard from "@/components/admin/EmailSettingsCard";
 import PromptsManager from "@/components/admin/PromptsManager";
 import SEOSettingsCard from "@/components/admin/SEOSettingsCard";
+import GrowthSettingsCard from "@/components/admin/GrowthSettingsCard";
 
 const Admin = () => {
   const { user, loading: authLoading } = useAuth();
@@ -109,6 +110,8 @@ const Admin = () => {
         return <PlansConfigManager />;
       case "manual-subs":
         return <ManualSubscriptionManager />;
+      case "growth":
+        return <GrowthSettingsCard />;
       case "users":
         return <UsersTable />;
       case "roles":
@@ -147,6 +150,7 @@ const Admin = () => {
       companies: { pt: "Empresas Parceiras", en: "Partner Companies" },
       plans: { pt: "Configuração de Planos", en: "Plans Configuration" },
       "manual-subs": { pt: "Assinaturas Manuais", en: "Manual Subscriptions" },
+      growth: { pt: "Configurações de Growth", en: "Growth Settings" },
       users: { pt: "Usuários", en: "Users" },
       roles: { pt: "Permissões e Roles", en: "Permissions & Roles" },
       email: { pt: "Configurações de E-mail", en: "Email Settings" },

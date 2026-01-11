@@ -72,6 +72,7 @@ const AdminSidebar = ({ activeSection, onSectionChange }: AdminSidebarProps) => 
       items: [
         { id: "plans", icon: Crown, label: language === "pt-BR" ? "Planos" : "Plans" },
         { id: "manual-subs", icon: Gift, label: language === "pt-BR" ? "Assinaturas" : "Subscriptions" },
+        { id: "growth", icon: TrendingUp, label: "Growth" },
       ],
     },
     {
