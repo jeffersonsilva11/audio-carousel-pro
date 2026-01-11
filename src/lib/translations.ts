@@ -4011,6 +4011,59 @@ export const translations = {
       es: "Popular",
     },
   },
+
+  // Profile Identity (CreateCarousel)
+  profileIdentity: {
+    changePhoto: {
+      "pt-BR": "Alterar foto",
+      en: "Change photo",
+      es: "Cambiar foto",
+    },
+    recommended: {
+      "pt-BR": "Recomendado",
+      en: "Recommended",
+      es: "Recomendado",
+    },
+    name: {
+      "pt-BR": "Nome",
+      en: "Name",
+      es: "Nombre",
+    },
+    namePlaceholder: {
+      "pt-BR": "Seu nome ou marca",
+      en: "Your name or brand",
+      es: "Tu nombre o marca",
+    },
+    username: {
+      "pt-BR": "Usuário",
+      en: "Username",
+      es: "Usuario",
+    },
+    usernamePlaceholder: {
+      "pt-BR": "seu_usuario",
+      en: "your_username",
+      es: "tu_usuario",
+    },
+  },
+
+  // Live Preview (CreateCarousel)
+  livePreview: {
+    previousSlide: {
+      "pt-BR": "Slide anterior",
+      en: "Previous slide",
+      es: "Diapositiva anterior",
+    },
+    nextSlide: {
+      "pt-BR": "Próximo slide",
+      en: "Next slide",
+      es: "Siguiente diapositiva",
+    },
+    slideOf: {
+      "pt-BR": "de",
+      en: "of",
+      es: "de",
+    },
+  },
 } as const;
 
 export type TranslationKey = keyof typeof translations;
