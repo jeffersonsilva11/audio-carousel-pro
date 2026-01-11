@@ -30,6 +30,7 @@ import {
 import { CoverTemplateType, ContentTemplateType } from "@/lib/templates";
 
 export type TextAlignment = 'left' | 'center' | 'right';
+export type VerticalAlignment = 'top' | 'middle' | 'bottom';
 
 export interface TemplateCustomization {
   fontId: FontId;
@@ -37,6 +38,7 @@ export interface TemplateCustomization {
   customGradientColors?: string[];
   slideImages: (string | null)[]; // Array of storage URLs per slide
   textAlignment: TextAlignment;
+  verticalAlignment: VerticalAlignment;
   showNavigationDots: boolean;
   showNavigationArrow: boolean;
   // Layout templates (Creator+ only)

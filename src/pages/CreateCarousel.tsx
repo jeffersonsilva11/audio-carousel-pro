@@ -36,10 +36,11 @@ import TextModeSelector, { CreativeTone } from "@/components/carousel-creator/Te
 import SlideCountSelector from "@/components/carousel-creator/SlideCountSelector";
 import LanguageSelector from "@/components/carousel-creator/LanguageSelector";
 import AdvancedTemplateEditor, { TemplateCustomization } from "@/components/carousel-creator/AdvancedTemplateEditor";
-import CoverOptionsEditor from "@/components/carousel-creator/CoverOptionsEditor";
 import AdvancedOptionsEditor from "@/components/carousel-creator/AdvancedOptionsEditor";
-import LayoutTemplateSelector from "@/components/carousel-creator/LayoutTemplateSelector";
+import CoverCustomization from "@/components/carousel-creator/CoverCustomization";
+import ContentCustomization from "@/components/carousel-creator/ContentCustomization";
 import SlideImageUploader from "@/components/carousel-creator/SlideImageUploader";
+import AudioRecoveryBanner from "@/components/carousel-creator/AudioRecoveryBanner";
 import {
   CoverTemplateType,
   ContentTemplateType,
@@ -100,6 +101,7 @@ const CreateCarousel = () => {
   const [audioDuration, setAudioDuration] = useState<number | null>(null);
   const [isRecordingAudio, setIsRecordingAudio] = useState(false);
   const [audioRestoredFromStorage, setAudioRestoredFromStorage] = useState(false);
+  const [showRecoveryBanner, setShowRecoveryBanner] = useState(false);
 
   // Profile identity state - initialized from preferences
   const [profileIdentity, setProfileIdentity] = useState<ProfileIdentity>({
@@ -137,6 +139,7 @@ const CreateCarousel = () => {
     customGradientColors: undefined,
     slideImages: [],
     textAlignment: 'center',
+    verticalAlignment: 'middle',
     showNavigationDots: true,
     showNavigationArrow: true,
   });
@@ -264,6 +267,7 @@ const CreateCarousel = () => {
                         })
                       : templateCustomization.slideImages,
                     textAlignment: templateCustomization.textAlignment,
+                    verticalAlignment: templateCustomization.verticalAlignment,
                     showNavigationDots: templateCustomization.showNavigationDots,
                     showNavigationArrow: templateCustomization.showNavigationArrow,
                     coverTemplate,
@@ -393,9 +397,10 @@ const CreateCarousel = () => {
         setAudioFile(file);
         setAudioDuration(parseFloat(savedAudioDuration));
 
-        // Restore step if it was on customize
+        // Restore step if it was on customize and show recovery banner
         if (savedStep === 'customize') {
           setCurrentStep('customize');
+          setShowRecoveryBanner(true);
         }
 
         toast({
@@ -543,6 +548,7 @@ const CreateCarousel = () => {
           customGradientColors: config.customGradientColors as string[] | undefined,
           slideImages: config.slideImages as (string | null)[] | undefined,
           textAlignment: (config.textAlignment as 'left' | 'center' | 'right') || 'center',
+          verticalAlignment: (config.verticalAlignment as 'top' | 'middle' | 'bottom') || 'middle',
           showNavigationDots: config.showNavigationDots !== false,
           showNavigationArrow: config.showNavigationArrow !== false,
         });
@@ -747,6 +753,7 @@ const CreateCarousel = () => {
               })
             : templateCustomization.slideImages,
           textAlignment: templateCustomization.textAlignment,
+          verticalAlignment: templateCustomization.verticalAlignment,
           showNavigationDots: templateCustomization.showNavigationDots,
           showNavigationArrow: templateCustomization.showNavigationArrow,
           coverTemplate,
@@ -1021,7 +1028,39 @@ const CreateCarousel = () => {
                   {t("create", "customizeSubtitle", siteLanguage)}
                 </p>
               </div>
-              
+
+              {/* Audio Recovery Banner - shows when audio was recovered from session */}
+              {showRecoveryBanner && audioFile && audioDuration && (
+                <AudioRecoveryBanner
+                  audioFile={audioFile}
+                  audioDuration={audioDuration}
+                  onDiscard={() => {
+                    setAudioFile(null);
+                    setAudioDuration(null);
+                    setShowRecoveryBanner(false);
+                    setCurrentStep("upload");
+                    // Clear sessionStorage
+                    sessionStorage.removeItem('carousel_audio_data');
+                    sessionStorage.removeItem('carousel_audio_duration');
+                    sessionStorage.removeItem('carousel_audio_name');
+                    sessionStorage.removeItem('carousel_audio_type');
+                    sessionStorage.removeItem('carousel_current_step');
+                  }}
+                  onRecordNew={() => {
+                    setAudioFile(null);
+                    setAudioDuration(null);
+                    setShowRecoveryBanner(false);
+                    setCurrentStep("upload");
+                    // Clear sessionStorage
+                    sessionStorage.removeItem('carousel_audio_data');
+                    sessionStorage.removeItem('carousel_audio_duration');
+                    sessionStorage.removeItem('carousel_audio_name');
+                    sessionStorage.removeItem('carousel_audio_type');
+                    sessionStorage.removeItem('carousel_current_step');
+                  }}
+                />
+              )}
+
               <div className="lg:grid lg:grid-cols-[1fr,280px] lg:gap-8">
                 {/* Form options - Organized in logical order */}
                 <div className="space-y-8">
@@ -1061,6 +1100,8 @@ const CreateCarousel = () => {
                       onFontChange={(fontId) => setTemplateCustomization({ ...templateCustomization, fontId })}
                       textAlignment={templateCustomization.textAlignment}
                       onTextAlignmentChange={(textAlignment) => setTemplateCustomization({ ...templateCustomization, textAlignment })}
+                      verticalAlignment={templateCustomization.verticalAlignment}
+                      onVerticalAlignmentChange={(verticalAlignment) => setTemplateCustomization({ ...templateCustomization, verticalAlignment })}
                       isCreator={isCreator}
                     />
                   </div>
@@ -1081,12 +1122,13 @@ const CreateCarousel = () => {
                     />
                   </div>
 
-                  {/* 7. Cover Options - Creator+ only */}
+                  {/* 7. Cover Customization - Creator+ only (unified: template + background) */}
                   <div className="border-t border-border pt-8">
-                    <CoverOptionsEditor
+                    <CoverCustomization
+                      selectedCoverTemplate={coverTemplate}
+                      onCoverTemplateChange={setCoverTemplate}
                       gradientId={templateCustomization.gradientId}
                       customGradientColors={templateCustomization.customGradientColors}
-                      slideImages={templateCustomization.slideImages}
                       onGradientChange={(gradientId, customColors) =>
                         setTemplateCustomization({
                           ...templateCustomization,
@@ -1094,28 +1136,28 @@ const CreateCarousel = () => {
                           customGradientColors: customColors
                         })
                       }
-                      onSlideImagesChange={(slideImages) =>
-                        setTemplateCustomization({ ...templateCustomization, slideImages })
-                      }
-                      slideCount={manualSlideCount}
+                      coverImageUrl={templateCustomization.slideImages?.[0] || null}
+                      onCoverImageChange={(url) => {
+                        const newSlideImages = [...(templateCustomization.slideImages || [])];
+                        newSlideImages[0] = url;
+                        setTemplateCustomization({ ...templateCustomization, slideImages: newSlideImages });
+                      }}
                       isCreator={isCreator}
                       userId={user?.id}
                     />
                   </div>
 
-                  {/* 8. Layout Templates - Creator+ only */}
+                  {/* 8. Content Customization - Creator+ only */}
                   <div className="border-t border-border pt-8">
-                    <LayoutTemplateSelector
-                      selectedCoverTemplate={coverTemplate}
+                    <ContentCustomization
                       selectedContentTemplate={contentTemplate}
-                      onCoverTemplateChange={setCoverTemplate}
                       onContentTemplateChange={setContentTemplate}
                       isCreator={isCreator}
                     />
                   </div>
 
-                  {/* 8.5 Per-Slide Image Upload - Creator+ only, shown when templates require images */}
-                  {isCreator && (templateRequiresImage(coverTemplate) || templateRequiresImage(contentTemplate)) && (
+                  {/* 8.5 Content Images Upload - Creator+ only, shown when content template requires images */}
+                  {isCreator && templateRequiresImage(contentTemplate) && (
                     <div className="border-t border-border pt-8">
                       <SlideImageUploader
                         userId={user?.id || ''}
@@ -1159,6 +1201,7 @@ const CreateCarousel = () => {
                       gradientId={templateCustomization.gradientId}
                       customGradientColors={templateCustomization.customGradientColors}
                       textAlignment={templateCustomization.textAlignment}
+                      verticalAlignment={templateCustomization.verticalAlignment}
                       coverTemplate={coverTemplate}
                       contentTemplate={contentTemplate}
                     />
@@ -1179,6 +1222,7 @@ const CreateCarousel = () => {
                   gradientId={templateCustomization.gradientId}
                   customGradientColors={templateCustomization.customGradientColors}
                   textAlignment={templateCustomization.textAlignment}
+                  verticalAlignment={templateCustomization.verticalAlignment}
                   coverTemplate={coverTemplate}
                   contentTemplate={contentTemplate}
                 />
