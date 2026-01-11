@@ -157,10 +157,11 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- 8. Add announcement template to email_templates if not exists
-INSERT INTO email_templates (template_key, name, subject, html_content, text_content, variables, is_active)
+INSERT INTO email_templates (template_key, name, description, subject, html_content, variables, is_active)
 VALUES (
   'announcement',
   'Comunicado Geral',
+  'Template para envio de comunicados e anúncios em massa',
   '{{subject}}',
   '<!DOCTYPE html>
 <html>
@@ -198,17 +199,10 @@ VALUES (
   </div>
 </body>
 </html>',
-  'Comunicado: {{title}}
-
-{{content}}
-
----
-© {{year}} {{fromName}}. Todos os direitos reservados.',
   '["subject", "title", "content", "ctaUrl", "ctaText", "fromName", "year"]',
   true
 ) ON CONFLICT (template_key) DO UPDATE SET
   html_content = EXCLUDED.html_content,
-  text_content = EXCLUDED.text_content,
   variables = EXCLUDED.variables;
 
 -- Grant execute permissions
