@@ -36,9 +36,9 @@ import TextModeSelector, { CreativeTone } from "@/components/carousel-creator/Te
 import SlideCountSelector from "@/components/carousel-creator/SlideCountSelector";
 import LanguageSelector from "@/components/carousel-creator/LanguageSelector";
 import AdvancedTemplateEditor, { TemplateCustomization } from "@/components/carousel-creator/AdvancedTemplateEditor";
-import CoverOptionsEditor from "@/components/carousel-creator/CoverOptionsEditor";
 import AdvancedOptionsEditor from "@/components/carousel-creator/AdvancedOptionsEditor";
-import LayoutTemplateSelector from "@/components/carousel-creator/LayoutTemplateSelector";
+import CoverCustomization from "@/components/carousel-creator/CoverCustomization";
+import ContentCustomization from "@/components/carousel-creator/ContentCustomization";
 import SlideImageUploader from "@/components/carousel-creator/SlideImageUploader";
 import {
   CoverTemplateType,
@@ -1081,12 +1081,13 @@ const CreateCarousel = () => {
                     />
                   </div>
 
-                  {/* 7. Cover Options - Creator+ only */}
+                  {/* 7. Cover Customization - Creator+ only (unified: template + background) */}
                   <div className="border-t border-border pt-8">
-                    <CoverOptionsEditor
+                    <CoverCustomization
+                      selectedCoverTemplate={coverTemplate}
+                      onCoverTemplateChange={setCoverTemplate}
                       gradientId={templateCustomization.gradientId}
                       customGradientColors={templateCustomization.customGradientColors}
-                      slideImages={templateCustomization.slideImages}
                       onGradientChange={(gradientId, customColors) =>
                         setTemplateCustomization({
                           ...templateCustomization,
@@ -1094,28 +1095,28 @@ const CreateCarousel = () => {
                           customGradientColors: customColors
                         })
                       }
-                      onSlideImagesChange={(slideImages) =>
-                        setTemplateCustomization({ ...templateCustomization, slideImages })
-                      }
-                      slideCount={manualSlideCount}
+                      coverImageUrl={templateCustomization.slideImages?.[0] || null}
+                      onCoverImageChange={(url) => {
+                        const newSlideImages = [...(templateCustomization.slideImages || [])];
+                        newSlideImages[0] = url;
+                        setTemplateCustomization({ ...templateCustomization, slideImages: newSlideImages });
+                      }}
                       isCreator={isCreator}
                       userId={user?.id}
                     />
                   </div>
 
-                  {/* 8. Layout Templates - Creator+ only */}
+                  {/* 8. Content Customization - Creator+ only */}
                   <div className="border-t border-border pt-8">
-                    <LayoutTemplateSelector
-                      selectedCoverTemplate={coverTemplate}
+                    <ContentCustomization
                       selectedContentTemplate={contentTemplate}
-                      onCoverTemplateChange={setCoverTemplate}
                       onContentTemplateChange={setContentTemplate}
                       isCreator={isCreator}
                     />
                   </div>
 
-                  {/* 8.5 Per-Slide Image Upload - Creator+ only, shown when templates require images */}
-                  {isCreator && (templateRequiresImage(coverTemplate) || templateRequiresImage(contentTemplate)) && (
+                  {/* 8.5 Content Images Upload - Creator+ only, shown when content template requires images */}
+                  {isCreator && templateRequiresImage(contentTemplate) && (
                     <div className="border-t border-border pt-8">
                       <SlideImageUploader
                         userId={user?.id || ''}

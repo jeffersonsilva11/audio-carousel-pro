@@ -111,17 +111,12 @@ const SlideImageUploader = ({
   const t = translations[langKey as keyof typeof translations];
 
   // Determine which slides require images based on templates
+  // Note: Cover (index 0) is handled by CoverCustomization, so we only show content slides here
   const getSlidesRequiringImages = () => {
     const slides: { index: number; requiresImage: boolean; isCover: boolean }[] = [];
 
-    // Cover slide (index 0)
-    slides.push({
-      index: 0,
-      requiresImage: templateRequiresImage(coverTemplate),
-      isCover: true,
-    });
-
-    // Content slides (index 1 to slideCount - 1)
+    // Content slides only (index 1 to slideCount - 1)
+    // Cover slide (index 0) is handled by CoverCustomization component
     for (let i = 1; i < slideCount; i++) {
       slides.push({
         index: i,
