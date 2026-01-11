@@ -33,7 +33,6 @@ import {
 
 interface ExitIntentSettings {
   enabled: boolean;
-  position: "left" | "center" | "right";
   title_pt: string;
   title_en: string;
   title_es: string;
@@ -82,7 +81,6 @@ interface SequenceStep {
 
 const DEFAULT_EXIT_INTENT: ExitIntentSettings = {
   enabled: true,
-  position: "center",
   title_pt: "Espere! Não vá embora ainda...",
   title_en: "Wait! Don't leave yet...",
   title_es: "¡Espera! No te vayas todavía...",
@@ -110,6 +108,7 @@ const GrowthSettingsCard = () => {
   // Social Proof
   const [socialProofEnabled, setSocialProofEnabled] = useState(true);
   const [socialProofInterval, setSocialProofInterval] = useState(8);
+  const [socialProofPosition, setSocialProofPosition] = useState<"left" | "right">("left");
 
   // Early Access
   const [earlyAccess, setEarlyAccess] = useState<EarlyAccessSettings>({
@@ -142,6 +141,7 @@ const GrowthSettingsCard = () => {
           "exit_intent_settings",
           "social_proof_enabled",
           "social_proof_interval_seconds",
+          "social_proof_position",
           "early_access_enabled",
           "early_access_total_spots",
           "early_access_plan_id",
@@ -162,8 +162,10 @@ const GrowthSettingsCard = () => {
         // Social Proof
         const spEnabled = settings.find((s) => s.key === "social_proof_enabled");
         const spInterval = settings.find((s) => s.key === "social_proof_interval_seconds");
+        const spPosition = settings.find((s) => s.key === "social_proof_position");
         setSocialProofEnabled(spEnabled?.value !== "false");
         setSocialProofInterval(parseInt(spInterval?.value || "8", 10));
+        setSocialProofPosition((spPosition?.value === "right" ? "right" : "left") as "left" | "right");
 
         // Early Access
         const eaEnabled = settings.find((s) => s.key === "early_access_enabled");
@@ -248,6 +250,7 @@ const GrowthSettingsCard = () => {
     try {
       await saveSetting("social_proof_enabled", String(socialProofEnabled));
       await saveSetting("social_proof_interval_seconds", String(socialProofInterval));
+      await saveSetting("social_proof_position", socialProofPosition);
       toast({ title: "Salvo", description: "Configurações de Social Proof atualizadas." });
     } catch (error) {
       toast({ title: "Erro", description: "Não foi possível salvar.", variant: "destructive" });
@@ -422,39 +425,7 @@ const GrowthSettingsCard = () => {
             </div>
 
             {exitIntent.enabled && (
-              <>
-                {/* Position selector */}
-                <div className="space-y-2 mb-6">
-                  <Label>Posição do Popup</Label>
-                  <div className="grid grid-cols-3 gap-2">
-                    <Button
-                      type="button"
-                      variant={exitIntent.position === "left" ? "default" : "outline"}
-                      onClick={() => setExitIntent({ ...exitIntent, position: "left" })}
-                      className="w-full"
-                    >
-                      Esquerda
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={exitIntent.position === "center" ? "default" : "outline"}
-                      onClick={() => setExitIntent({ ...exitIntent, position: "center" })}
-                      className="w-full"
-                    >
-                      Centro
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={exitIntent.position === "right" ? "default" : "outline"}
-                      onClick={() => setExitIntent({ ...exitIntent, position: "right" })}
-                      className="w-full"
-                    >
-                      Direita
-                    </Button>
-                  </div>
-                </div>
-
-                <Accordion type="single" collapsible className="space-y-2">
+              <Accordion type="single" collapsible className="space-y-2">
                 <AccordionItem value="pt-br">
                   <AccordionTrigger>🇧🇷 Português</AccordionTrigger>
                   <AccordionContent className="space-y-4 pt-4">
@@ -563,7 +534,6 @@ const GrowthSettingsCard = () => {
                   </AccordionContent>
                 </AccordionItem>
               </Accordion>
-              </>
             )}
 
             <div className="grid grid-cols-2 gap-4">
@@ -608,18 +578,45 @@ const GrowthSettingsCard = () => {
             </div>
 
             {socialProofEnabled && (
-              <div className="space-y-2">
-                <Label>Intervalo entre notificações (segundos)</Label>
-                <Input
-                  type="number"
-                  min="5"
-                  max="60"
-                  value={socialProofInterval}
-                  onChange={(e) => setSocialProofInterval(parseInt(e.target.value, 10))}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Recomendado: 8-12 segundos para não ser intrusivo
-                </p>
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <Label>Intervalo entre notificações (segundos)</Label>
+                  <Input
+                    type="number"
+                    min="5"
+                    max="60"
+                    value={socialProofInterval}
+                    onChange={(e) => setSocialProofInterval(parseInt(e.target.value, 10))}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Recomendado: 8-12 segundos para não ser intrusivo
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Posição da Notificação</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      type="button"
+                      variant={socialProofPosition === "left" ? "default" : "outline"}
+                      onClick={() => setSocialProofPosition("left")}
+                      className="w-full"
+                    >
+                      Esquerda
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={socialProofPosition === "right" ? "default" : "outline"}
+                      onClick={() => setSocialProofPosition("right")}
+                      className="w-full"
+                    >
+                      Direita
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Posição onde a notificação aparece na tela
+                  </p>
+                </div>
               </div>
             )}
 

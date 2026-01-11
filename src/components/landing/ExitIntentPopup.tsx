@@ -9,7 +9,6 @@ import { useToast } from "@/hooks/use-toast";
 
 interface ExitIntentSettings {
   enabled: boolean;
-  position: "left" | "center" | "right";
   title_pt: string;
   title_en: string;
   title_es: string;
@@ -28,7 +27,6 @@ interface ExitIntentSettings {
 
 const DEFAULT_SETTINGS: ExitIntentSettings = {
   enabled: true,
-  position: "center",
   title_pt: "Espere! Não vá embora ainda...",
   title_en: "Wait! Don't leave yet...",
   title_es: "¡Espera! No te vayas todavía...",
@@ -206,13 +204,7 @@ const ExitIntentPopup = () => {
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className={`fixed inset-0 flex items-center z-50 p-4 ${
-              settings.position === "left"
-                ? "justify-start pl-8"
-                : settings.position === "right"
-                ? "justify-end pr-8"
-                : "justify-center"
-            }`}
+            className="fixed inset-0 flex items-center justify-center z-50 p-4"
           >
             <div className="relative bg-card border border-border rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
               {/* Close button */}
