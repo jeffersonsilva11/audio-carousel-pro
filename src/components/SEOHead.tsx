@@ -1,6 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useLanguage } from '@/hooks/useLanguage';
 import { BRAND } from '@/lib/constants';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SEOHeadProps {
   title?: string;
@@ -11,7 +12,22 @@ interface SEOHeadProps {
   noindex?: boolean;
 }
 
-const SEO_CONTENT = {
+interface LocalizedText {
+  pt: string;
+  en: string;
+  es: string;
+}
+
+interface AdminSEOSettings {
+  meta_title: LocalizedText;
+  meta_description: LocalizedText;
+  meta_keywords: LocalizedText;
+  og_image: string;
+  twitter_handle: string;
+}
+
+// Default fallback content
+const DEFAULT_SEO_CONTENT = {
   'pt-BR': {
     defaultTitle: `${BRAND.name} - Transforme Áudio em Carrosséis com IA`,
     defaultDescription: 'Grave um áudio de até 30 segundos. Nossa IA transcreve, roteiriza e gera carrosséis profissionais prontos para o Instagram em segundos.',
@@ -47,11 +63,48 @@ const SEOHead = ({
   noindex = false,
 }: SEOHeadProps) => {
   const { language } = useLanguage();
-  const content = SEO_CONTENT[language] || SEO_CONTENT['pt-BR'];
+  const [adminSettings, setAdminSettings] = useState<AdminSEOSettings | null>(null);
 
-  const finalTitle = title || content.defaultTitle;
-  const finalDescription = description || content.defaultDescription;
-  const finalKeywords = keywords || content.keywords;
+  // Fetch admin SEO settings on mount
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const { data } = await supabase
+          .from('app_settings')
+          .select('value')
+          .eq('key', 'seo_settings')
+          .maybeSingle();
+
+        if (data?.value) {
+          const parsed = JSON.parse(data.value);
+          setAdminSettings(parsed);
+        }
+      } catch (error) {
+        console.error('Error fetching SEO settings:', error);
+      }
+    };
+
+    fetchSettings();
+  }, []);
+
+  // Get language key for admin settings (pt-BR -> pt, etc.)
+  const langKey = language === 'pt-BR' ? 'pt' : language as 'en' | 'es';
+
+  // Use admin settings if available, otherwise fallback to defaults
+  const defaultContent = DEFAULT_SEO_CONTENT[language] || DEFAULT_SEO_CONTENT['pt-BR'];
+
+  const getAdminValue = (field: keyof LocalizedText, fallback: string) => {
+    if (adminSettings && adminSettings[`meta_${field}` as keyof AdminSEOSettings]) {
+      const value = (adminSettings[`meta_${field}` as keyof AdminSEOSettings] as LocalizedText)?.[langKey];
+      return value || fallback;
+    }
+    return fallback;
+  };
+
+  const finalTitle = title || (adminSettings?.meta_title?.[langKey]) || defaultContent.defaultTitle;
+  const finalDescription = description || (adminSettings?.meta_description?.[langKey]) || defaultContent.defaultDescription;
+  const finalKeywords = keywords || (adminSettings?.meta_keywords?.[langKey]) || defaultContent.keywords;
+  const finalOgImage = adminSettings?.og_image || ogImage;
   const canonicalUrl = `${BRAND.url}${canonicalPath}`;
 
   useEffect(() => {
@@ -82,18 +135,18 @@ const SEOHead = ({
 
     // Open Graph
     updateMeta('og:type', 'website', true);
-    updateMeta('og:title', title || content.ogTitle, true);
+    updateMeta('og:title', title || defaultContent.ogTitle, true);
     updateMeta('og:description', finalDescription, true);
     updateMeta('og:site_name', BRAND.name, true);
     updateMeta('og:url', canonicalUrl, true);
-    updateMeta('og:image', ogImage.startsWith('http') ? ogImage : `${BRAND.url}${ogImage}`, true);
+    updateMeta('og:image', finalOgImage.startsWith('http') ? finalOgImage : `${BRAND.url}${finalOgImage}`, true);
     updateMeta('og:locale', language === 'pt-BR' ? 'pt_BR' : language === 'es' ? 'es_ES' : 'en_US', true);
 
     // Twitter
     updateMeta('twitter:card', 'summary_large_image');
-    updateMeta('twitter:title', title || content.twitterTitle);
-    updateMeta('twitter:description', content.twitterDescription);
-    updateMeta('twitter:image', ogImage.startsWith('http') ? ogImage : `${BRAND.url}${ogImage}`);
+    updateMeta('twitter:title', title || defaultContent.twitterTitle);
+    updateMeta('twitter:description', defaultContent.twitterDescription);
+    updateMeta('twitter:image', finalOgImage.startsWith('http') ? finalOgImage : `${BRAND.url}${finalOgImage}`);
 
     // Canonical URL
     let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement;
@@ -132,7 +185,7 @@ const SEOHead = ({
     }
     xDefault.href = canonicalUrl;
 
-  }, [finalTitle, finalDescription, finalKeywords, canonicalUrl, ogImage, noindex, language, content, title]);
+  }, [finalTitle, finalDescription, finalKeywords, canonicalUrl, finalOgImage, noindex, language, defaultContent, title, adminSettings]);
 
   return null;
 };

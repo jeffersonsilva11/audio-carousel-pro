@@ -16,10 +16,16 @@ interface SocialLink {
   enabled: boolean;
 }
 
+interface LocalizedText {
+  pt: string;
+  en: string;
+  es: string;
+}
+
 interface SEOSettings {
-  meta_title: string;
-  meta_description: string;
-  meta_keywords: string;
+  meta_title: LocalizedText;
+  meta_description: LocalizedText;
+  meta_keywords: LocalizedText;
   og_image: string;
   twitter_handle: string;
   canonical_url: string;
@@ -37,9 +43,21 @@ const DEFAULT_SOCIAL_LINKS: SocialLink[] = [
 ];
 
 const DEFAULT_SEO_SETTINGS: SEOSettings = {
-  meta_title: "Audisell - Transforme sua voz em carrosséis profissionais",
-  meta_description: "Plataforma SaaS que transforma áudio em carrosséis profissionais para Instagram usando IA. Grave um áudio de até 30 segundos e nossa inteligência artificial transcreve, roteiriza e gera imagens prontas para publicar.",
-  meta_keywords: "carrossel instagram, criador de conteúdo, IA, inteligência artificial, social media, marketing digital",
+  meta_title: {
+    pt: "Audisell - Transforme Áudio em Carrosséis com IA",
+    en: "Audisell - Transform Audio into Carousels with AI",
+    es: "Audisell - Transforma Audio en Carruseles con IA",
+  },
+  meta_description: {
+    pt: "Grave um áudio de até 30 segundos. Nossa IA transcreve, roteiriza e gera carrosséis profissionais prontos para o Instagram em segundos.",
+    en: "Record an audio up to 30 seconds. Our AI transcribes, scripts, and generates professional Instagram-ready carousels in seconds.",
+    es: "Graba un audio de hasta 30 segundos. Nuestra IA transcribe, guioniza y genera carruseles profesionales listos para Instagram en segundos.",
+  },
+  meta_keywords: {
+    pt: "carrossel instagram, criar carrossel, áudio instagram, ia conteúdo, gerador de carrossel",
+    en: "instagram carousel, create carousel, audio to instagram, ai content, carousel generator",
+    es: "carrusel instagram, crear carrusel, audio instagram, ia contenido, generador de carrusel",
+  },
   og_image: "/og-image.png",
   twitter_handle: "@audisell",
   canonical_url: "",
@@ -47,12 +65,15 @@ const DEFAULT_SEO_SETTINGS: SEOSettings = {
   sitemap_enabled: true,
 };
 
+type SeoLanguage = "pt" | "en" | "es";
+
 const SEOSettingsCard = () => {
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>(DEFAULT_SOCIAL_LINKS);
   const [seoSettings, setSeoSettings] = useState<SEOSettings>(DEFAULT_SEO_SETTINGS);
   const [loading, setLoading] = useState(true);
   const [savingSocial, setSavingSocial] = useState(false);
   const [savingSeo, setSavingSeo] = useState(false);
+  const [seoLang, setSeoLang] = useState<SeoLanguage>("pt");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -289,40 +310,74 @@ const SEOSettingsCard = () => {
 
           {/* SEO Tab */}
           <TabsContent value="seo" className="space-y-6">
+            {/* Language Selector */}
+            <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
+              <Globe className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Idioma:</span>
+              <div className="flex gap-1">
+                {(["pt", "en", "es"] as const).map((lang) => (
+                  <Button
+                    key={lang}
+                    variant={seoLang === lang ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setSeoLang(lang)}
+                    className="w-12"
+                  >
+                    {lang === "pt" ? "🇧🇷 PT" : lang === "en" ? "🇺🇸 EN" : "🇪🇸 ES"}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="meta_title">Meta Title</Label>
+                <Label htmlFor="meta_title">
+                  Meta Title ({seoLang === "pt" ? "Português" : seoLang === "en" ? "English" : "Español"})
+                </Label>
                 <Input
                   id="meta_title"
-                  value={seoSettings.meta_title}
-                  onChange={(e) => setSeoSettings({ ...seoSettings, meta_title: e.target.value })}
+                  value={seoSettings.meta_title[seoLang]}
+                  onChange={(e) => setSeoSettings({
+                    ...seoSettings,
+                    meta_title: { ...seoSettings.meta_title, [seoLang]: e.target.value }
+                  })}
                   placeholder="Título da página para SEO"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Recomendado: 50-60 caracteres. Atual: {seoSettings.meta_title.length}
+                  Recomendado: 50-60 caracteres. Atual: {seoSettings.meta_title[seoLang].length}
                 </p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="meta_description">Meta Description</Label>
+                <Label htmlFor="meta_description">
+                  Meta Description ({seoLang === "pt" ? "Português" : seoLang === "en" ? "English" : "Español"})
+                </Label>
                 <Textarea
                   id="meta_description"
-                  value={seoSettings.meta_description}
-                  onChange={(e) => setSeoSettings({ ...seoSettings, meta_description: e.target.value })}
+                  value={seoSettings.meta_description[seoLang]}
+                  onChange={(e) => setSeoSettings({
+                    ...seoSettings,
+                    meta_description: { ...seoSettings.meta_description, [seoLang]: e.target.value }
+                  })}
                   placeholder="Descrição da página para SEO"
                   rows={3}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Recomendado: 150-160 caracteres. Atual: {seoSettings.meta_description.length}
+                  Recomendado: 150-160 caracteres. Atual: {seoSettings.meta_description[seoLang].length}
                 </p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="meta_keywords">Palavras-chave</Label>
+                <Label htmlFor="meta_keywords">
+                  Palavras-chave ({seoLang === "pt" ? "Português" : seoLang === "en" ? "English" : "Español"})
+                </Label>
                 <Input
                   id="meta_keywords"
-                  value={seoSettings.meta_keywords}
-                  onChange={(e) => setSeoSettings({ ...seoSettings, meta_keywords: e.target.value })}
+                  value={seoSettings.meta_keywords[seoLang]}
+                  onChange={(e) => setSeoSettings({
+                    ...seoSettings,
+                    meta_keywords: { ...seoSettings.meta_keywords, [seoLang]: e.target.value }
+                  })}
                   placeholder="palavras, separadas, por, vírgula"
                 />
               </div>
