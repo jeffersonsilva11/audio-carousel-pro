@@ -194,25 +194,23 @@ const VerifyEmail = () => {
           variant: "destructive",
         });
       } else {
-        // Check if existing valid token was found (don't send new email)
-        const isExistingToken = response.data?.provider === "existing_token";
-        const hint = response.data?.hint;
+        // Check if it was a resend (same code) or new code
+        const isResend = response.data?.isResend;
 
         toast({
-          title: isExistingToken
-            ? (language === "pt-BR" ? "Código já enviado" : language === "es" ? "Código ya enviado" : "Code already sent")
+          title: isResend
+            ? (language === "pt-BR" ? "Código reenviado" : language === "es" ? "Código reenviado" : "Code resent")
             : t("verifyEmail", "codeResent", language),
-          description: hint || t("verifyEmail", "checkInbox", language),
+          description: isResend
+            ? (language === "pt-BR"
+                ? "O mesmo código foi reenviado para seu e-mail."
+                : language === "es"
+                  ? "El mismo código fue reenviado a tu correo."
+                  : "The same code was resent to your email.")
+            : t("verifyEmail", "checkInbox", language),
         });
 
-        // Set cooldown based on remaining minutes for existing token
-        const remainingMinutes = response.data?.remainingMinutes;
-        if (isExistingToken && remainingMinutes) {
-          // Set a shorter cooldown for existing token case (just to prevent spam clicking)
-          setResendCooldown(30);
-        } else {
-          setResendCooldown(60); // 60 seconds cooldown for new token
-        }
+        setResendCooldown(60); // 60 seconds cooldown
       }
     } catch {
       toast({
