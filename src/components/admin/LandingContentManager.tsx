@@ -127,10 +127,10 @@ const FIELD_LABELS: Record<string, string> = {
   founder_name: "Nome do fundador",
   founder_role: "Cargo do fundador",
 
-  // Testimonials
+  // Testimonials (specific keys to avoid conflict with Origin Story)
   before_after_badge: "Badge Before/After",
-  before_label: "Label Antes",
-  after_label: "Label Depois",
+  testimonials_before_label: "Testimonials - Label Antes",
+  testimonials_after_label: "Testimonials - Label Depois",
   time_saved_label: "Label tempo economizado",
   engagement_label: "Label engajamento",
 };

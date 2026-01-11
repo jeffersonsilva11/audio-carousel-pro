@@ -4,6 +4,7 @@ import { useLanguage, SupportedLanguage } from "@/hooks/useLanguage";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useLandingContent } from "@/hooks/useLandingContent";
 
 interface Testimonial {
   id: string;
@@ -26,9 +27,21 @@ interface Testimonial {
 
 const Testimonials = () => {
   const { language } = useLanguage();
+  const { getContent } = useLandingContent();
   const [activeIndex, setActiveIndex] = useState(0);
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Get dynamic content from database
+  const sectionBadge = getContent("testimonials", "badge", language) || (
+    language === "pt-BR" ? "Casos de sucesso" : language === "es" ? "Casos de éxito" : "Success Stories"
+  );
+  const sectionTitle = getContent("testimonials", "title", language) || (
+    language === "pt-BR" ? "O que criadores estão dizendo" : language === "es" ? "Lo que dicen los creadores" : "What creators are saying"
+  );
+  const sectionSubtitle = getContent("testimonials", "subtitle", language) || (
+    language === "pt-BR" ? "Resultados reais de quem já usa o Audisell" : language === "es" ? "Resultados reales de quienes ya usan Audisell" : "Real results from those who already use Audisell"
+  );
 
   useEffect(() => {
     fetchTestimonials();
@@ -148,39 +161,31 @@ const Testimonials = () => {
       <div className="container mx-auto relative z-10">
         {/* Section Header */}
         <div className="text-center max-w-2xl mx-auto mb-16">
-          <motion.span 
+          <motion.span
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             className="inline-block text-sm font-semibold text-accent mb-4 tracking-wide uppercase"
           >
-            {language === "pt-BR" ? "Casos de sucesso" : language === "es" ? "Casos de éxito" : "Success Stories"}
+            {sectionBadge}
           </motion.span>
-          <motion.h2 
+          <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
             className="text-display-sm md:text-display-md mb-4"
           >
-            {language === "pt-BR" 
-              ? "Criadores que transformaram seus resultados" 
-              : language === "es"
-                ? "Creadores que transformaron sus resultados"
-                : "Creators who transformed their results"}
+            {sectionTitle}
           </motion.h2>
-          <motion.p 
+          <motion.p
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.2 }}
             className="text-body-lg text-muted-foreground"
           >
-            {language === "pt-BR"
-              ? "Veja o que nossos usuários dizem sobre a plataforma"
-              : language === "es"
-                ? "Mira lo que dicen nuestros usuarios sobre la plataforma"
-                : "See what our users say about the platform"}
+            {sectionSubtitle}
           </motion.p>
         </div>
 
