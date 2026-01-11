@@ -92,7 +92,7 @@ interface ProfileIdentity {
 }
 
 // Layout template types
-type CoverTemplateType = 'cover_full_image' | 'cover_split_images' | 'cover_gradient_overlay';
+type CoverTemplateType = 'cover_solid_color' | 'cover_full_image' | 'cover_split_images' | 'cover_gradient_overlay';
 type ContentTemplateType = 'content_image_top' | 'content_text_top' | 'content_split' | 'content_text_only';
 
 interface TemplateCustomization {
@@ -101,6 +101,7 @@ interface TemplateCustomization {
   customGradientColors?: string[];
   slideImages?: (string | null)[];
   textAlignment?: 'left' | 'center' | 'right';
+  verticalAlignment?: 'top' | 'middle' | 'bottom';
   showNavigationDots?: boolean;
   showNavigationArrow?: boolean;
   // New layout templates (Creator+ only)
@@ -725,6 +726,111 @@ function generateCoverGradientOverlaySVG(
 </svg>`;
 }
 
+// Generate SVG for cover_solid_color template (solid background, no image required)
+function generateCoverSolidColorSVG(
+  slideData: SlideData,
+  totalSlides: number,
+  style: keyof typeof STYLES,
+  format: keyof typeof DIMENSIONS,
+  hasWatermark: boolean = true,
+  profile?: ProfileIdentity,
+  customization?: TemplateCustomization
+): string {
+  const { width, height } = DIMENSIONS[format];
+  const { background, text: styleTextColor } = STYLES[style];
+
+  const fontId = customization?.fontId || 'inter';
+  const fontFamily = FONTS[fontId] || FONTS['inter'];
+  const showDots = customization?.showNavigationDots !== false;
+  const showArrow = customization?.showNavigationArrow !== false;
+
+  const { text } = slideData;
+
+  // For solid color, use style-based text color (no image/gradient)
+  const textColor = styleTextColor;
+  const counterColor = style === 'BLACK_WHITE' ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)';
+
+  // Calculate font size for title
+  const titleFontSize = calculateFontSize(text.length, 'cover', format);
+
+  // Get text alignment (horizontal)
+  const textAlignment = customization?.textAlignment || 'center';
+  const alignmentConfig = {
+    'left': { x: 80, anchor: 'start' },
+    'center': { x: width / 2, anchor: 'middle' },
+    'right': { x: width - 80, anchor: 'end' }
+  };
+  const { x: textX, anchor: textAnchor } = alignmentConfig[textAlignment];
+
+  // Get vertical alignment
+  const verticalAlignment = customization?.verticalAlignment || 'middle';
+
+  // Word wrap the title
+  const maxWidth = width - 160;
+  const lines = wrapText(text, maxWidth, titleFontSize);
+  const lineHeight = titleFontSize * 1.15;
+  const totalTitleHeight = lines.length * lineHeight;
+
+  // Calculate vertical position based on alignment
+  // Reserve space: profile (if present) at top, dots at bottom
+  const profileHeight = profile ? 150 : 80;
+  const footerHeight = showDots ? 100 : 60;
+  const availableHeight = height - profileHeight - footerHeight;
+
+  let titleStartY: number;
+  switch (verticalAlignment) {
+    case 'top':
+      titleStartY = profileHeight + 40 + titleFontSize * 0.8;
+      break;
+    case 'bottom':
+      titleStartY = height - footerHeight - totalTitleHeight + titleFontSize * 0.8 - 20;
+      break;
+    case 'middle':
+    default:
+      titleStartY = profileHeight + (availableHeight - totalTitleHeight) / 2 + titleFontSize * 0.8;
+      break;
+  }
+
+  // Generate title text elements
+  const textElements = lines.map((line, index) => {
+    const y = titleStartY + (index * lineHeight);
+    return `<text x="${textX}" y="${y}" text-anchor="${textAnchor}" fill="${textColor}" font-family="${fontFamily}" font-size="${titleFontSize}" font-weight="800" letter-spacing="-0.02em">${escapeXml(line)}</text>`;
+  }).join('\n    ');
+
+  // Counter
+  const counter = `<text x="${width - 50}" y="55" text-anchor="end" fill="${counterColor}" font-family="${fontFamily}" font-size="26" font-weight="500">1/${totalSlides}</text>`;
+
+  // Profile identity
+  const profileIdentity = profile ? generateProfileIdentitySVG(profile, style, format, fontFamily, false) : '';
+
+  // Navigation elements
+  const dotsElement = showDots ? generateNavigationDots(width, height, 1, totalSlides, textColor, format) : '';
+  const arrowElement = showArrow ? generateNavigationArrow(width, height, textColor, format) : '';
+
+  // Watermark
+  const watermark = hasWatermark ? `
+    <g class="watermark-cta">
+      <rect x="${width / 2 - 100}" y="${height - 85}" width="200" height="36" rx="18" fill="${style === 'BLACK_WHITE' ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.08)'}" stroke="${style === 'BLACK_WHITE' ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.15)'}" stroke-width="1"/>
+      <text x="${width / 2}" y="${height - 61}" text-anchor="middle" fill="${textColor}" font-family="${fontFamily}" font-size="13" font-weight="600" letter-spacing="0.02em">FEITO COM AUDISELL →</text>
+    </g>
+    <g opacity="0.05" transform="rotate(-30 ${width / 2} ${height / 2})">
+      <text x="${width / 2}" y="${height / 2 - 60}" text-anchor="middle" fill="${textColor}" font-family="${fontFamily}" font-size="64" font-weight="700">DEMO</text>
+    </g>` : '';
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <rect width="${width}" height="${height}" fill="${background}"/>
+  ${profileIdentity}
+  ${counter}
+  <g class="title">
+    ${textElements}
+  </g>
+  ${dotsElement}
+  ${arrowElement}
+  ${watermark}
+</svg>`;
+}
+
 // Generate SVG for COVER slide (slide 1 - HOOK) - cover_full_image (default)
 function generateCoverSlideSVG(
   slideData: SlideData,
@@ -1152,7 +1258,7 @@ function generateContentSlideSVG(
   const maxWidth = width - 160;
   const lines = wrapText(text, maxWidth, fontSize);
 
-  // Get text alignment
+  // Get text alignment (horizontal)
   const textAlignment = customization?.textAlignment || 'center';
   const alignmentConfig = {
     'left': { x: 80, anchor: 'start' },
@@ -1161,13 +1267,29 @@ function generateContentSlideSVG(
   };
   const { x: textX, anchor: textAnchor } = alignmentConfig[textAlignment];
 
-  // Calculate vertical positioning - center in available space (below profile, above footer)
+  // Get vertical alignment
+  const verticalAlignment = customization?.verticalAlignment || 'middle';
+
+  // Calculate vertical positioning - based on alignment (below profile, above footer)
   const profileHeight = profile ? 150 : 0; // Increased for larger profile (100px avatar + 50px padding)
   const footerHeight = showDots ? 80 : 60;
   const availableHeight = height - profileHeight - footerHeight;
   const lineHeight = fontSize * 1.45;
   const totalTextHeight = lines.length * lineHeight;
-  const startY = profileHeight + (availableHeight - totalTextHeight) / 2 + fontSize * 0.8;
+
+  let startY: number;
+  switch (verticalAlignment) {
+    case 'top':
+      startY = profileHeight + 60 + fontSize * 0.8;
+      break;
+    case 'bottom':
+      startY = height - footerHeight - totalTextHeight + fontSize * 0.8 - 20;
+      break;
+    case 'middle':
+    default:
+      startY = profileHeight + (availableHeight - totalTextHeight) / 2 + fontSize * 0.8;
+      break;
+  }
 
   // Generate text elements
   const fontWeight = isSignature ? '700' : '500';
@@ -1235,6 +1357,16 @@ function generateSlideSVG(
     const coverTemplate = customization?.coverTemplate || 'cover_full_image';
 
     switch (coverTemplate) {
+      case 'cover_solid_color':
+        return generateCoverSolidColorSVG(
+          slideData,
+          totalSlides,
+          style,
+          format,
+          hasWatermark,
+          profile,
+          customization
+        );
       case 'cover_split_images':
         return generateCoverSplitImagesSVG(
           slideData,
