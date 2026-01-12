@@ -30,7 +30,7 @@ const Hero = () => {
   const y = useTransform(scrollYProgress, [0, 0.5], [0, -100]);
   const opacity = useTransform(scrollYProgress, [0, 0.3], [1, 0]);
 
-  // Fetch demo video URL and subscriber count
+  // Fetch demo video URL
   useEffect(() => {
     const fetchData = async () => {
       // Fetch video URL
@@ -52,26 +52,20 @@ const Hero = () => {
         setDemoVideoUrl(url);
       }
 
-      // Fetch subscriber count for early access offer using RPC function
-      // This works for both authenticated and anonymous users
-      try {
-        const { data: count, error } = await supabase
-          .rpc("get_active_subscriber_count");
-
-        if (!error && count !== null) {
-          const total = 500;
-          const filled = count || 0;
-          setSpotsRemaining(Math.max(total - filled, 0));
-        }
-      } catch (err) {
-        // Silently fail - spots remaining will stay null and show fallback text
-      } finally {
-        setLoadingSpots(false);
-      }
+      setLoadingSpots(false);
     };
 
     fetchData();
   }, []);
+
+  // Calculate spots remaining from landing content (configured by admin)
+  useEffect(() => {
+    if (!contentLoading) {
+      const spotsTotal = parseInt(getContent("scarcity", "spots_total", language) || "500");
+      const spotsFilled = parseInt(getContent("scarcity", "spots_filled", language) || "0");
+      setSpotsRemaining(Math.max(spotsTotal - spotsFilled, 0));
+    }
+  }, [contentLoading, getContent, language]);
 
   // Get dynamic content with fallback
   const heroTitle1 = getContent("hero", "title_part1", language) || (language === "pt-BR" ? "Transforme sua" : language === "es" ? "Transforma tu" : "Transform your");

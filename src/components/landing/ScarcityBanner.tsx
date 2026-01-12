@@ -4,7 +4,6 @@ import { Zap, Check, ArrowRight, Loader2 } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useLandingContent } from "@/hooks/useLandingContent";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
 
 const ScarcityBanner = () => {
   const { language } = useLanguage();
@@ -15,35 +14,15 @@ const ScarcityBanner = () => {
   // Check if scarcity is enabled
   const enabled = getContent("scarcity", "enabled", language) === "true";
 
-  // Fetch real subscriber count from database using RPC function
-  // This works for both authenticated and anonymous users
+  // Use spots_filled from landing content (configured by admin)
+  // This avoids RLS issues with the subscriptions table for anonymous users
   useEffect(() => {
-    const fetchSubscriberCount = async () => {
-      try {
-        // Use RPC function that bypasses RLS and returns only the count
-        const { data: count, error } = await supabase
-          .rpc("get_active_subscriber_count");
-
-        if (error) {
-          // Silently fail - will use fallback from landing content
-          setRealSpotsFilled(null);
-        } else {
-          setRealSpotsFilled(count || 0);
-        }
-      } catch (err) {
-        // Silently fail - will use fallback from landing content
-        setRealSpotsFilled(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     if (enabled) {
-      fetchSubscriberCount();
-    } else {
-      setLoading(false);
+      const spotsFilled = parseInt(getContent("scarcity", "spots_filled", language) || "0");
+      setRealSpotsFilled(spotsFilled);
     }
-  }, [enabled]);
+    setLoading(false);
+  }, [enabled, getContent, language]);
 
   if (!enabled) return null;
 
