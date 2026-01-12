@@ -15,25 +15,23 @@ const ScarcityBanner = () => {
   // Check if scarcity is enabled
   const enabled = getContent("scarcity", "enabled", language) === "true";
 
-  // Fetch real subscriber count from database
+  // Fetch real subscriber count from database using RPC function
+  // This works for both authenticated and anonymous users
   useEffect(() => {
     const fetchSubscriberCount = async () => {
       try {
-        // Count active subscriptions for creator and agency tiers
-        const { count, error } = await supabase
-          .from("subscriptions")
-          .select("*", { count: "exact", head: true })
-          .in("tier", ["creator", "agency"])
-          .eq("status", "active");
+        // Use RPC function that bypasses RLS and returns only the count
+        const { data: count, error } = await supabase
+          .rpc("get_active_subscriber_count");
 
         if (error) {
-          console.error("Error fetching subscriber count:", error);
+          // Silently fail - will use fallback from landing content
           setRealSpotsFilled(null);
         } else {
           setRealSpotsFilled(count || 0);
         }
       } catch (err) {
-        console.error("Error:", err);
+        // Silently fail - will use fallback from landing content
         setRealSpotsFilled(null);
       } finally {
         setLoading(false);
