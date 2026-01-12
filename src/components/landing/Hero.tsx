@@ -52,21 +52,19 @@ const Hero = () => {
         setDemoVideoUrl(url);
       }
 
-      // Fetch subscriber count for early access offer
+      // Fetch subscriber count for early access offer using RPC function
+      // This works for both authenticated and anonymous users
       try {
-        const { count, error } = await supabase
-          .from("subscriptions")
-          .select("*", { count: "exact", head: true })
-          .in("tier", ["creator", "agency"])
-          .eq("status", "active");
+        const { data: count, error } = await supabase
+          .rpc("get_active_subscriber_count");
 
-        if (!error) {
+        if (!error && count !== null) {
           const total = 500;
           const filled = count || 0;
           setSpotsRemaining(Math.max(total - filled, 0));
         }
       } catch (err) {
-        console.error("Error fetching spots:", err);
+        // Silently fail - spots remaining will stay null and show fallback text
       } finally {
         setLoadingSpots(false);
       }
