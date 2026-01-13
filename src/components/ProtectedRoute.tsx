@@ -30,11 +30,15 @@ const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps)
 
   // Redirect to auth if not authenticated
   if (!user) {
-    // Save the attempted URL to redirect back after login
+    // For admin routes, redirect to landing page silently (don't reveal admin exists)
+    if (requireAdmin) {
+      return <Navigate to="/" replace />;
+    }
+    // For other protected routes, redirect to auth with return URL
     return <Navigate to="/auth" state={{ from: location.pathname }} replace />;
   }
 
-  // Check admin requirement
+  // Check admin requirement - redirect to dashboard silently (don't reveal admin exists)
   if (requireAdmin && !isAdmin) {
     return <Navigate to="/dashboard" replace />;
   }
