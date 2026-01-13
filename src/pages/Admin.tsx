@@ -3,14 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdminAccess } from "@/hooks/useAdminAccess";
 import { useLanguage } from "@/hooks/useLanguage";
-import { Button } from "@/components/ui/button";
-import {
-  Shield,
-  Loader2,
-  AlertTriangle,
-  Menu,
-} from "lucide-react";
-import { BRAND } from "@/lib/constants";
+import { Loader2 } from "lucide-react";
 import {
   SidebarProvider,
   SidebarInset,
@@ -52,14 +45,16 @@ const Admin = () => {
   const [activeSection, setActiveSection] = useState("analytics");
 
   useEffect(() => {
+    // Redirect to landing page silently if not authenticated (don't reveal admin exists)
     if (!authLoading && !user) {
-      navigate("/auth");
+      navigate("/", { replace: true });
     }
   }, [user, authLoading, navigate]);
 
   useEffect(() => {
+    // Redirect to dashboard silently if not admin (don't reveal admin exists)
     if (!adminLoading && !isAdmin && user) {
-      navigate("/dashboard");
+      navigate("/dashboard", { replace: true });
     }
   }, [isAdmin, adminLoading, user, navigate]);
 
@@ -71,25 +66,9 @@ const Admin = () => {
     );
   }
 
+  // Return null while redirecting (don't reveal admin exists)
   if (!isAdmin) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
-        <AlertTriangle className="w-16 h-16 text-destructive" />
-        <h1 className="text-2xl font-bold">
-          {language === "pt-BR" ? "Acesso negado" : language === "es" ? "Acceso denegado" : "Access denied"}
-        </h1>
-        <p className="text-muted-foreground">
-          {language === "pt-BR"
-            ? "Você não tem permissão para acessar esta página."
-            : language === "es"
-            ? "No tienes permiso para acceder a esta página."
-            : "You don't have permission to access this page."}
-        </p>
-        <Button onClick={() => navigate("/dashboard")}>
-          {language === "pt-BR" ? "Voltar ao Dashboard" : language === "es" ? "Volver al Dashboard" : "Back to Dashboard"}
-        </Button>
-      </div>
-    );
+    return null;
   }
 
   const renderContent = () => {
