@@ -36,6 +36,7 @@ import SEOSettingsCard from "@/components/admin/SEOSettingsCard";
 import GrowthSettingsCard from "@/components/admin/GrowthSettingsCard";
 import SocialProofSettingsCard from "@/components/admin/SocialProofSettingsCard";
 import BroadcastManager from "@/components/admin/BroadcastManager";
+import TrendsAnalytics from "@/components/admin/TrendsAnalytics";
 
 const Admin = () => {
   const { user, loading: authLoading } = useAuth();
@@ -103,6 +104,8 @@ const Admin = () => {
         return <EmailSettingsCard />;
       case "support":
         return <SupportSettingsCard />;
+      case "trends":
+        return <TrendsAnalytics />;
       case "prompts":
         return <PromptsManager />;
       case "settings":
@@ -144,6 +147,7 @@ const Admin = () => {
       roles: { pt: "Permissões e Roles", en: "Permissions & Roles" },
       email: { pt: "Configurações de E-mail", en: "Email Settings" },
       support: { pt: "Configurações de Suporte", en: "Support Settings" },
+      trends: { pt: "Tendências de Conteúdo", en: "Content Trends" },
       prompts: { pt: "Prompts de IA", en: "AI Prompts" },
       settings: { pt: "Configurações Gerais", en: "General Settings" },
       seo: { pt: "SEO & Redes Sociais", en: "SEO & Social Media" },

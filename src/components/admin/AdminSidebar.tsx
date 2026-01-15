@@ -94,6 +94,7 @@ const AdminSidebar = ({ activeSection, onSectionChange }: AdminSidebarProps) => 
     {
       label: "IA",
       items: [
+        { id: "trends", icon: TrendingUp, label: language === "pt-BR" ? "Tendências" : "Trends" },
         { id: "prompts", icon: Sparkles, label: "Prompts" },
       ],
     },
