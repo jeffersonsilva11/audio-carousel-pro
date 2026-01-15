@@ -592,6 +592,22 @@ const CreateCarousel = () => {
           showNavigationDots: config.showNavigationDots !== false,
           showNavigationArrow: config.showNavigationArrow !== false,
         });
+
+        // Restore perSlideImages for showing which slides have uploaded background images
+        if (Array.isArray(config.perSlideImages)) {
+          const restoredImages = (config.perSlideImages as Array<{
+            slideIndex: number;
+            publicUrl: string;
+            storagePath: string;
+            position: string;
+          }>).map(img => ({
+            slideIndex: img.slideIndex,
+            publicUrl: img.publicUrl,
+            storagePath: img.storagePath,
+            position: img.position as 'main' | 'background' | 'overlay',
+          }));
+          setPerSlideImages(restoredImages);
+        }
       }
 
       // Load the generated slides from the script
@@ -823,6 +839,28 @@ const CreateCarousel = () => {
     setCurrentStep("processing");
 
     try {
+      // Build template_config with all customization data (Creator+ only)
+      const templateConfig = isCreator ? {
+        fontId: templateCustomization.fontId,
+        gradientId: templateCustomization.gradientId,
+        customGradientColors: templateCustomization.customGradientColors,
+        textAlignment: templateCustomization.textAlignment,
+        verticalAlignment: templateCustomization.verticalAlignment,
+        showNavigationDots: templateCustomization.showNavigationDots,
+        showNavigationArrow: templateCustomization.showNavigationArrow,
+        // Store which slides have uploaded images (for draft recovery)
+        uploadedSlideIndices: perSlideImages
+          .filter(img => img.publicUrl)
+          .map(img => img.slideIndex),
+        // Store the perSlideImages data for full restoration
+        perSlideImages: perSlideImages.map(img => ({
+          slideIndex: img.slideIndex,
+          publicUrl: img.publicUrl,
+          storagePath: img.storagePath,
+          position: img.position,
+        })),
+      } : undefined;
+
       // Create carousel record in database
       const { data: carousel, error: insertError } = await supabase
         .from("carousels")
@@ -838,6 +876,8 @@ const CreateCarousel = () => {
           // Save template selections (Creator+ only)
           cover_template: isCreator ? coverTemplate : 'cover_full_image',
           content_template: isCreator ? contentTemplate : 'content_text_only',
+          // Save template customization including uploaded images info
+          template_config: templateConfig,
         })
         .select()
         .single();
