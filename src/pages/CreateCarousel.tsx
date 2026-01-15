@@ -168,7 +168,10 @@ const CreateCarousel = () => {
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [regeneratingProgress, setRegeneratingProgress] = useState<{ current: number; total: number } | null>(null);
   const regenerationAbortRef = useRef(false);
-  
+
+  // Track if draft/retry has already been loaded (prevents re-loading on tab switch)
+  const draftLoadedRef = useRef<string | null>(null);
+
   // Carousel ID for editing
   const [currentCarouselId, setCurrentCarouselId] = useState<string | null>(null);
 
@@ -503,7 +506,9 @@ const CreateCarousel = () => {
   // Handle retry parameter - load failed carousel data
   useEffect(() => {
     const retryId = searchParams.get('retry');
-    if (retryId && user) {
+    // Only load if we have a retryId, user, and haven't already loaded this retry
+    if (retryId && user && draftLoadedRef.current !== retryId) {
+      draftLoadedRef.current = retryId;
       loadFailedCarousel(retryId);
     }
   }, [searchParams, user]);
@@ -511,7 +516,9 @@ const CreateCarousel = () => {
   // Handle draft parameter - load draft carousel and go to preview
   useEffect(() => {
     const draftId = searchParams.get('draft');
-    if (draftId && user) {
+    // Only load if we have a draftId, user, and haven't already loaded this draft
+    if (draftId && user && draftLoadedRef.current !== draftId) {
+      draftLoadedRef.current = draftId;
       loadDraftCarousel(draftId);
     }
   }, [searchParams, user]);

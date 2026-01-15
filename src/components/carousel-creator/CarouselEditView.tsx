@@ -93,6 +93,7 @@ const CarouselEditView = ({
   const { t } = useTranslation();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const thumbnailsContainerRef = useRef<HTMLDivElement>(null);
 
   // Undo/Redo hook for slides
   const {
@@ -133,15 +134,20 @@ const CarouselEditView = ({
   const templateNeedsImages = templateRequiresImage(contentTemplate);
 
   // Get slides missing images (content slides only, index > 0)
+  // A slide is missing image if it has no generated imageUrl AND no uploaded slideImage
   const slidesMissingImages = useMemo(() => {
     if (!templateNeedsImages) return [];
     return slides
-      .map((_, index) => index)
-      .filter(index => {
+      .map((slide, index) => ({ slide, index }))
+      .filter(({ slide, index }) => {
         if (index === 0) return false; // Skip cover slide
-        const hasImage = slideImages.some(img => img.slideIndex === index && img.publicUrl);
-        return !hasImage;
-      });
+        // Check if slide already has a generated image
+        if (slide.imageUrl) return false;
+        // Check if there's an uploaded image for this slide
+        const hasUploadedImage = slideImages.some(img => img.slideIndex === index && img.publicUrl);
+        return !hasUploadedImage;
+      })
+      .map(({ index }) => index);
   }, [slides, slideImages, templateNeedsImages]);
 
   const hasTextChanges = getChangedIndices().length > 0;
@@ -155,6 +161,22 @@ const CarouselEditView = ({
       setEditedText(current.text);
     }
   }, [currentSlide, slides]);
+
+  // Auto-scroll thumbnails to keep current slide visible
+  useEffect(() => {
+    const container = thumbnailsContainerRef.current;
+    if (!container) return;
+
+    // Find the thumbnail element for the current slide
+    const thumbnail = container.querySelector(`[data-slide-index="${currentSlide}"]`);
+    if (thumbnail) {
+      thumbnail.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+        inline: 'center'
+      });
+    }
+  }, [currentSlide]);
 
   // Save current slide edits to state
   const saveCurrentSlideEdits = useCallback(() => {
@@ -482,20 +504,21 @@ const CarouselEditView = ({
           {/* Thumbnails */}
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={sortableIds} strategy={horizontalListSortingStrategy}>
-              <div className="flex gap-2 overflow-x-auto pb-2 justify-center">
+              <div ref={thumbnailsContainerRef} className="flex gap-2 overflow-x-auto pb-2 justify-center">
                 {slides.map((slide, index) => {
                   const original = originalSlides[index];
                   const isModified = original && slide.text !== original.text;
                   return (
-                    <SortableSlide
-                      key={`slide-${index}`}
-                      slide={slide}
-                      index={index}
-                      isActive={currentSlide === index}
-                      isModified={isModified}
-                      onClick={() => goToSlide(index)}
-                      disabled={false}
-                    />
+                    <div key={`slide-${index}`} data-slide-index={index}>
+                      <SortableSlide
+                        slide={slide}
+                        index={index}
+                        isActive={currentSlide === index}
+                        isModified={isModified}
+                        onClick={() => goToSlide(index)}
+                        disabled={false}
+                      />
+                    </div>
                   );
                 })}
               </div>
