@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -12,6 +12,9 @@ import {
   Redo2,
   AlertTriangle,
   X,
+  Upload,
+  ImageIcon,
+  RefreshCw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -39,6 +42,9 @@ import {
   horizontalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { SortableSlide } from "./SortableSlide";
+import { supabase } from "@/integrations/supabase/client";
+import { ContentTemplateType, templateRequiresImage, SlideImage } from "@/lib/templates";
+import { FILE_LIMITS } from "@/lib/constants";
 
 interface Slide {
   number: number;
@@ -59,11 +65,16 @@ const CHARACTER_LIMITS: Record<FormatType, { cover: number; content: number }> =
 interface CarouselEditViewProps {
   slides: Slide[];
   onSlidesUpdate: (slides: Slide[]) => void;
-  onFinalize: (editedSlides: Slide[], changedIndices: number[]) => void;
+  onFinalize: (editedSlides: Slide[], changedIndices: number[], changedImageIndices: number[]) => void;
   isRegenerating?: boolean;
   regeneratingProgress?: { current: number; total: number };
   onCancelRegeneration?: () => void;
   format?: FormatType;
+  // New props for image management
+  userId?: string;
+  contentTemplate?: ContentTemplateType;
+  slideImages?: SlideImage[];
+  onSlideImagesChange?: (images: SlideImage[]) => void;
 }
 
 const CarouselEditView = ({
@@ -74,9 +85,14 @@ const CarouselEditView = ({
   regeneratingProgress,
   onCancelRegeneration,
   format = 'POST_SQUARE',
+  userId,
+  contentTemplate = 'content_text_only',
+  slideImages = [],
+  onSlideImagesChange,
 }: CarouselEditViewProps) => {
   const { t } = useTranslation();
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Undo/Redo hook for slides
   const {
@@ -94,7 +110,7 @@ const CarouselEditView = ({
   // Local editing state (always in edit mode)
   const [editedText, setEditedText] = useState(initialSlides[0]?.text || "");
 
-  // Track which slides have been modified
+  // Track which slides have been modified (text)
   const getChangedIndices = useCallback(() => {
     return slides
       .map((slide, index) => {
@@ -108,7 +124,29 @@ const CarouselEditView = ({
       .filter((i) => i !== -1);
   }, [slides, originalSlides]);
 
-  const hasAnyChanges = getChangedIndices().length > 0;
+  // Track original images to detect changes
+  const [originalImages] = useState<SlideImage[]>(slideImages);
+  const [uploadingSlide, setUploadingSlide] = useState<number | null>(null);
+  const [changedImageIndices, setChangedImageIndices] = useState<number[]>([]);
+
+  // Check if template requires images for content slides
+  const templateNeedsImages = templateRequiresImage(contentTemplate);
+
+  // Get slides missing images (content slides only, index > 0)
+  const slidesMissingImages = useMemo(() => {
+    if (!templateNeedsImages) return [];
+    return slides
+      .map((_, index) => index)
+      .filter(index => {
+        if (index === 0) return false; // Skip cover slide
+        const hasImage = slideImages.some(img => img.slideIndex === index && img.publicUrl);
+        return !hasImage;
+      });
+  }, [slides, slideImages, templateNeedsImages]);
+
+  const hasTextChanges = getChangedIndices().length > 0;
+  const hasImageChanges = changedImageIndices.length > 0;
+  const hasAnyChanges = hasTextChanges || hasImageChanges;
 
   // Update local state when changing slides
   useEffect(() => {
@@ -181,10 +219,101 @@ const CarouselEditView = ({
     }
   };
 
+  // Handle image upload for a specific slide
+  const handleImageUpload = async (slideIndex: number, file: File) => {
+    if (!userId || !onSlideImagesChange) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast({
+        title: t("carouselEditor", "invalidFile") || "Arquivo inválido",
+        description: t("carouselEditor", "invalidFileDesc") || "Por favor, envie uma imagem (JPG, PNG, WebP)",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > FILE_LIMITS.MAX_IMAGE_SIZE) {
+      toast({
+        title: t("carouselEditor", "fileTooLarge") || "Arquivo muito grande",
+        description: t("carouselEditor", "fileTooLargeDesc") || "O tamanho máximo é 5MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUploadingSlide(slideIndex);
+
+    try {
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${userId}/slides/${Date.now()}-slide-${slideIndex}.${fileExt}`;
+
+      const { data, error } = await supabase.storage
+        .from("slide-images")
+        .upload(fileName, file, {
+          cacheControl: FILE_LIMITS.CACHE_CONTROL_TTL,
+          upsert: true,
+        });
+
+      if (error) throw error;
+
+      const { data: urlData } = supabase.storage
+        .from("slide-images")
+        .getPublicUrl(data.path);
+
+      // Update slide images
+      const existingImageIndex = slideImages.findIndex(
+        (img) => img.slideIndex === slideIndex
+      );
+
+      const newImage: SlideImage = {
+        slideIndex,
+        storagePath: data.path,
+        publicUrl: urlData.publicUrl,
+        position: "main",
+      };
+
+      let updatedImages: SlideImage[];
+      if (existingImageIndex >= 0) {
+        updatedImages = [...slideImages];
+        updatedImages[existingImageIndex] = newImage;
+      } else {
+        updatedImages = [...slideImages, newImage];
+      }
+
+      onSlideImagesChange(updatedImages);
+
+      // Track this slide as having changed image
+      if (!changedImageIndices.includes(slideIndex)) {
+        setChangedImageIndices([...changedImageIndices, slideIndex]);
+      }
+
+      toast({
+        title: t("carouselEditor", "imageUploaded") || "Imagem enviada",
+        description: `Slide ${slideIndex + 1}`,
+      });
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast({
+        title: t("carouselEditor", "uploadError") || "Erro ao enviar",
+        description: error instanceof Error ? error.message : "Erro desconhecido",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingSlide(null);
+    }
+  };
+
+  // Trigger file input for current slide
+  const triggerImageUpload = () => {
+    fileInputRef.current?.click();
+  };
+
   const handleFinalize = () => {
     saveCurrentSlideEdits();
     const changedIndices = getChangedIndices();
-    onFinalize(slides, changedIndices);
+    onFinalize(slides, changedIndices, changedImageIndices);
   };
 
   // Keyboard shortcuts
@@ -230,6 +359,35 @@ const CarouselEditView = ({
           </p>
         </div>
       </div>
+
+      {/* Alert for slides missing images */}
+      {templateNeedsImages && slidesMissingImages.length > 0 && (
+        <div className="flex items-start gap-2 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg text-sm">
+          <ImageIcon className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-blue-600 dark:text-blue-400 font-medium">
+              {t("carouselEditor", "slidesMissingImages") || `${slidesMissingImages.length} slide(s) sem imagem de fundo`}
+            </p>
+            <p className="text-muted-foreground text-xs mt-0.5">
+              {t("carouselEditor", "slidesMissingImagesDesc") ||
+                "Clique em um slide e use o botão 'Trocar imagem' para adicionar imagens."}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Hidden file input for image upload */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) handleImageUpload(currentSlide, file);
+          e.target.value = "";
+        }}
+      />
 
       {/* Main content - Side by side on desktop */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -439,13 +597,56 @@ const CarouselEditView = ({
                   </div>
                 );
               })()}
+
+              {/* Image upload button - only for content slides when template needs images */}
+              {templateNeedsImages && !isCoverSlide && userId && onSlideImagesChange && (
+                <div className="pt-4 border-t border-border">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label className="text-sm">
+                        {t("carouselEditor", "slideImage") || "Imagem do Slide"}
+                      </Label>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {slideImages.some(img => img.slideIndex === currentSlide && img.publicUrl)
+                          ? t("carouselEditor", "hasImage") || "Este slide tem imagem"
+                          : t("carouselEditor", "noImage") || "Nenhuma imagem definida"}
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={triggerImageUpload}
+                      disabled={uploadingSlide === currentSlide}
+                    >
+                      {uploadingSlide === currentSlide ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          {t("carouselEditor", "uploading") || "Enviando..."}
+                        </>
+                      ) : slideImages.some(img => img.slideIndex === currentSlide && img.publicUrl) ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 mr-2" />
+                          {t("carouselEditor", "changeImage") || "Trocar imagem"}
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-4 h-4 mr-2" />
+                          {t("carouselEditor", "addImage") || "Adicionar imagem"}
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
           {/* Changes summary */}
           {hasAnyChanges && (
             <div className="text-sm text-muted-foreground text-center">
-              {getChangedIndices().length} slide(s) editado(s)
+              {hasTextChanges && `${getChangedIndices().length} slide(s) com texto editado`}
+              {hasTextChanges && hasImageChanges && " • "}
+              {hasImageChanges && `${changedImageIndices.length} slide(s) com imagem alterada`}
             </div>
           )}
         </div>
@@ -463,12 +664,17 @@ const CarouselEditView = ({
           {isRegenerating ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Processando...
+              {t("carouselEditor", "processing") || "Processando..."}
+            </>
+          ) : hasAnyChanges ? (
+            <>
+              <RefreshCw className="w-4 h-4 mr-2" />
+              {t("carouselEditor", "adjustAndFinalize") || "Ajustar e Finalizar"}
             </>
           ) : (
             <>
               <Check className="w-4 h-4 mr-2" />
-              Finalizar Edição
+              {t("carouselEditor", "finalize") || "Finalizar"}
             </>
           )}
         </Button>

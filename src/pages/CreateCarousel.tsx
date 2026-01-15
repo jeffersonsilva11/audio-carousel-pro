@@ -207,7 +207,7 @@ const CreateCarousel = () => {
   }, [toast, siteLanguage]);
 
   // Function to finalize editing with batch regeneration
-  const handleFinalizeEdit = async (editedSlides: Slide[], changedIndices: number[]) => {
+  const handleFinalizeEdit = async (editedSlides: Slide[], changedTextIndices: number[], changedImageIndices: number[] = []) => {
     if (!currentCarouselId || !user) return;
 
     setIsRegenerating(true);
@@ -223,6 +223,9 @@ const CreateCarousel = () => {
       if (scriptError) {
         throw new Error("Failed to save script: " + scriptError.message);
       }
+
+      // Combine text and image changes, removing duplicates
+      const changedIndices = [...new Set([...changedTextIndices, ...changedImageIndices])];
 
       // If there are changed slides, regenerate them
       if (changedIndices.length > 0) {
@@ -1197,7 +1200,8 @@ const CreateCarousel = () => {
                     <div className="border-t border-border pt-8">
                       <SlideImageUploader
                         userId={user?.id || ''}
-                        slideCount={slideCountMode === "auto" ? 6 : manualSlideCount}
+                        slideCount={slideCountMode === "auto" ? 10 : manualSlideCount}
+                        slideCountMode={slideCountMode}
                         coverTemplate={coverTemplate}
                         contentTemplate={contentTemplate}
                         slideImages={perSlideImages}
@@ -1331,6 +1335,10 @@ const CreateCarousel = () => {
                   regeneratingProgress={regeneratingProgress || undefined}
                   onCancelRegeneration={handleCancelRegeneration}
                   format={selectedFormat}
+                  userId={user?.id}
+                  contentTemplate={contentTemplate}
+                  slideImages={perSlideImages}
+                  onSlideImagesChange={setPerSlideImages}
                 />
               ) : (
                 <>
