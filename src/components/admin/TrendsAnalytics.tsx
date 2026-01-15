@@ -105,9 +105,12 @@ const TrendsAnalytics = () => {
         }
       });
 
+      // Check for errors - extract message from response data if available
       if (response.error) {
-        console.error("Function error:", response.error);
-        throw new Error(response.error.message || "Function call failed");
+        console.error("Function error:", response.error, "Data:", response.data);
+        // Try to get error message from response data first
+        const errorMsg = response.data?.error || response.error.message || "Function call failed";
+        throw new Error(errorMsg);
       }
 
       const result = response.data;
@@ -120,6 +123,7 @@ const TrendsAnalytics = () => {
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to analyze";
+      console.error("Analysis error:", message);
       toast({
         title: "Erro na análise",
         description: message,
