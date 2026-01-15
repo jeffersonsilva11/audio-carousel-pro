@@ -79,26 +79,48 @@ serve(async (req) => {
 
     // Authenticate user
     const authHeader = req.headers.get("Authorization");
+    logStep("Auth header present", { hasHeader: !!authHeader });
+
     if (!authHeader) {
-      throw new Error("No authorization header");
+      return new Response(
+        JSON.stringify({ success: false, error: "No authorization header" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
+      );
     }
 
     const token = authHeader.replace("Bearer ", "");
     const { data: userData, error: userError } = await supabase.auth.getUser(token);
-    if (userError || !userData.user) {
-      throw new Error("Authentication failed");
+
+    if (userError) {
+      logStep("Auth error", { error: userError.message });
+      return new Response(
+        JSON.stringify({ success: false, error: `Authentication failed: ${userError.message}` }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
+      );
+    }
+
+    if (!userData.user) {
+      return new Response(
+        JSON.stringify({ success: false, error: "User not found" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
+      );
     }
 
     // Check if user is admin
-    const { data: roleData } = await supabase
+    const { data: roleData, error: roleError } = await supabase
       .from("user_roles")
       .select("role")
       .eq("user_id", userData.user.id)
       .eq("role", "admin")
       .maybeSingle();
 
+    logStep("Role check", { hasRole: !!roleData, roleError: roleError?.message });
+
     if (!roleData) {
-      throw new Error("Admin access required");
+      return new Response(
+        JSON.stringify({ success: false, error: "Admin access required" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 403 }
+      );
     }
 
     logStep("Admin authenticated", { userId: userData.user.id });
