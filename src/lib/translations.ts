@@ -3561,6 +3561,91 @@ export const translations = {
       en: "Cancel",
       es: "Cancelar",
     },
+    finalize: {
+      "pt-BR": "Finalizar",
+      en: "Finalize",
+      es: "Finalizar",
+    },
+    adjustAndFinalize: {
+      "pt-BR": "Ajustar e Finalizar",
+      en: "Adjust and Finalize",
+      es: "Ajustar y Finalizar",
+    },
+    processing: {
+      "pt-BR": "Processando...",
+      en: "Processing...",
+      es: "Procesando...",
+    },
+    slideImage: {
+      "pt-BR": "Imagem do Slide",
+      en: "Slide Image",
+      es: "Imagen del Slide",
+    },
+    noImage: {
+      "pt-BR": "Nenhuma imagem definida",
+      en: "No image set",
+      es: "Sin imagen definida",
+    },
+    hasImage: {
+      "pt-BR": "Este slide tem imagem",
+      en: "This slide has an image",
+      es: "Este slide tiene imagen",
+    },
+    addImage: {
+      "pt-BR": "Adicionar imagem",
+      en: "Add image",
+      es: "Agregar imagen",
+    },
+    changeImage: {
+      "pt-BR": "Trocar imagem",
+      en: "Change image",
+      es: "Cambiar imagen",
+    },
+    uploading: {
+      "pt-BR": "Enviando...",
+      en: "Uploading...",
+      es: "Subiendo...",
+    },
+    imageUploaded: {
+      "pt-BR": "Imagem enviada",
+      en: "Image uploaded",
+      es: "Imagen subida",
+    },
+    uploadError: {
+      "pt-BR": "Erro ao enviar",
+      en: "Upload error",
+      es: "Error al subir",
+    },
+    slidesMissingImages: {
+      "pt-BR": "slide(s) sem imagem de fundo",
+      en: "slide(s) missing background image",
+      es: "slide(s) sin imagen de fondo",
+    },
+    slidesMissingImagesDesc: {
+      "pt-BR": "Clique em um slide e use o botão 'Trocar imagem' para adicionar imagens.",
+      en: "Click on a slide and use the 'Change image' button to add images.",
+      es: "Haz clic en un slide y usa el botón 'Cambiar imagen' para agregar imágenes.",
+    },
+    invalidFile: {
+      "pt-BR": "Arquivo inválido",
+      en: "Invalid file",
+      es: "Archivo inválido",
+    },
+    invalidFileDesc: {
+      "pt-BR": "Por favor, envie uma imagem (JPG, PNG, WebP)",
+      en: "Please upload an image (JPG, PNG, WebP)",
+      es: "Por favor, sube una imagen (JPG, PNG, WebP)",
+    },
+    fileTooLarge: {
+      "pt-BR": "Arquivo muito grande",
+      en: "File too large",
+      es: "Archivo muy grande",
+    },
+    fileTooLargeDesc: {
+      "pt-BR": "O tamanho máximo é 5MB",
+      en: "Maximum size is 5MB",
+      es: "El tamaño máximo es 5MB",
+    },
   },
 
   // Cookie Consent
