@@ -50,6 +50,7 @@ interface Carousel {
   image_urls: string[] | null;
   created_at: string;
   has_watermark: boolean | null;
+  exported_at: string | null;
 }
 
 // Pagination and filter constants
@@ -70,6 +71,10 @@ const Dashboard = () => {
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [regeneratingId, setRegeneratingId] = useState<string | null>(null);
   const [showPlansModal, setShowPlansModal] = useState(false);
+
+  // Drafts state (carousels with status=COMPLETED but exported_at=null)
+  const [drafts, setDrafts] = useState<Carousel[]>([]);
+  const [loadingDrafts, setLoadingDrafts] = useState(true);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -178,6 +183,7 @@ const Dashboard = () => {
   useEffect(() => {
     if (user) {
       fetchCarousels();
+      fetchDrafts();
     }
   }, [user, currentPage, pageSize, statusFilter, toneFilter]);
 
@@ -185,6 +191,27 @@ const Dashboard = () => {
   useEffect(() => {
     setCurrentPage(1);
   }, [statusFilter, toneFilter, pageSize]);
+
+  // Fetch drafts (COMPLETED but not exported)
+  const fetchDrafts = async () => {
+    setLoadingDrafts(true);
+    try {
+      const { data, error } = await supabase
+        .from("carousels")
+        .select("*")
+        .eq("status", "COMPLETED")
+        .is("exported_at", null)
+        .order("created_at", { ascending: false })
+        .limit(6);
+
+      if (error) throw error;
+      setDrafts(data || []);
+    } catch (error) {
+      console.error("Error fetching drafts:", error);
+    } finally {
+      setLoadingDrafts(false);
+    }
+  };
 
   const fetchCarousels = async () => {
     setLoadingCarousels(true);
@@ -600,6 +627,68 @@ const Dashboard = () => {
         <div className="mb-6">
           <UsageStats />
         </div>
+
+        {/* Drafts Section - Rascunhos */}
+        {!loadingDrafts && drafts.length > 0 && (
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Clock className="w-5 h-5 text-amber-500" />
+                <h2 className="text-lg font-semibold">
+                  {language === "pt-BR" ? "Rascunhos" : language === "es" ? "Borradores" : "Drafts"}
+                </h2>
+                <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                  {drafts.length}
+                </span>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {language === "pt-BR"
+                  ? "Carrosséis aguardando finalização"
+                  : language === "es"
+                    ? "Carruseles esperando finalización"
+                    : "Carousels waiting to be finalized"}
+              </p>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {drafts.map((draft) => (
+                <Card
+                  key={draft.id}
+                  className="group hover:shadow-lg transition-all border-amber-500/30 bg-gradient-to-br from-amber-500/5 to-transparent cursor-pointer"
+                  onClick={() => navigate(`/create?draft=${draft.id}`)}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
+                          <ImageIcon className="w-5 h-5 text-amber-500" />
+                        </div>
+                        <div>
+                          <p className="font-medium">{getToneLabel(draft.tone)}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {formatInteger(draft.slide_count, language)} {t("dashboard", "slides", language)}
+                          </p>
+                        </div>
+                      </div>
+                      <span className="text-xs px-2 py-1 rounded-full bg-amber-500/10 text-amber-500">
+                        {language === "pt-BR" ? "Rascunho" : language === "es" ? "Borrador" : "Draft"}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Calendar className="w-3 h-3" />
+                        {formatRelativeTime(draft.created_at, language)}
+                      </div>
+                      <Button variant="ghost" size="sm" className="text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-500/10">
+                        {language === "pt-BR" ? "Continuar" : language === "es" ? "Continuar" : "Continue"}
+                        <ChevronRight className="w-3 h-3 ml-1" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Quick actions */}
         <Card className="mb-8 border-accent/20 bg-gradient-to-br from-accent/5 to-transparent">

@@ -48,7 +48,6 @@ import {
   templateRequiresImage,
   isValidCoverTemplate,
   isValidContentTemplate,
-  validateRequiredImages,
 } from "@/lib/templates";
 import LiveCarouselPreview from "@/components/carousel-creator/LiveCarouselPreview";
 import { FontId, GradientId } from "@/lib/constants";
@@ -509,6 +508,122 @@ const CreateCarousel = () => {
     }
   }, [searchParams, user]);
 
+  // Handle draft parameter - load draft carousel and go to preview
+  useEffect(() => {
+    const draftId = searchParams.get('draft');
+    if (draftId && user) {
+      loadDraftCarousel(draftId);
+    }
+  }, [searchParams, user]);
+
+  const loadDraftCarousel = async (carouselId: string) => {
+    try {
+      const { data: carousel, error } = await supabase
+        .from('carousels')
+        .select('*')
+        .eq('id', carouselId)
+        .eq('user_id', user?.id)
+        .single();
+
+      if (error || !carousel) {
+        toast({
+          title: t("errors", "error", siteLanguage),
+          description: t("create", "carouselNotFound", siteLanguage),
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Verify it's a draft (COMPLETED but not exported)
+      if (carousel.status !== 'COMPLETED' || carousel.exported_at !== null) {
+        toast({
+          title: t("create", "warning", siteLanguage),
+          description: siteLanguage === "pt-BR"
+            ? "Este carrossel não é um rascunho"
+            : siteLanguage === "es"
+              ? "Este carrusel no es un borrador"
+              : "This carousel is not a draft",
+          variant: "destructive",
+        });
+        navigate(`/carousel/${carouselId}`);
+        return;
+      }
+
+      // Load the carousel data
+      setCurrentCarouselId(carouselId);
+
+      // Restore style, format and tone
+      if (carousel.tone) {
+        const toneMap: Record<string, CreativeTone> = {
+          EMOTIONAL: "emotional",
+          PROFESSIONAL: "professional",
+          PROVOCATIVE: "provocative"
+        };
+        setCreativeTone(toneMap[carousel.tone] || "professional");
+      }
+      setSelectedStyle(carousel.style as StyleType || 'BLACK_WHITE');
+      setSelectedFormat(carousel.format as FormatType || 'POST_SQUARE');
+
+      // Restore template selections (Creator+ only) - with validation
+      if (carousel.cover_template && isValidCoverTemplate(carousel.cover_template)) {
+        setCoverTemplate(carousel.cover_template);
+      }
+      if (carousel.content_template && isValidContentTemplate(carousel.content_template)) {
+        setContentTemplate(carousel.content_template);
+      }
+
+      // Restore template customization from template_config
+      if (carousel.template_config && typeof carousel.template_config === 'object') {
+        const config = carousel.template_config as Record<string, unknown>;
+        setTemplateCustomization({
+          fontId: (config.fontId as FontId) || 'inter',
+          gradientId: (config.gradientId as GradientId) || 'none',
+          customGradientColors: config.customGradientColors as string[] | undefined,
+          slideImages: config.slideImages as (string | null)[] | undefined,
+          textAlignment: (config.textAlignment as 'left' | 'center' | 'right') || 'center',
+          verticalAlignment: (config.verticalAlignment as 'top' | 'middle' | 'bottom') || 'middle',
+          showNavigationDots: config.showNavigationDots !== false,
+          showNavigationArrow: config.showNavigationArrow !== false,
+        });
+      }
+
+      // Load the generated slides from the script
+      if (carousel.script && typeof carousel.script === 'object') {
+        const script = carousel.script as { slides?: Slide[] };
+        if (script.slides && Array.isArray(script.slides)) {
+          // Load slides with image URLs from the carousel
+          const slidesWithImages = script.slides.map((slide, index) => ({
+            ...slide,
+            imageUrl: carousel.image_urls?.[index] || slide.imageUrl
+          }));
+          setGeneratedSlides(slidesWithImages);
+        }
+      }
+
+      // Go directly to preview step
+      setCurrentStep('preview');
+
+      toast({
+        title: siteLanguage === "pt-BR"
+          ? "Rascunho carregado"
+          : siteLanguage === "es"
+            ? "Borrador cargado"
+            : "Draft loaded",
+        description: siteLanguage === "pt-BR"
+          ? "Finalize seu carrossel"
+          : siteLanguage === "es"
+            ? "Finaliza tu carrusel"
+            : "Finalize your carousel",
+      });
+    } catch {
+      toast({
+        title: t("errors", "error", siteLanguage),
+        description: t("create", "couldNotLoadCarousel", siteLanguage),
+        variant: "destructive",
+      });
+    }
+  };
+
   const loadFailedCarousel = async (carouselId: string) => {
     try {
       const { data: carousel, error } = await supabase
@@ -674,31 +789,8 @@ const CreateCarousel = () => {
         return;
       }
 
-      // Check required images for Creator+ users with image-requiring templates
-      if (isCreator) {
-        const slideCount = slideCountMode === "auto" ? 6 : manualSlideCount;
-        const imageValidation = validateRequiredImages(
-          slideCount,
-          coverTemplate,
-          contentTemplate,
-          templateCustomization.coverImages || [],
-          perSlideImages
-        );
-
-        if (!imageValidation.isValid) {
-          const missingCount = imageValidation.missingSlides.length;
-          const missingList = imageValidation.missingSlides
-            .map(i => i === 0 ? t("create", "cover", siteLanguage) : `Slide ${i}`)
-            .join(", ");
-
-          toast({
-            title: t("create", "requiredImagesMissing", siteLanguage).replace("{count}", String(missingCount)),
-            description: t("create", "uploadImagesFor", siteLanguage).replace("{list}", missingList),
-            variant: "destructive",
-          });
-          return;
-        }
-      }
+      // Note: Image upload is optional - users can add images later in Preview
+      // Images uploaded here will be used during generation
 
       // Check usage limit for free users
       if (!isPro && carouselCount >= 1) {

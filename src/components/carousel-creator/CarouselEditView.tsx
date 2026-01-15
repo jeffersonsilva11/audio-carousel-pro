@@ -226,8 +226,8 @@ const CarouselEditView = ({
     // Validate file type
     if (!file.type.startsWith("image/")) {
       toast({
-        title: t("carouselEditor", "invalidFile") || "Arquivo inválido",
-        description: t("carouselEditor", "invalidFileDesc") || "Por favor, envie uma imagem (JPG, PNG, WebP)",
+        title: t("carouselEditor", "invalidFile"),
+        description: t("carouselEditor", "invalidFileDesc"),
         variant: "destructive",
       });
       return;
@@ -236,8 +236,8 @@ const CarouselEditView = ({
     // Validate file size (max 5MB)
     if (file.size > FILE_LIMITS.MAX_IMAGE_SIZE) {
       toast({
-        title: t("carouselEditor", "fileTooLarge") || "Arquivo muito grande",
-        description: t("carouselEditor", "fileTooLargeDesc") || "O tamanho máximo é 5MB",
+        title: t("carouselEditor", "fileTooLarge"),
+        description: t("carouselEditor", "fileTooLargeDesc"),
         variant: "destructive",
       });
       return;
@@ -290,14 +290,14 @@ const CarouselEditView = ({
       }
 
       toast({
-        title: t("carouselEditor", "imageUploaded") || "Imagem enviada",
+        title: t("carouselEditor", "imageUploaded"),
         description: `Slide ${slideIndex + 1}`,
       });
     } catch (error) {
       console.error("Upload error:", error);
       toast({
-        title: t("carouselEditor", "uploadError") || "Erro ao enviar",
-        description: error instanceof Error ? error.message : "Erro desconhecido",
+        title: t("carouselEditor", "uploadError"),
+        description: error instanceof Error ? error.message : "Unknown error",
         variant: "destructive",
       });
     } finally {
@@ -366,11 +366,10 @@ const CarouselEditView = ({
           <ImageIcon className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
           <div className="flex-1">
             <p className="text-blue-600 dark:text-blue-400 font-medium">
-              {t("carouselEditor", "slidesMissingImages") || `${slidesMissingImages.length} slide(s) sem imagem de fundo`}
+              {slidesMissingImages.length} {t("carouselEditor", "slidesMissingImages")}
             </p>
             <p className="text-muted-foreground text-xs mt-0.5">
-              {t("carouselEditor", "slidesMissingImagesDesc") ||
-                "Clique em um slide e use o botão 'Trocar imagem' para adicionar imagens."}
+              {t("carouselEditor", "slidesMissingImagesDesc")}
             </p>
           </div>
         </div>
@@ -604,12 +603,12 @@ const CarouselEditView = ({
                   <div className="flex items-center justify-between">
                     <div>
                       <Label className="text-sm">
-                        {t("carouselEditor", "slideImage") || "Imagem do Slide"}
+                        {t("carouselEditor", "slideImage")}
                       </Label>
                       <p className="text-xs text-muted-foreground mt-0.5">
                         {slideImages.some(img => img.slideIndex === currentSlide && img.publicUrl)
-                          ? t("carouselEditor", "hasImage") || "Este slide tem imagem"
-                          : t("carouselEditor", "noImage") || "Nenhuma imagem definida"}
+                          ? t("carouselEditor", "hasImage")
+                          : t("carouselEditor", "noImage")}
                       </p>
                     </div>
                     <Button
@@ -621,17 +620,17 @@ const CarouselEditView = ({
                       {uploadingSlide === currentSlide ? (
                         <>
                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          {t("carouselEditor", "uploading") || "Enviando..."}
+                          {t("carouselEditor", "uploading")}
                         </>
                       ) : slideImages.some(img => img.slideIndex === currentSlide && img.publicUrl) ? (
                         <>
                           <RefreshCw className="w-4 h-4 mr-2" />
-                          {t("carouselEditor", "changeImage") || "Trocar imagem"}
+                          {t("carouselEditor", "changeImage")}
                         </>
                       ) : (
                         <>
                           <Upload className="w-4 h-4 mr-2" />
-                          {t("carouselEditor", "addImage") || "Adicionar imagem"}
+                          {t("carouselEditor", "addImage")}
                         </>
                       )}
                     </Button>
@@ -664,17 +663,17 @@ const CarouselEditView = ({
           {isRegenerating ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              {t("carouselEditor", "processing") || "Processando..."}
+              {t("carouselEditor", "processing")}
             </>
           ) : hasAnyChanges ? (
             <>
               <RefreshCw className="w-4 h-4 mr-2" />
-              {t("carouselEditor", "adjustAndFinalize") || "Ajustar e Finalizar"}
+              {t("carouselEditor", "adjustAndFinalize")}
             </>
           ) : (
             <>
               <Check className="w-4 h-4 mr-2" />
-              {t("carouselEditor", "finalize") || "Finalizar"}
+              {t("carouselEditor", "finalize")}
             </>
           )}
         </Button>
