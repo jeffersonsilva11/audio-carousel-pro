@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, BarChart3, TrendingUp, Users, Image, DollarSign, Activity, FileEdit, Clock, CheckCircle } from "lucide-react";
+import { Loader2, BarChart3, TrendingUp, Users, Image, DollarSign, Activity, FileEdit, Clock, CheckCircle, UserMinus, UserPlus, AlertTriangle, RefreshCw } from "lucide-react";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from "recharts";
 import { format, subDays } from "date-fns";
@@ -32,6 +32,18 @@ interface ApiCosts {
   cost: number;
 }
 
+interface ChurnMetrics {
+  cancellations: number;
+  churned: number;
+  newSubscriptions: number;
+  upgrades: number;
+  downgrades: number;
+  reactivations: number;
+  netMrrChange: number;
+  churnRate: number;
+  atRisk: number;
+}
+
 const PLAN_COLORS: Record<string, string> = {
   free: "hsl(var(--muted))",
   starter: "hsl(var(--accent))",
@@ -56,6 +68,17 @@ const AdvancedAnalytics = () => {
   const [planDistribution, setPlanDistribution] = useState<PlanDistribution[]>([]);
   const [formatDistribution, setFormatDistribution] = useState<FormatDistribution[]>([]);
   const [apiCosts, setApiCosts] = useState<ApiCosts[]>([]);
+  const [churnMetrics, setChurnMetrics] = useState<ChurnMetrics>({
+    cancellations: 0,
+    churned: 0,
+    newSubscriptions: 0,
+    upgrades: 0,
+    downgrades: 0,
+    reactivations: 0,
+    netMrrChange: 0,
+    churnRate: 0,
+    atRisk: 0,
+  });
   const [totals, setTotals] = useState({
     totalUsers: 0,
     completedCarousels: 0,
@@ -160,8 +183,49 @@ const AdvancedAnalytics = () => {
       // Fetch subscriptions for plan distribution
       const { data: subscriptionsData } = await supabase
         .from("subscriptions")
-        .select("plan_tier, status, user_id")
+        .select("plan_tier, status, user_id, cancel_at_period_end, cancelled_at")
         .eq("status", "active");
+
+      // Fetch subscription events for churn metrics
+      const { data: subscriptionEvents } = await supabase
+        .from("subscription_events")
+        .select("*")
+        .gte("created_at", startDate.toISOString());
+
+      // Process churn metrics from subscription events
+      const nonAdminEvents = (subscriptionEvents || []).filter(
+        e => !adminUserIds.has(e.user_id)
+      );
+
+      const newSubs = nonAdminEvents.filter(e => e.event_type === 'subscription_created').length;
+      const cancellations = nonAdminEvents.filter(e => e.event_type === 'subscription_cancelled').length;
+      const churned = nonAdminEvents.filter(e => e.event_type === 'subscription_churned' || e.event_type === 'subscription_expired').length;
+      const upgrades = nonAdminEvents.filter(e => e.event_type === 'subscription_upgraded').length;
+      const downgrades = nonAdminEvents.filter(e => e.event_type === 'subscription_downgraded').length;
+      const reactivations = nonAdminEvents.filter(e => e.event_type === 'subscription_reactivated').length;
+      const netMrrChange = nonAdminEvents.reduce((sum, e) => sum + (e.mrr_change || 0), 0);
+
+      // Count users at risk (cancelled but still active)
+      const nonAdminSubscriptions = (subscriptionsData || []).filter(
+        s => !adminUserIds.has(s.user_id)
+      );
+      const atRisk = nonAdminSubscriptions.filter(s => s.cancel_at_period_end === true).length;
+
+      // Calculate churn rate
+      const paidUsersCount = nonAdminSubscriptions.filter(s => s.plan_tier !== 'free').length;
+      const churnRate = paidUsersCount > 0 ? (churned / paidUsersCount) * 100 : 0;
+
+      setChurnMetrics({
+        cancellations,
+        churned,
+        newSubscriptions: newSubs,
+        upgrades,
+        downgrades,
+        reactivations,
+        netMrrChange,
+        churnRate,
+        atRisk,
+      });
 
       // Fetch API costs
       const { data: apiUsageData } = await supabase
@@ -197,11 +261,6 @@ const AdvancedAnalytics = () => {
       // Process plan distribution (excluding admins)
       const planCounts: Record<string, number> = { free: 0, starter: 0, creator: 0 };
 
-      const nonAdminSubscriptions = (subscriptionsData || []).filter(
-        s => !adminUserIds.has(s.user_id)
-      );
-
-      const paidUsersCount = nonAdminSubscriptions.length;
       planCounts.free = Math.max(0, (totalUsers || 0) - paidUsersCount - adminCount);
 
       nonAdminSubscriptions.forEach((s) => {
@@ -346,6 +405,71 @@ const AdvancedAnalytics = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Churn & Retention Section */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center gap-2">
+            <RefreshCw className="w-4 h-4" />
+            Churn & Retenção
+          </CardTitle>
+          <CardDescription>Métricas de assinaturas no período selecionado</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
+            <div className="text-center p-3 bg-green-500/10 rounded-lg">
+              <UserPlus className="w-5 h-5 mx-auto text-green-600 mb-1" />
+              <p className="text-xl font-bold text-green-600">+{churnMetrics.newSubscriptions}</p>
+              <p className="text-xs text-muted-foreground">Novos</p>
+            </div>
+            <div className="text-center p-3 bg-blue-500/10 rounded-lg">
+              <TrendingUp className="w-5 h-5 mx-auto text-blue-600 mb-1" />
+              <p className="text-xl font-bold text-blue-600">{churnMetrics.upgrades}</p>
+              <p className="text-xs text-muted-foreground">Upgrades</p>
+            </div>
+            <div className="text-center p-3 bg-orange-500/10 rounded-lg">
+              <Activity className="w-5 h-5 mx-auto text-orange-600 mb-1" />
+              <p className="text-xl font-bold text-orange-600">{churnMetrics.downgrades}</p>
+              <p className="text-xs text-muted-foreground">Downgrades</p>
+            </div>
+            <div className="text-center p-3 bg-purple-500/10 rounded-lg">
+              <RefreshCw className="w-5 h-5 mx-auto text-purple-600 mb-1" />
+              <p className="text-xl font-bold text-purple-600">{churnMetrics.reactivations}</p>
+              <p className="text-xs text-muted-foreground">Reativações</p>
+            </div>
+            <div className="text-center p-3 bg-yellow-500/10 rounded-lg">
+              <AlertTriangle className="w-5 h-5 mx-auto text-yellow-600 mb-1" />
+              <p className="text-xl font-bold text-yellow-600">{churnMetrics.cancellations}</p>
+              <p className="text-xs text-muted-foreground">Cancelamentos</p>
+            </div>
+            <div className="text-center p-3 bg-red-500/10 rounded-lg">
+              <UserMinus className="w-5 h-5 mx-auto text-red-600 mb-1" />
+              <p className="text-xl font-bold text-red-600">{churnMetrics.churned}</p>
+              <p className="text-xs text-muted-foreground">Churned</p>
+            </div>
+            <div className="text-center p-3 bg-amber-500/10 rounded-lg">
+              <AlertTriangle className="w-5 h-5 mx-auto text-amber-600 mb-1" />
+              <p className="text-xl font-bold text-amber-600">{churnMetrics.atRisk}</p>
+              <p className="text-xs text-muted-foreground">Em risco</p>
+            </div>
+            <div className={`text-center p-3 rounded-lg ${churnMetrics.netMrrChange >= 0 ? 'bg-green-500/10' : 'bg-red-500/10'}`}>
+              <DollarSign className={`w-5 h-5 mx-auto mb-1 ${churnMetrics.netMrrChange >= 0 ? 'text-green-600' : 'text-red-600'}`} />
+              <p className={`text-xl font-bold ${churnMetrics.netMrrChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {churnMetrics.netMrrChange >= 0 ? '+' : ''}R${churnMetrics.netMrrChange.toFixed(0)}
+              </p>
+              <p className="text-xs text-muted-foreground">MRR Δ</p>
+            </div>
+          </div>
+          {churnMetrics.churnRate > 0 && (
+            <div className="mt-4 p-3 bg-muted/50 rounded-lg">
+              <p className="text-sm text-muted-foreground">
+                Taxa de churn no período: <span className={`font-bold ${churnMetrics.churnRate > 5 ? 'text-red-600' : 'text-amber-600'}`}>{churnMetrics.churnRate.toFixed(1)}%</span>
+                {churnMetrics.churnRate > 5 && " - Atenção: taxa acima do ideal (5%)"}
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Summary cards - Row 2 */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
