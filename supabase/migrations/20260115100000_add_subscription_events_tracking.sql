@@ -84,6 +84,7 @@ END;
 $$;
 
 -- Trigger function to automatically log subscription changes
+-- Note: This function handles both schemas (with and without cancel_at_period_end column)
 CREATE OR REPLACE FUNCTION track_subscription_changes()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -97,10 +98,13 @@ DECLARE
   v_mrr_change DECIMAL;
   v_old_mrr DECIMAL;
   v_new_mrr DECIMAL;
+  v_has_cancel_column BOOLEAN;
+  v_new_cancel BOOLEAN;
+  v_old_cancel BOOLEAN;
 BEGIN
   -- Get plan names
-  v_old_plan := COALESCE(OLD.plan_tier, 'free');
-  v_new_plan := COALESCE(NEW.plan_tier, 'free');
+  v_old_plan := COALESCE(OLD.plan_tier::TEXT, 'free');
+  v_new_plan := COALESCE(NEW.plan_tier::TEXT, 'free');
 
   -- Calculate MRR values (approximate)
   v_old_mrr := CASE v_old_plan
@@ -119,24 +123,19 @@ BEGIN
 
   v_mrr_change := v_new_mrr - v_old_mrr;
 
+  -- Check if cancel_at_period_end column exists
+  SELECT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'subscriptions'
+      AND column_name = 'cancel_at_period_end'
+  ) INTO v_has_cancel_column;
+
   -- Determine event type based on changes
 
   -- New subscription (from free to paid)
   IF TG_OP = 'INSERT' AND v_new_plan != 'free' THEN
     v_event_type := 'subscription_created';
-
-  -- Status changed to cancelled
-  ELSIF TG_OP = 'UPDATE' AND
-        NEW.cancel_at_period_end = true AND
-        (OLD.cancel_at_period_end IS NULL OR OLD.cancel_at_period_end = false) THEN
-    v_event_type := 'subscription_cancelled';
-    v_mrr_change := 0; -- Not churned yet, just cancelled
-
-  -- Subscription reactivated (cancel_at_period_end went from true to false)
-  ELSIF TG_OP = 'UPDATE' AND
-        NEW.cancel_at_period_end = false AND
-        OLD.cancel_at_period_end = true THEN
-    v_event_type := 'subscription_reactivated';
 
   -- Plan changed (upgrade or downgrade)
   ELSIF TG_OP = 'UPDATE' AND v_old_plan != v_new_plan THEN
@@ -189,25 +188,34 @@ CREATE TRIGGER track_subscription_changes_trigger
   FOR EACH ROW
   EXECUTE FUNCTION track_subscription_changes();
 
--- Backfill existing data: Log current cancelled subscriptions (only if not already backfilled)
-INSERT INTO subscription_events (user_id, event_type, from_plan, to_plan, mrr_change, created_at, metadata)
-SELECT
-  s.user_id,
-  'subscription_cancelled',
-  s.plan_tier,
-  s.plan_tier, -- Still same plan, just cancelled
-  0,
-  COALESCE(s.cancelled_at, s.updated_at),
-  jsonb_build_object('backfilled', true, 'status', s.status)
-FROM subscriptions s
-WHERE s.cancel_at_period_end = true
-  AND s.cancelled_at IS NOT NULL
-  AND NOT EXISTS (
-    SELECT 1 FROM subscription_events se
-    WHERE se.user_id = s.user_id
-      AND se.event_type = 'subscription_cancelled'
-      AND se.metadata->>'backfilled' = 'true'
-  );
+-- Backfill existing data: Log current cancelled subscriptions (only if columns exist)
+DO $$
+BEGIN
+  -- Only run backfill if cancel_at_period_end and cancelled_at columns exist
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'subscriptions' AND column_name = 'cancelled_at'
+  ) THEN
+    INSERT INTO subscription_events (user_id, event_type, from_plan, to_plan, mrr_change, created_at, metadata)
+    SELECT
+      s.user_id,
+      'subscription_cancelled',
+      s.plan_tier,
+      s.plan_tier,
+      0,
+      COALESCE(s.cancelled_at, s.updated_at),
+      jsonb_build_object('backfilled', true, 'status', s.status)
+    FROM subscriptions s
+    WHERE s.cancel_at_period_end = true
+      AND s.cancelled_at IS NOT NULL
+      AND NOT EXISTS (
+        SELECT 1 FROM subscription_events se
+        WHERE se.user_id = s.user_id
+          AND se.event_type = 'subscription_cancelled'
+          AND se.metadata->>'backfilled' = 'true'
+      );
+  END IF;
+END $$;
 
 -- Add comments
 COMMENT ON TABLE subscription_events IS 'Tracks all subscription state changes for churn/retention analytics';
