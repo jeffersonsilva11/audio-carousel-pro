@@ -52,12 +52,15 @@ FORMATO DE RESPOSTA (JSON válido):
 Analise os seguintes conteúdos:`;
 
 serve(async (req) => {
-  const corsHeaders = getCorsHeaders(req);
-
+  // Handle CORS preflight
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response("ok", {
+      status: 200,
+      headers: getCorsHeaders(req)
+    });
   }
 
+  const corsHeaders = getCorsHeaders(req);
   const startTime = Date.now();
 
   try {
