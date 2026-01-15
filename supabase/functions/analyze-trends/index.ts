@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
-import OpenAI from "https://esm.sh/openai@4.28.0";
 import { getCorsHeaders } from "../_shared/cors.ts";
 
 const logStep = (step: string, details?: unknown) => {
@@ -52,7 +51,7 @@ FORMATO DE RESPOSTA (JSON válido):
 Analise os seguintes conteúdos:`;
 
 serve(async (req) => {
-  // Handle CORS preflight
+  // Handle CORS preflight FIRST
   if (req.method === "OPTIONS") {
     return new Response("ok", {
       status: 200,
@@ -66,7 +65,7 @@ serve(async (req) => {
   try {
     logStep("Function started");
 
-    // Initialize clients
+    // Initialize Supabase client
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
@@ -77,8 +76,6 @@ serve(async (req) => {
     if (!openaiKey) {
       throw new Error("OPENAI_API_KEY not configured");
     }
-
-    const openai = new OpenAI({ apiKey: openaiKey });
 
     // Authenticate user
     const authHeader = req.headers.get("Authorization");
@@ -107,7 +104,8 @@ serve(async (req) => {
     logStep("Admin authenticated", { userId: userData.user.id });
 
     // Parse request body
-    const { period_days = 30 } = await req.json();
+    const body = await req.json();
+    const period_days = body.period_days || 30;
 
     if (![7, 30, 90].includes(period_days)) {
       throw new Error("Invalid period. Use 7, 30, or 90 days.");
@@ -118,7 +116,7 @@ serve(async (req) => {
       p_period_days: period_days
     });
 
-    if (!canRun) {
+    if (canRun === false) {
       const { data: lastReport } = await supabase
         .from("trend_reports")
         .select("created_at")
@@ -139,7 +137,7 @@ serve(async (req) => {
       .select("user_id")
       .eq("role", "admin");
 
-    const adminUserIds = (adminRoles || []).map(r => r.user_id);
+    const adminUserIds = (adminRoles || []).map((r: { user_id: string }) => r.user_id);
 
     // Calculate date range
     const endDate = new Date();
@@ -184,9 +182,9 @@ serve(async (req) => {
 
     // Prepare transcriptions for analysis (limit to avoid token overflow)
     const transcriptions = carousels
-      .filter(c => c.transcription && c.transcription.length > 50)
+      .filter((c: { transcription: string | null }) => c.transcription && c.transcription.length > 50)
       .slice(0, 100) // Max 100 transcriptions
-      .map((c, i) => `[${i + 1}] ${c.transcription.slice(0, 500)}`) // Truncate long transcriptions
+      .map((c: { transcription: string }, i: number) => `[${i + 1}] ${c.transcription.slice(0, 500)}`) // Truncate long transcriptions
       .join("\n\n---\n\n");
 
     if (transcriptions.length < 100) {
@@ -195,25 +193,33 @@ serve(async (req) => {
 
     logStep("Sending to OpenAI for analysis");
 
-    // Call OpenAI for analysis
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content: ANALYSIS_PROMPT
-        },
-        {
-          role: "user",
-          content: transcriptions
-        }
-      ],
-      temperature: 0.3,
-      max_tokens: 4000,
-      response_format: { type: "json_object" }
+    // Call OpenAI using fetch (more reliable in Deno)
+    const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${openaiKey}`,
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: ANALYSIS_PROMPT },
+          { role: 'user', content: transcriptions }
+        ],
+        temperature: 0.3,
+        max_tokens: 4000,
+        response_format: { type: 'json_object' }
+      }),
     });
 
-    const analysisText = completion.choices[0]?.message?.content;
+    if (!openaiResponse.ok) {
+      const errorText = await openaiResponse.text();
+      throw new Error(`OpenAI API error: ${openaiResponse.status} - ${errorText}`);
+    }
+
+    const completion = await openaiResponse.json();
+    const analysisText = completion.choices?.[0]?.message?.content;
+
     if (!analysisText) {
       throw new Error("No response from OpenAI");
     }
@@ -241,20 +247,33 @@ serve(async (req) => {
       .maybeSingle();
 
     // Calculate trend evolution if previous report exists
-    let trendsEvolution = { growing: [], declining: [], stable: [], new: [] };
+    interface TrendItem {
+      name: string;
+      percentage: number;
+      from?: number;
+      to?: number;
+      change?: number;
+    }
+
+    const trendsEvolution: {
+      growing: TrendItem[];
+      declining: TrendItem[];
+      stable: TrendItem[];
+      new: TrendItem[];
+    } = { growing: [], declining: [], stable: [], new: [] };
 
     if (previousReport) {
-      const prevTopics = new Map((previousReport.topics || []).map((t: { name: string; percentage: number }) => [t.name.toLowerCase(), t.percentage]));
-      const currTopics = new Map((analysis.topics || []).map((t: { name: string; percentage: number }) => [t.name.toLowerCase(), t.percentage]));
+      const prevTopics = new Map((previousReport.topics || []).map((t: TrendItem) => [t.name.toLowerCase(), t.percentage]));
+      const currTopics = new Map((analysis.topics || []).map((t: TrendItem) => [t.name.toLowerCase(), t.percentage]));
 
       for (const [name, currPct] of currTopics) {
         const prevPct = prevTopics.get(name);
         if (prevPct === undefined) {
           trendsEvolution.new.push({ name, percentage: currPct });
         } else if (currPct > prevPct + 5) {
-          trendsEvolution.growing.push({ name, from: prevPct, to: currPct, change: currPct - prevPct });
+          trendsEvolution.growing.push({ name, from: prevPct, to: currPct, change: currPct - prevPct, percentage: currPct });
         } else if (currPct < prevPct - 5) {
-          trendsEvolution.declining.push({ name, from: prevPct, to: currPct, change: currPct - prevPct });
+          trendsEvolution.declining.push({ name, from: prevPct, to: currPct, change: currPct - prevPct, percentage: currPct });
         } else {
           trendsEvolution.stable.push({ name, percentage: currPct });
         }
@@ -264,7 +283,7 @@ serve(async (req) => {
     // Sample transcriptions for reference
     const sampleTranscriptions = carousels
       .slice(0, 5)
-      .map(c => ({
+      .map((c: { id: string; transcription: string | null; tone: string | null }) => ({
         id: c.id,
         preview: c.transcription?.slice(0, 200) + "...",
         tone: c.tone
