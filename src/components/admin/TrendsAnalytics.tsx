@@ -92,9 +92,17 @@ const TrendsAnalytics = () => {
   const runAnalysis = async () => {
     setAnalyzing(true);
     try {
-      // Let Supabase client handle the auth header automatically
+      // Get current session for auth
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error("Você precisa estar logado para executar esta análise");
+      }
+
       const response = await supabase.functions.invoke("analyze-trends", {
-        body: { period_days: period }
+        body: { period_days: period },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
       });
 
       if (response.error) {
