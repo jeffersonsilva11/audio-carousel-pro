@@ -193,25 +193,37 @@ serve(async (req) => {
       logStep("No carousels found for analysis");
       return new Response(
         JSON.stringify({
-          success: false,
-          error: "No carousels found in the selected period"
+          success: true,
+          no_data: true,
+          message: "Nenhum carrossel encontrado no período selecionado. Aguarde seus usuários criarem conteúdo."
         }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
       );
     }
 
     logStep("Carousels fetched", { count: carousels.length });
 
     // Prepare transcriptions for analysis (limit to avoid token overflow)
-    const transcriptions = carousels
-      .filter((c: { transcription: string | null }) => c.transcription && c.transcription.length > 50)
+    const validCarousels = carousels.filter(
+      (c: { transcription: string | null }) => c.transcription && c.transcription.length > 50
+    );
+
+    if (validCarousels.length < 3) {
+      logStep("Not enough valid carousels", { count: validCarousels.length });
+      return new Response(
+        JSON.stringify({
+          success: true,
+          no_data: true,
+          message: `Apenas ${validCarousels.length} carrossel(is) com conteúdo suficiente. Aguarde mais criações de conteúdo para uma análise significativa (mínimo: 3).`
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+      );
+    }
+
+    const transcriptions = validCarousels
       .slice(0, 100) // Max 100 transcriptions
       .map((c: { transcription: string }, i: number) => `[${i + 1}] ${c.transcription.slice(0, 500)}`) // Truncate long transcriptions
       .join("\n\n---\n\n");
-
-    if (transcriptions.length < 100) {
-      throw new Error("Not enough content to analyze");
-    }
 
     logStep("Sending to OpenAI for analysis");
 

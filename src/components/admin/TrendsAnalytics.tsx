@@ -116,6 +116,15 @@ const TrendsAnalytics = () => {
       const result = response.data;
       if (!result.success) throw new Error(result.error);
 
+      // Handle "no data" case with friendly message
+      if (result.no_data) {
+        toast({
+          title: "Sem dados para análise",
+          description: result.message,
+        });
+        return;
+      }
+
       setReport(result.report);
       toast({
         title: "Análise concluída!",
