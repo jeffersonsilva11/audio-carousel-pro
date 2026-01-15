@@ -502,23 +502,25 @@ const CarouselEditView = ({
           {/* Thumbnails */}
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={sortableIds} strategy={horizontalListSortingStrategy}>
-              <div ref={thumbnailsContainerRef} className="flex gap-2 overflow-x-auto pb-2 justify-center">
-                {slides.map((slide, index) => {
-                  const original = originalSlides[index];
-                  const isModified = original && slide.text !== original.text;
-                  return (
-                    <div key={`slide-${index}`} data-slide-index={index}>
-                      <SortableSlide
-                        slide={slide}
-                        index={index}
-                        isActive={currentSlide === index}
-                        isModified={isModified}
-                        onClick={() => goToSlide(index)}
-                        disabled={false}
-                      />
-                    </div>
-                  );
-                })}
+              <div ref={thumbnailsContainerRef} className="overflow-x-auto pb-2">
+                <div className="flex gap-2 w-fit mx-auto">
+                  {slides.map((slide, index) => {
+                    const original = originalSlides[index];
+                    const isModified = original && slide.text !== original.text;
+                    return (
+                      <div key={`slide-${index}`} data-slide-index={index}>
+                        <SortableSlide
+                          slide={slide}
+                          index={index}
+                          isActive={currentSlide === index}
+                          isModified={isModified}
+                          onClick={() => goToSlide(index)}
+                          disabled={false}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </SortableContext>
           </DndContext>
