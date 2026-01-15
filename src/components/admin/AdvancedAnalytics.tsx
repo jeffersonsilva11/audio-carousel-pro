@@ -103,7 +103,10 @@ const AdvancedAnalytics = () => {
         const date = format(new Date(c.created_at), "yyyy-MM-dd");
         if (dailyMap[date]) {
           dailyMap[date].carousels++;
-          dailyMap[date].users.add(c.user_id);
+          // Only count non-admin users for active users metric
+          if (!adminUserIds.has(c.user_id)) {
+            dailyMap[date].users.add(c.user_id);
+          }
         }
       });
 
@@ -170,7 +173,7 @@ const AdvancedAnalytics = () => {
       const conversionRate = nonAdminUsers > 0 ? (proUsers / nonAdminUsers) * 100 : 0;
 
       setTotals({
-        totalUsers: totalUsers || 0,
+        totalUsers: Math.max(0, (totalUsers || 0) - adminCount), // Exclude admins
         totalCarousels: carouselsData?.length || 0,
         totalProUsers: proUsers,
         estimatedRevenue,
