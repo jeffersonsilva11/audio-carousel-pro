@@ -141,6 +141,7 @@ const CreateCarousel = () => {
     gradientId: 'none' as GradientId,
     customGradientColors: undefined,
     slideImages: [],
+    coverImages: [], // Separate array for cover images (1-4 depending on template)
     textAlignment: 'center',
     verticalAlignment: 'middle',
     showNavigationDots: true,
@@ -262,13 +263,26 @@ const CreateCarousel = () => {
                     fontId: templateCustomization.fontId,
                     gradientId: templateCustomization.gradientId,
                     customGradientColors: templateCustomization.customGradientColors,
-                    slideImages: perSlideImages.length > 0
-                      ? Array.from({ length: editedSlides.length }, (_, i) => {
-                          const perSlide = perSlideImages.find(img => img.slideIndex === i);
-                          if (perSlide?.publicUrl) return perSlide.publicUrl;
-                          return templateCustomization.slideImages?.[i] || null;
-                        })
-                      : templateCustomization.slideImages,
+                    // Merge coverImages with perSlideImages for regeneration
+                    slideImages: (() => {
+                      const totalSlides = editedSlides.length;
+                      const merged: (string | null)[] = Array(totalSlides).fill(null);
+
+                      // First, place cover images
+                      const coverImgs = templateCustomization.coverImages || [];
+                      coverImgs.forEach((img, i) => {
+                        if (img) merged[i] = img;
+                      });
+
+                      // Then, place content images
+                      perSlideImages.forEach(img => {
+                        if (img.publicUrl && img.slideIndex < totalSlides) {
+                          merged[img.slideIndex] = img.publicUrl;
+                        }
+                      });
+
+                      return merged;
+                    })(),
                     textAlignment: templateCustomization.textAlignment,
                     verticalAlignment: templateCustomization.verticalAlignment,
                     showNavigationDots: templateCustomization.showNavigationDots,
@@ -664,6 +678,7 @@ const CreateCarousel = () => {
           slideCount,
           coverTemplate,
           contentTemplate,
+          templateCustomization.coverImages || [],
           perSlideImages
         );
 
@@ -747,14 +762,26 @@ const CreateCarousel = () => {
           fontId: templateCustomization.fontId,
           gradientId: templateCustomization.gradientId,
           customGradientColors: templateCustomization.customGradientColors,
-          // Merge cover slideImages with per-slide images (per-slide takes priority)
-          slideImages: perSlideImages.length > 0
-            ? Array.from({ length: slideCountMode === "auto" ? 6 : manualSlideCount }, (_, i) => {
-                const perSlide = perSlideImages.find(img => img.slideIndex === i);
-                if (perSlide?.publicUrl) return perSlide.publicUrl;
-                return templateCustomization.slideImages?.[i] || null;
-              })
-            : templateCustomization.slideImages,
+          // Merge coverImages (for cover slide) with perSlideImages (for content slides)
+          slideImages: (() => {
+            const totalSlides = slideCountMode === "auto" ? 6 : manualSlideCount;
+            const merged: (string | null)[] = Array(totalSlides).fill(null);
+
+            // First, place cover images (indices depend on cover template)
+            const coverImgs = templateCustomization.coverImages || [];
+            coverImgs.forEach((img, i) => {
+              if (img) merged[i] = img;
+            });
+
+            // Then, place content images (slideIndex matches the array index)
+            perSlideImages.forEach(img => {
+              if (img.publicUrl && img.slideIndex < totalSlides) {
+                merged[img.slideIndex] = img.publicUrl;
+              }
+            });
+
+            return merged;
+          })(),
           textAlignment: templateCustomization.textAlignment,
           verticalAlignment: templateCustomization.verticalAlignment,
           showNavigationDots: templateCustomization.showNavigationDots,
@@ -1143,11 +1170,9 @@ const CreateCarousel = () => {
                           customGradientColors: customColors
                         })
                       }
-                      coverImageUrl={templateCustomization.slideImages?.[0] || null}
-                      onCoverImageChange={(url) => {
-                        const newSlideImages = [...(templateCustomization.slideImages || [])];
-                        newSlideImages[0] = url;
-                        setTemplateCustomization({ ...templateCustomization, slideImages: newSlideImages });
+                      coverImages={templateCustomization.coverImages || []}
+                      onCoverImagesChange={(images) => {
+                        setTemplateCustomization({ ...templateCustomization, coverImages: images });
                       }}
                       isCreator={isCreator}
                       userId={user?.id}
