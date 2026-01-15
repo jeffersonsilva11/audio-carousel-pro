@@ -78,7 +78,7 @@ interface Slide {
 
 const CreateCarousel = () => {
   const { user, loading, isEmailConfirmed, signOut } = useAuth();
-  const { isPro, isCreator, createCheckout, loading: subLoading } = useSubscription();
+  const { isPro, isCreator, plan, createCheckout, loading: subLoading } = useSubscription();
   const { preferences, loading: prefsLoading, savePreferences } = useUserPreferences();
   const { language: siteLanguage } = useLanguage();
   const navigate = useNavigate();
@@ -1108,12 +1108,12 @@ const CreateCarousel = () => {
               })}
             </div>
 
-            {/* Pro badge or upgrade */}
+            {/* Plan badge or upgrade */}
             <div className="flex items-center gap-2">
               {isPro ? (
                 <span className="inline-flex items-center gap-1 px-2 py-1 bg-accent/10 text-accent text-xs font-medium rounded-full">
                   <Crown className="w-3 h-3" />
-                  Pro
+                  {plan.charAt(0).toUpperCase() + plan.slice(1)}
                 </span>
               ) : (
                 <Button 
