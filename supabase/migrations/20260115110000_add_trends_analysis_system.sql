@@ -48,15 +48,16 @@ CREATE TABLE IF NOT EXISTS trend_reports (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Create indexes
-CREATE INDEX idx_trend_reports_period ON trend_reports(period_days, created_at DESC);
-CREATE INDEX idx_trend_reports_status ON trend_reports(status);
-CREATE INDEX idx_trend_reports_date_range ON trend_reports(analysis_start, analysis_end);
+-- Create indexes (using IF NOT EXISTS to allow re-running)
+CREATE INDEX IF NOT EXISTS idx_trend_reports_period ON trend_reports(period_days, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_trend_reports_status ON trend_reports(status);
+CREATE INDEX IF NOT EXISTS idx_trend_reports_date_range ON trend_reports(analysis_start, analysis_end);
 
 -- Enable RLS
 ALTER TABLE trend_reports ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies - Only admins can view/manage trend reports
+DROP POLICY IF EXISTS "Admins can view trend reports" ON trend_reports;
 CREATE POLICY "Admins can view trend reports"
 ON trend_reports FOR SELECT
 USING (
@@ -66,6 +67,7 @@ USING (
   )
 );
 
+DROP POLICY IF EXISTS "Admins can insert trend reports" ON trend_reports;
 CREATE POLICY "Admins can insert trend reports"
 ON trend_reports FOR INSERT
 WITH CHECK (
@@ -75,6 +77,7 @@ WITH CHECK (
   )
 );
 
+DROP POLICY IF EXISTS "Service role can manage trend reports" ON trend_reports;
 CREATE POLICY "Service role can manage trend reports"
 ON trend_reports FOR ALL
 USING (auth.jwt() ->> 'role' = 'service_role');
