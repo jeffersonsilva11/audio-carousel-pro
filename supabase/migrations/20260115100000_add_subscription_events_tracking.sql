@@ -33,21 +33,23 @@ CREATE TABLE IF NOT EXISTS subscription_events (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Create indexes for efficient querying
-CREATE INDEX idx_subscription_events_user ON subscription_events(user_id);
-CREATE INDEX idx_subscription_events_type ON subscription_events(event_type);
-CREATE INDEX idx_subscription_events_date ON subscription_events(created_at);
-CREATE INDEX idx_subscription_events_churn ON subscription_events(event_type, created_at)
+-- Create indexes for efficient querying (IF NOT EXISTS to allow re-running)
+CREATE INDEX IF NOT EXISTS idx_subscription_events_user ON subscription_events(user_id);
+CREATE INDEX IF NOT EXISTS idx_subscription_events_type ON subscription_events(event_type);
+CREATE INDEX IF NOT EXISTS idx_subscription_events_date ON subscription_events(created_at);
+CREATE INDEX IF NOT EXISTS idx_subscription_events_churn ON subscription_events(event_type, created_at)
   WHERE event_type IN ('subscription_churned', 'subscription_cancelled');
 
 -- Enable RLS
 ALTER TABLE subscription_events ENABLE ROW LEVEL SECURITY;
 
--- RLS Policies
+-- RLS Policies (DROP IF EXISTS to allow re-running)
+DROP POLICY IF EXISTS "Users can view their own subscription events" ON subscription_events;
 CREATE POLICY "Users can view their own subscription events"
 ON subscription_events FOR SELECT
 USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Service role can manage subscription events" ON subscription_events;
 CREATE POLICY "Service role can manage subscription events"
 ON subscription_events FOR ALL
 USING (auth.jwt() ->> 'role' = 'service_role');
@@ -187,20 +189,25 @@ CREATE TRIGGER track_subscription_changes_trigger
   FOR EACH ROW
   EXECUTE FUNCTION track_subscription_changes();
 
--- Backfill existing data: Log current cancelled subscriptions
+-- Backfill existing data: Log current cancelled subscriptions (only if not already backfilled)
 INSERT INTO subscription_events (user_id, event_type, from_plan, to_plan, mrr_change, created_at, metadata)
 SELECT
-  user_id,
+  s.user_id,
   'subscription_cancelled',
-  plan_tier,
-  plan_tier, -- Still same plan, just cancelled
+  s.plan_tier,
+  s.plan_tier, -- Still same plan, just cancelled
   0,
-  COALESCE(cancelled_at, updated_at),
-  jsonb_build_object('backfilled', true, 'status', status)
-FROM subscriptions
-WHERE cancel_at_period_end = true
-  AND cancelled_at IS NOT NULL
-ON CONFLICT DO NOTHING;
+  COALESCE(s.cancelled_at, s.updated_at),
+  jsonb_build_object('backfilled', true, 'status', s.status)
+FROM subscriptions s
+WHERE s.cancel_at_period_end = true
+  AND s.cancelled_at IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM subscription_events se
+    WHERE se.user_id = s.user_id
+      AND se.event_type = 'subscription_cancelled'
+      AND se.metadata->>'backfilled' = 'true'
+  );
 
 -- Add comments
 COMMENT ON TABLE subscription_events IS 'Tracks all subscription state changes for churn/retention analytics';
