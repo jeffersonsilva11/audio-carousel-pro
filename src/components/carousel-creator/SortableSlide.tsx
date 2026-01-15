@@ -75,21 +75,24 @@ export function SortableSlide({
               e.currentTarget.style.display = 'none';
             }}
           />
-        ) : null}
-        <div className={`w-full h-full bg-muted flex items-center justify-center text-xs text-muted-foreground ${slide.imageUrl ? 'absolute inset-0' : ''}`}>
-          {index + 1}
-        </div>
+        ) : (
+          <div className="w-full h-full bg-muted flex items-center justify-center text-xs text-muted-foreground">
+            {index + 1}
+          </div>
+        )}
         {isActive && !isDragging && (
           <div className="absolute inset-0 bg-accent/10" />
         )}
         {isModified && (
           <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-500" />
         )}
-        
-        {/* Slide number badge */}
-        <div className="absolute bottom-1 left-1 w-5 h-5 rounded bg-background/80 backdrop-blur-sm flex items-center justify-center text-[10px] font-medium">
-          {index + 1}
-        </div>
+
+        {/* Slide number badge - only show when there's an image */}
+        {slide.imageUrl && (
+          <div className="absolute bottom-1 left-1 w-5 h-5 rounded bg-background/80 backdrop-blur-sm flex items-center justify-center text-[10px] font-medium">
+            {index + 1}
+          </div>
+        )}
       </button>
       
       {/* Drag handle - only visible on hover when not disabled */}

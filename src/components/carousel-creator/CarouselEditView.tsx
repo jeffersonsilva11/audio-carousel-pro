@@ -133,21 +133,19 @@ const CarouselEditView = ({
   // Check if template requires images for content slides
   const templateNeedsImages = templateRequiresImage(contentTemplate);
 
-  // Get slides missing images (content slides only, index > 0)
-  // A slide is missing image if it has no generated imageUrl AND no uploaded slideImage
+  // Get slides missing uploaded background images (content slides only, index > 0)
+  // This checks if the user has uploaded a background image for templates that require images
+  // Note: slide.imageUrl is the GENERATED carousel image, not the user-uploaded background
   const slidesMissingImages = useMemo(() => {
     if (!templateNeedsImages) return [];
     return slides
-      .map((slide, index) => ({ slide, index }))
-      .filter(({ slide, index }) => {
+      .map((_, index) => index)
+      .filter(index => {
         if (index === 0) return false; // Skip cover slide
-        // Check if slide already has a generated image
-        if (slide.imageUrl) return false;
-        // Check if there's an uploaded image for this slide
+        // Check if there's an uploaded background image for this slide
         const hasUploadedImage = slideImages.some(img => img.slideIndex === index && img.publicUrl);
         return !hasUploadedImage;
-      })
-      .map(({ index }) => index);
+      });
   }, [slides, slideImages, templateNeedsImages]);
 
   const hasTextChanges = getChangedIndices().length > 0;
