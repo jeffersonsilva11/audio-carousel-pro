@@ -183,7 +183,7 @@ const AdvancedAnalytics = () => {
       // Fetch subscriptions for plan distribution
       const { data: subscriptionsData } = await supabase
         .from("subscriptions")
-        .select("plan_tier, status, user_id, cancel_at_period_end, cancelled_at")
+        .select("plan_tier, status, user_id")
         .eq("status", "active");
 
       // Fetch subscription events for churn metrics
@@ -205,11 +205,13 @@ const AdvancedAnalytics = () => {
       const reactivations = nonAdminEvents.filter(e => e.event_type === 'subscription_reactivated').length;
       const netMrrChange = nonAdminEvents.reduce((sum, e) => sum + (e.mrr_change || 0), 0);
 
-      // Count users at risk (cancelled but still active)
+      // Filter out admin subscriptions
       const nonAdminSubscriptions = (subscriptionsData || []).filter(
         s => !adminUserIds.has(s.user_id)
       );
-      const atRisk = nonAdminSubscriptions.filter(s => s.cancel_at_period_end === true).length;
+
+      // Count users at risk from subscription events (cancelled but not churned yet)
+      const atRisk = Math.max(0, nonAdminEvents.filter(e => e.event_type === 'subscription_cancelled').length - churned);
 
       // Calculate churn rate
       const paidUsersCount = nonAdminSubscriptions.filter(s => s.plan_tier !== 'free').length;
