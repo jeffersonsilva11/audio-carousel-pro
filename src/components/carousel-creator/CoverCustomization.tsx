@@ -44,9 +44,9 @@ interface CoverCustomizationProps {
   gradientId: GradientId;
   customGradientColors?: string[];
   onGradientChange: (gradientId: GradientId, customColors?: string[]) => void;
-  // Cover image
-  coverImageUrl: string | null;
-  onCoverImageChange: (url: string | null) => void;
+  // Cover images (1-4 depending on template)
+  coverImages: (string | null)[];
+  onCoverImagesChange: (images: (string | null)[]) => void;
   // Access
   isCreator: boolean;
   userId?: string;
@@ -60,20 +60,44 @@ const CoverCustomization = ({
   gradientId,
   customGradientColors,
   onGradientChange,
-  coverImageUrl,
-  onCoverImageChange,
+  coverImages,
+  onCoverImagesChange,
   isCreator,
   userId,
 }: CoverCustomizationProps) => {
   const { language } = useLanguage();
   const { plan } = useSubscription();
   const { toast } = useToast();
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const fileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const [customColor1, setCustomColor1] = useState(customGradientColors?.[0] || DEFAULT_GRADIENT_COLORS.START);
   const [customColor2, setCustomColor2] = useState(customGradientColors?.[1] || DEFAULT_GRADIENT_COLORS.END);
-  const [uploading, setUploading] = useState(false);
+  const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
   const [activeGradientCategory, setActiveGradientCategory] = useState<GradientCategory | 'basic'>('basic');
   const [activeTab, setActiveTab] = useState<"template" | "background">("template");
+
+  // Get number of images required for selected template
+  const getRequiredImageCount = (): number => {
+    switch (selectedCoverTemplate) {
+      case 'cover_split_images':
+        return 4;
+      case 'cover_full_image':
+      case 'cover_gradient_overlay':
+        return 1;
+      case 'cover_solid_color':
+      default:
+        return 0;
+    }
+  };
+
+  // Check if template requires images
+  const templateRequiresCoverImage = selectedCoverTemplate !== 'cover_solid_color';
+
+  // Check if template supports gradient (only solid_color and gradient_overlay)
+  const templateSupportsGradient =
+    selectedCoverTemplate === 'cover_solid_color' ||
+    selectedCoverTemplate === 'cover_gradient_overlay';
+
+  const requiredImageCount = getRequiredImageCount();
 
   const langKey = language === "pt-BR" ? "pt" : language === "es" ? "es" : "en";
 
@@ -86,12 +110,15 @@ const CoverCustomization = ({
       backgroundTab: "Fundo",
       templateDescription: "Escolha como os elementos serão organizados na capa",
       requiresImage: "Requer imagem",
+      requiresImages: "Requer 4 imagens",
       noImageRequired: "Sem imagem",
       imageSubtab: "Imagem",
+      imagesSubtab: "Imagens",
       gradientSubtab: "Gradiente",
       imageDescription: "Adicione uma imagem de fundo para a capa",
+      imagesDescription: "Adicione 4 imagens para o grid da capa",
       gradientDescription: "Escolha um gradiente para o fundo da capa",
-      uploadImage: "Clique para adicionar imagem",
+      uploadImage: "Clique para adicionar",
       recommendedSize: "Tamanho recomendado:",
       sizeDetails: "1080x1080px (Feed), 1080x1350px (Retrato), ou 1080x1920px (Stories)",
       imagePriority: "A imagem de capa tem prioridade sobre o gradiente. Se você enviar uma imagem, ela será usada no lugar do gradiente.",
@@ -106,6 +133,8 @@ const CoverCustomization = ({
       pleaseUploadImage: "Por favor, envie uma imagem.",
       fileTooLarge: "Arquivo muito grande",
       maxSize: "Máximo 5MB por imagem.",
+      noBackgroundNeeded: "Este layout não requer configuração de fundo. O fundo será a cor do estilo selecionado (preto ou branco).",
+      gridImagePosition: ["Superior Esq.", "Superior Dir.", "Inferior Esq.", "Inferior Dir."],
       lockedFeatures: [
         "3 templates de capa",
         "Upload de imagem de capa",
@@ -120,12 +149,15 @@ const CoverCustomization = ({
       backgroundTab: "Background",
       templateDescription: "Choose how elements are organized on the cover",
       requiresImage: "Requires image",
+      requiresImages: "Requires 4 images",
       noImageRequired: "No image",
       imageSubtab: "Image",
+      imagesSubtab: "Images",
       gradientSubtab: "Gradient",
       imageDescription: "Add a background image for the cover",
+      imagesDescription: "Add 4 images for the cover grid",
       gradientDescription: "Choose a gradient for the cover background",
-      uploadImage: "Click to add image",
+      uploadImage: "Click to add",
       recommendedSize: "Recommended size:",
       sizeDetails: "1080x1080px (Feed), 1080x1350px (Portrait), or 1080x1920px (Stories)",
       imagePriority: "The cover image takes priority over the gradient. If you upload an image, it will be used instead of the gradient.",
@@ -140,6 +172,8 @@ const CoverCustomization = ({
       pleaseUploadImage: "Please upload an image.",
       fileTooLarge: "File too large",
       maxSize: "Maximum 5MB per image.",
+      noBackgroundNeeded: "This layout doesn't require background configuration. The background will be the selected style color (black or white).",
+      gridImagePosition: ["Top Left", "Top Right", "Bottom Left", "Bottom Right"],
       lockedFeatures: [
         "3 cover templates",
         "Cover image upload",
@@ -154,12 +188,15 @@ const CoverCustomization = ({
       backgroundTab: "Fondo",
       templateDescription: "Elige cómo se organizan los elementos en la portada",
       requiresImage: "Requiere imagen",
+      requiresImages: "Requiere 4 imágenes",
       noImageRequired: "Sin imagen",
       imageSubtab: "Imagen",
+      imagesSubtab: "Imágenes",
       gradientSubtab: "Gradiente",
       imageDescription: "Agrega una imagen de fondo para la portada",
+      imagesDescription: "Agrega 4 imágenes para la cuadrícula de la portada",
       gradientDescription: "Elige un gradiente para el fondo de la portada",
-      uploadImage: "Clic para agregar imagen",
+      uploadImage: "Clic para agregar",
       recommendedSize: "Tamaño recomendado:",
       sizeDetails: "1080x1080px (Feed), 1080x1350px (Retrato), o 1080x1920px (Stories)",
       imagePriority: "La imagen de portada tiene prioridad sobre el gradiente. Si subes una imagen, se usará en lugar del gradiente.",
@@ -174,6 +211,8 @@ const CoverCustomization = ({
       pleaseUploadImage: "Por favor, sube una imagen.",
       fileTooLarge: "Archivo muy grande",
       maxSize: "Máximo 5MB por imagen.",
+      noBackgroundNeeded: "Este diseño no requiere configuración de fondo. El fondo será el color del estilo seleccionado (negro o blanco).",
+      gridImagePosition: ["Sup. Izq.", "Sup. Der.", "Inf. Izq.", "Inf. Der."],
       lockedFeatures: [
         "3 plantillas de portada",
         "Subida de imagen de portada",
@@ -219,7 +258,7 @@ const CoverCustomization = ({
     }
   };
 
-  const handleImageUpload = async (file: File) => {
+  const handleImageUpload = async (index: number, file: File) => {
     if (!file.type.startsWith('image/')) {
       toast({
         title: t.invalidFile,
@@ -246,11 +285,11 @@ const CoverCustomization = ({
       return;
     }
 
-    setUploading(true);
+    setUploadingIndex(index);
 
     try {
       const fileExt = file.name.split('.').pop();
-      const fileName = `${userId}/${Date.now()}-cover.${fileExt}`;
+      const fileName = `${userId}/${Date.now()}-cover-${index}.${fileExt}`;
 
       const { data, error } = await supabase.storage
         .from('slide-images')
@@ -265,7 +304,13 @@ const CoverCustomization = ({
         .from('slide-images')
         .getPublicUrl(data.path);
 
-      onCoverImageChange(urlData.publicUrl);
+      // Update coverImages array
+      const newCoverImages = [...coverImages];
+      while (newCoverImages.length <= index) {
+        newCoverImages.push(null);
+      }
+      newCoverImages[index] = urlData.publicUrl;
+      onCoverImagesChange(newCoverImages);
 
       toast({
         title: t.uploadComplete,
@@ -279,14 +324,15 @@ const CoverCustomization = ({
         variant: "destructive",
       });
     } finally {
-      setUploading(false);
+      setUploadingIndex(null);
     }
   };
 
-  const handleRemoveImage = async () => {
-    if (coverImageUrl && coverImageUrl.includes('slide-images') && userId) {
+  const handleRemoveImage = async (index: number) => {
+    const imageUrl = coverImages[index];
+    if (imageUrl && imageUrl.includes('slide-images') && userId) {
       try {
-        const path = coverImageUrl.split('slide-images/')[1];
+        const path = imageUrl.split('slide-images/')[1];
         if (path) {
           await supabase.storage.from('slide-images').remove([path]);
         }
@@ -294,7 +340,9 @@ const CoverCustomization = ({
         console.error("Error deleting image:", error);
       }
     }
-    onCoverImageChange(null);
+    const newCoverImages = [...coverImages];
+    newCoverImages[index] = null;
+    onCoverImagesChange(newCoverImages);
   };
 
   const getGradientStyle = (colors: readonly string[] | null) => {
@@ -309,7 +357,11 @@ const CoverCustomization = ({
     return GRADIENT_PRESETS.filter(g => g.category === activeGradientCategory);
   };
 
-  const hasImage = !!coverImageUrl;
+  // Check if any cover image is present
+  const hasAnyImage = coverImages.some(img => img !== null);
+
+  // Count uploaded images
+  const uploadedImageCount = coverImages.filter(img => img !== null).length;
 
   return (
     <div className="border border-border/50 rounded-xl overflow-hidden">
@@ -335,7 +387,7 @@ const CoverCustomization = ({
           <TabsTrigger value="background" className="gap-1.5">
             <Palette className="w-4 h-4" />
             <span>{t.backgroundTab}</span>
-            {hasImage && <span className="w-2 h-2 rounded-full bg-green-500" />}
+            {hasAnyImage && <span className="w-2 h-2 rounded-full bg-green-500" />}
           </TabsTrigger>
         </TabsList>
 
@@ -376,7 +428,9 @@ const CoverCustomization = ({
                           {getTemplateName(templateId, langKey)}
                         </p>
                         <p className="text-[10px] text-muted-foreground truncate">
-                          {meta.requiresImage ? t.requiresImage : t.noImageRequired}
+                          {meta.requiresImage
+                            ? (meta.maxImages > 1 ? t.requiresImages : t.requiresImage)
+                            : t.noImageRequired}
                         </p>
                       </div>
                       {isSelected && (
@@ -397,102 +451,11 @@ const CoverCustomization = ({
 
         {/* Background Tab */}
         <TabsContent value="background" className="space-y-4">
-          {/* Image/Gradient sub-tabs */}
-          <Tabs defaultValue="image">
-            <TabsList className="grid w-full grid-cols-2 mb-4">
-              <TabsTrigger value="image" className="gap-1.5">
-                <Image className="w-4 h-4" />
-                <span>{t.imageSubtab}</span>
-                {hasImage && <span className="w-2 h-2 rounded-full bg-green-500" />}
-              </TabsTrigger>
-              <TabsTrigger value="gradient" className="gap-1.5">
-                <Palette className="w-4 h-4" />
-                <span>{t.gradientSubtab}</span>
-              </TabsTrigger>
-            </TabsList>
+          {/* Content varies based on selected template */}
 
-            {/* Image Sub-tab */}
-            <TabsContent value="image" className="space-y-4">
-              <p className="text-sm text-muted-foreground">{t.imageDescription}</p>
-
-              <div className="flex justify-center">
-                <div className="relative w-48">
-                  <div
-                    className={cn(
-                      "aspect-square rounded-lg border-2 border-dashed overflow-hidden transition-all",
-                      coverImageUrl ? "border-accent" : "border-border hover:border-accent/50",
-                      uploading && "opacity-50"
-                    )}
-                  >
-                    {uploading ? (
-                      <div className="w-full h-full flex items-center justify-center bg-muted/50">
-                        <Loader2 className="w-6 h-6 animate-spin text-accent" />
-                      </div>
-                    ) : coverImageUrl ? (
-                      <img
-                        src={coverImageUrl}
-                        alt="Cover"
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <button
-                        onClick={() => fileInputRef.current?.click()}
-                        className="w-full h-full flex flex-col items-center justify-center gap-2 hover:bg-accent/5 transition-colors"
-                      >
-                        <Upload className="w-6 h-6 text-muted-foreground" />
-                        <span className="text-xs text-muted-foreground text-center px-2">
-                          {t.uploadImage}
-                        </span>
-                      </button>
-                    )}
-                  </div>
-
-                  {coverImageUrl && !uploading && (
-                    <button
-                      onClick={handleRemoveImage}
-                      className="absolute -top-2 -right-2 w-6 h-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-transform"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  )}
-
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) handleImageUpload(file);
-                      e.target.value = '';
-                    }}
-                  />
-                </div>
-              </div>
-
-              <p className="text-xs text-center px-4 py-2 bg-accent/10 rounded-lg text-accent">
-                <strong>{t.recommendedSize}</strong> {t.sizeDetails}
-              </p>
-
-              <div className="flex items-start gap-2 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                <Info className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
-                <p className="text-xs text-blue-600 dark:text-blue-400">
-                  {t.imagePriority}
-                </p>
-              </div>
-            </TabsContent>
-
-            {/* Gradient Sub-tab */}
-            <TabsContent value="gradient" className="space-y-4">
-              {hasImage && (
-                <div className="flex items-start gap-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg mb-4">
-                  <Info className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-                  <p className="text-xs text-amber-600 dark:text-amber-400">
-                    {t.imageUploaded}
-                  </p>
-                </div>
-              )}
-
+          {/* SOLID COLOR: Show only gradient picker */}
+          {selectedCoverTemplate === 'cover_solid_color' && (
+            <div className="space-y-4">
               <p className="text-sm text-muted-foreground">{t.gradientDescription}</p>
 
               {/* Category Tabs */}
@@ -524,15 +487,11 @@ const CoverCustomization = ({
                 ))}
               </div>
 
-              <div className={cn(
-                "grid grid-cols-3 sm:grid-cols-5 gap-2",
-                hasImage && "opacity-50 pointer-events-none"
-              )}>
+              <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                 {getFilteredGradients().map((gradient) => (
                   <button
                     key={gradient.id}
                     onClick={() => handleGradientChange(gradient.id)}
-                    disabled={hasImage}
                     className={cn(
                       "p-2 rounded-lg border-2 transition-all",
                       gradientId === gradient.id
@@ -557,7 +516,7 @@ const CoverCustomization = ({
               </div>
 
               {/* Custom gradient color pickers */}
-              {gradientId === 'custom' && !hasImage && (
+              {gradientId === 'custom' && (
                 <div className="flex gap-4 pt-2">
                   <div className="flex-1">
                     <Label className="text-xs text-muted-foreground mb-1 block">{t.colorStart}</Label>
@@ -595,8 +554,329 @@ const CoverCustomization = ({
                   </div>
                 </div>
               )}
-            </TabsContent>
-          </Tabs>
+            </div>
+          )}
+
+          {/* FULL IMAGE: Show only 1 image upload */}
+          {selectedCoverTemplate === 'cover_full_image' && (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">{t.imageDescription}</p>
+
+              <div className="flex justify-center">
+                <div className="relative w-48">
+                  <div
+                    className={cn(
+                      "aspect-square rounded-lg border-2 border-dashed overflow-hidden transition-all",
+                      coverImages[0] ? "border-accent" : "border-border hover:border-accent/50",
+                      uploadingIndex === 0 && "opacity-50"
+                    )}
+                  >
+                    {uploadingIndex === 0 ? (
+                      <div className="w-full h-full flex items-center justify-center bg-muted/50">
+                        <Loader2 className="w-6 h-6 animate-spin text-accent" />
+                      </div>
+                    ) : coverImages[0] ? (
+                      <img
+                        src={coverImages[0]}
+                        alt="Cover"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <button
+                        onClick={() => fileInputRefs.current[0]?.click()}
+                        className="w-full h-full flex flex-col items-center justify-center gap-2 hover:bg-accent/5 transition-colors"
+                      >
+                        <Upload className="w-6 h-6 text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground text-center px-2">
+                          {t.uploadImage}
+                        </span>
+                      </button>
+                    )}
+                  </div>
+
+                  {coverImages[0] && uploadingIndex !== 0 && (
+                    <button
+                      onClick={() => handleRemoveImage(0)}
+                      className="absolute -top-2 -right-2 w-6 h-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-transform"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+
+                  <input
+                    ref={el => fileInputRefs.current[0] = el}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleImageUpload(0, file);
+                      e.target.value = '';
+                    }}
+                  />
+                </div>
+              </div>
+
+              <p className="text-xs text-center px-4 py-2 bg-accent/10 rounded-lg text-accent">
+                <strong>{t.recommendedSize}</strong> {t.sizeDetails}
+              </p>
+            </div>
+          )}
+
+          {/* SPLIT IMAGES: Show 4 image uploads in grid */}
+          {selectedCoverTemplate === 'cover_split_images' && (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">{t.imagesDescription}</p>
+
+              <div className="grid grid-cols-2 gap-3 max-w-[320px] mx-auto">
+                {[0, 1, 2, 3].map((index) => (
+                  <div key={index} className="relative">
+                    <div
+                      className={cn(
+                        "aspect-square rounded-lg border-2 border-dashed overflow-hidden transition-all",
+                        coverImages[index] ? "border-accent" : "border-border hover:border-accent/50",
+                        uploadingIndex === index && "opacity-50"
+                      )}
+                    >
+                      {uploadingIndex === index ? (
+                        <div className="w-full h-full flex items-center justify-center bg-muted/50">
+                          <Loader2 className="w-5 h-5 animate-spin text-accent" />
+                        </div>
+                      ) : coverImages[index] ? (
+                        <img
+                          src={coverImages[index]!}
+                          alt={`Cover ${index + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <button
+                          onClick={() => fileInputRefs.current[index]?.click()}
+                          className="w-full h-full flex flex-col items-center justify-center gap-1 hover:bg-accent/5 transition-colors"
+                        >
+                          <Upload className="w-5 h-5 text-muted-foreground" />
+                          <span className="text-[10px] text-muted-foreground text-center px-1">
+                            {t.gridImagePosition[index]}
+                          </span>
+                        </button>
+                      )}
+                    </div>
+
+                    {coverImages[index] && uploadingIndex !== index && (
+                      <button
+                        onClick={() => handleRemoveImage(index)}
+                        className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-transform"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    )}
+
+                    <input
+                      ref={el => fileInputRefs.current[index] = el}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleImageUpload(index, file);
+                        e.target.value = '';
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
+
+              <p className="text-xs text-center text-muted-foreground">
+                {uploadedImageCount}/4 {langKey === 'pt' ? 'imagens enviadas' : langKey === 'es' ? 'imágenes subidas' : 'images uploaded'}
+              </p>
+
+              <p className="text-xs text-center px-4 py-2 bg-accent/10 rounded-lg text-accent">
+                <strong>{t.recommendedSize}</strong> {t.sizeDetails}
+              </p>
+            </div>
+          )}
+
+          {/* GRADIENT OVERLAY: Show image upload + gradient picker */}
+          {selectedCoverTemplate === 'cover_gradient_overlay' && (
+            <Tabs defaultValue="image">
+              <TabsList className="grid w-full grid-cols-2 mb-4">
+                <TabsTrigger value="image" className="gap-1.5">
+                  <Image className="w-4 h-4" />
+                  <span>{t.imageSubtab}</span>
+                  {coverImages[0] && <span className="w-2 h-2 rounded-full bg-green-500" />}
+                </TabsTrigger>
+                <TabsTrigger value="gradient" className="gap-1.5">
+                  <Palette className="w-4 h-4" />
+                  <span>{t.gradientSubtab}</span>
+                </TabsTrigger>
+              </TabsList>
+
+              {/* Image Sub-tab */}
+              <TabsContent value="image" className="space-y-4">
+                <p className="text-sm text-muted-foreground">{t.imageDescription}</p>
+
+                <div className="flex justify-center">
+                  <div className="relative w-48">
+                    <div
+                      className={cn(
+                        "aspect-square rounded-lg border-2 border-dashed overflow-hidden transition-all",
+                        coverImages[0] ? "border-accent" : "border-border hover:border-accent/50",
+                        uploadingIndex === 0 && "opacity-50"
+                      )}
+                    >
+                      {uploadingIndex === 0 ? (
+                        <div className="w-full h-full flex items-center justify-center bg-muted/50">
+                          <Loader2 className="w-6 h-6 animate-spin text-accent" />
+                        </div>
+                      ) : coverImages[0] ? (
+                        <img
+                          src={coverImages[0]}
+                          alt="Cover"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <button
+                          onClick={() => fileInputRefs.current[0]?.click()}
+                          className="w-full h-full flex flex-col items-center justify-center gap-2 hover:bg-accent/5 transition-colors"
+                        >
+                          <Upload className="w-6 h-6 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground text-center px-2">
+                            {t.uploadImage}
+                          </span>
+                        </button>
+                      )}
+                    </div>
+
+                    {coverImages[0] && uploadingIndex !== 0 && (
+                      <button
+                        onClick={() => handleRemoveImage(0)}
+                        className="absolute -top-2 -right-2 w-6 h-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-transform"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+
+                    <input
+                      ref={el => fileInputRefs.current[0] = el}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleImageUpload(0, file);
+                        e.target.value = '';
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <p className="text-xs text-center px-4 py-2 bg-accent/10 rounded-lg text-accent">
+                  <strong>{t.recommendedSize}</strong> {t.sizeDetails}
+                </p>
+              </TabsContent>
+
+              {/* Gradient Sub-tab */}
+              <TabsContent value="gradient" className="space-y-4">
+                <p className="text-sm text-muted-foreground">{t.gradientDescription}</p>
+
+                {/* Category Tabs */}
+                <div className="flex flex-wrap gap-1">
+                  <button
+                    onClick={() => setActiveGradientCategory('basic')}
+                    className={cn(
+                      "px-2 py-1 text-xs rounded-md transition-colors",
+                      activeGradientCategory === 'basic'
+                        ? "bg-accent text-accent-foreground"
+                        : "bg-muted hover:bg-muted/80"
+                    )}
+                  >
+                    {GRADIENT_CATEGORY_LABELS.basic[language]}
+                  </button>
+                  {GRADIENT_CATEGORIES.map((cat) => (
+                    <button
+                      key={cat}
+                      onClick={() => setActiveGradientCategory(cat)}
+                      className={cn(
+                        "px-2 py-1 text-xs rounded-md transition-colors",
+                        activeGradientCategory === cat
+                          ? "bg-accent text-accent-foreground"
+                          : "bg-muted hover:bg-muted/80"
+                      )}
+                    >
+                      {GRADIENT_CATEGORY_LABELS[cat][language]}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                  {getFilteredGradients().map((gradient) => (
+                    <button
+                      key={gradient.id}
+                      onClick={() => handleGradientChange(gradient.id)}
+                      className={cn(
+                        "p-2 rounded-lg border-2 transition-all",
+                        gradientId === gradient.id
+                          ? "border-accent"
+                          : "border-border hover:border-accent/50"
+                      )}
+                    >
+                      <div
+                        className="w-full h-10 rounded-md mb-1"
+                        style={{
+                          background: gradient.colors
+                            ? getGradientStyle(gradient.colors)
+                            : gradient.id === 'custom'
+                              ? getGradientStyle([customColor1, customColor2])
+                              : 'transparent',
+                          border: gradient.id === 'none' ? '2px dashed hsl(var(--border))' : 'none',
+                        }}
+                      />
+                      <span className="text-[10px] font-medium truncate block">{gradient.name}</span>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Custom gradient color pickers */}
+                {gradientId === 'custom' && (
+                  <div className="flex gap-4 pt-2">
+                    <div className="flex-1">
+                      <Label className="text-xs text-muted-foreground mb-1 block">{t.colorStart}</Label>
+                      <div className="flex gap-2 items-center">
+                        <input
+                          type="color"
+                          value={customColor1}
+                          onChange={(e) => handleCustomColorChange(0, e.target.value)}
+                          className="w-10 h-10 rounded border-0 cursor-pointer"
+                        />
+                        <Input
+                          value={customColor1}
+                          onChange={(e) => handleCustomColorChange(0, e.target.value)}
+                          className="flex-1 font-mono text-sm"
+                          maxLength={7}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <Label className="text-xs text-muted-foreground mb-1 block">{t.colorEnd}</Label>
+                      <div className="flex gap-2 items-center">
+                        <input
+                          type="color"
+                          value={customColor2}
+                          onChange={(e) => handleCustomColorChange(1, e.target.value)}
+                          className="w-10 h-10 rounded border-0 cursor-pointer"
+                        />
+                        <Input
+                          value={customColor2}
+                          onChange={(e) => handleCustomColorChange(1, e.target.value)}
+                          className="flex-1 font-mono text-sm"
+                          maxLength={7}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
+          )}
         </TabsContent>
       </Tabs>
     </div>

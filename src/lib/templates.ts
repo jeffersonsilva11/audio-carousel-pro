@@ -218,27 +218,43 @@ export function countSlidesRequiringImages(
 
 /**
  * Validate that all required slide images are uploaded
+ * @param slideCount - Total number of slides
+ * @param coverTemplate - The selected cover template
+ * @param contentTemplate - The selected content template
+ * @param coverImages - Array of cover images (1-4 depending on template)
+ * @param contentImages - Array of content slide images (SlideImage[])
  */
 export function validateRequiredImages(
   slideCount: number,
   coverTemplate: CoverTemplateType,
   contentTemplate: ContentTemplateType,
-  uploadedImages: SlideImage[]
+  coverImages: (string | null)[],
+  contentImages: SlideImage[]
 ): { isValid: boolean; missingSlides: number[] } {
   const missingSlides: number[] = [];
 
   // Check cover slide (index 0)
   if (templateRequiresImage(coverTemplate)) {
-    const hasCoverImage = uploadedImages.some(
-      img => img.slideIndex === 0 && img.publicUrl
-    );
-    if (!hasCoverImage) missingSlides.push(0);
+    const requiredCoverImages = getTemplateMaxImages(coverTemplate);
+
+    // Check if we have all required cover images
+    let hasCoverImages = true;
+    for (let i = 0; i < requiredCoverImages; i++) {
+      if (!coverImages[i]) {
+        hasCoverImages = false;
+        break;
+      }
+    }
+
+    if (!hasCoverImages) {
+      missingSlides.push(0); // 0 represents cover
+    }
   }
 
   // Check content slides (index 1 to slideCount - 1)
   if (templateRequiresImage(contentTemplate)) {
     for (let i = 1; i < slideCount; i++) {
-      const hasImage = uploadedImages.some(
+      const hasImage = contentImages.some(
         img => img.slideIndex === i && img.publicUrl
       );
       if (!hasImage) missingSlides.push(i);

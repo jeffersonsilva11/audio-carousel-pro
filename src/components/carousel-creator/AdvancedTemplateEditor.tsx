@@ -36,7 +36,8 @@ export interface TemplateCustomization {
   fontId: FontId;
   gradientId: GradientId;
   customGradientColors?: string[];
-  slideImages: (string | null)[]; // Array of storage URLs per slide
+  slideImages: (string | null)[]; // Array of storage URLs for content slides (slides 2+)
+  coverImages: (string | null)[]; // Array of storage URLs for cover slide (1-4 images depending on template)
   textAlignment: TextAlignment;
   verticalAlignment: VerticalAlignment;
   showNavigationDots: boolean;
