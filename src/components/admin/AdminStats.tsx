@@ -20,6 +20,15 @@ export default function AdminStats() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
+        // First, fetch admin user IDs to exclude from relevant counts
+        const { data: adminRoles } = await supabase
+          .from("user_roles")
+          .select("user_id")
+          .eq("role", "admin");
+
+        const adminUserIds = (adminRoles || []).map(r => r.user_id);
+        const adminCount = adminUserIds.length;
+
         // Fetch total users from profiles
         const { count: usersCount } = await supabase
           .from("profiles")
@@ -30,27 +39,47 @@ export default function AdminStats() {
           .from("carousels")
           .select("*", { count: "exact", head: true });
 
-        // Fetch pro users (subscriptions with active status and non-free tier)
-        const { count: proCount } = await supabase
-          .from("subscriptions")
-          .select("*", { count: "exact", head: true })
-          .eq("status", "active")
-          .neq("plan_tier", "free");
+        // Fetch pro users (subscriptions with active status and non-free tier, excluding admins)
+        let proCount = 0;
+        if (adminUserIds.length > 0) {
+          const { data: subscriptions } = await supabase
+            .from("subscriptions")
+            .select("user_id")
+            .eq("status", "active")
+            .neq("plan_tier", "free");
 
-        // Fetch users active today
+          // Filter out admin subscriptions
+          proCount = (subscriptions || []).filter(s => !adminUserIds.includes(s.user_id)).length;
+        } else {
+          const { count } = await supabase
+            .from("subscriptions")
+            .select("*", { count: "exact", head: true })
+            .eq("status", "active")
+            .neq("plan_tier", "free");
+          proCount = count ?? 0;
+        }
+
+        // Fetch users active today (excluding admins)
         const todayStart = new Date();
         todayStart.setHours(0, 0, 0, 0);
-        
-        const { count: activeCount } = await supabase
+
+        const { data: activeCarousels } = await supabase
           .from("carousels")
-          .select("user_id", { count: "exact", head: true })
+          .select("user_id")
           .gte("created_at", todayStart.toISOString());
 
+        // Count unique non-admin users who created carousels today
+        const uniqueActiveUsers = new Set(
+          (activeCarousels || [])
+            .filter(c => !adminUserIds.includes(c.user_id))
+            .map(c => c.user_id)
+        );
+
         setStats({
-          totalUsers: usersCount ?? 0,
+          totalUsers: Math.max(0, (usersCount ?? 0) - adminCount), // Exclude admins from total
           totalCarousels: carouselsCount ?? 0,
-          proUsers: proCount ?? 0,
-          activeToday: activeCount ?? 0,
+          proUsers: proCount,
+          activeToday: uniqueActiveUsers.size,
         });
       } catch (error) {
         console.error("Error fetching admin stats:", error);
