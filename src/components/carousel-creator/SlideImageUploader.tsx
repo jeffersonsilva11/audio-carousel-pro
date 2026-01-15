@@ -13,11 +13,15 @@ import {
   templateRequiresImage,
   getTemplateName,
 } from "@/lib/templates";
-import { FILE_LIMITS } from "@/lib/constants";
+import { FILE_LIMITS, SlideCountMode } from "@/lib/constants";
+
+// Maximum content slides when in auto mode (10 total - 1 cover = 9)
+const MAX_AUTO_CONTENT_SLIDES = 9;
 
 interface SlideImageUploaderProps {
   userId: string;
   slideCount: number;
+  slideCountMode: SlideCountMode;
   coverTemplate: CoverTemplateType;
   contentTemplate: ContentTemplateType;
   slideImages: SlideImage[];
@@ -28,6 +32,7 @@ interface SlideImageUploaderProps {
 const SlideImageUploader = ({
   userId,
   slideCount,
+  slideCountMode,
   coverTemplate,
   contentTemplate,
   slideImages,
@@ -46,12 +51,13 @@ const SlideImageUploader = ({
     pt: {
       title: "Imagens do Conteúdo",
       subtitle: "Faça upload das imagens para os slides de conteúdo",
+      subtitleAuto: "A IA decidirá quantos slides criar (4-10). Envie até 9 imagens - usaremos na ordem conforme necessário.",
+      subtitleManual: "Envie imagens para os slides de conteúdo.",
       coverSlide: "Capa",
       contentSlide: "Slide",
       uploadImage: "Enviar imagem",
       removeImage: "Remover",
-      requiresImage: "Requer imagem",
-      noImageRequired: "Não requer imagem",
+      optional: "Opcional",
       uploadingImage: "Enviando...",
       uploadSuccess: "Imagem enviada com sucesso",
       uploadError: "Erro ao enviar imagem",
@@ -63,16 +69,20 @@ const SlideImageUploader = ({
       lockedDesc: "Faça upload de imagens personalizadas para cada slide",
       noImagesTitle: "Sem imagens necessárias",
       noImagesDesc: "Os templates selecionados não requerem upload de imagens.",
+      hintAuto: "Você pode adicionar ou alterar imagens depois na Preview",
+      hintManual: "Você pode adicionar ou alterar imagens depois na Preview",
+      imagesUploaded: "imagens enviadas",
     },
     en: {
       title: "Content Images",
       subtitle: "Upload images for content slides",
+      subtitleAuto: "AI will decide how many slides to create (4-10). Upload up to 9 images - we'll use them in order as needed.",
+      subtitleManual: "Upload images for content slides.",
       coverSlide: "Cover",
       contentSlide: "Slide",
       uploadImage: "Upload image",
       removeImage: "Remove",
-      requiresImage: "Requires image",
-      noImageRequired: "No image required",
+      optional: "Optional",
       uploadingImage: "Uploading...",
       uploadSuccess: "Image uploaded successfully",
       uploadError: "Error uploading image",
@@ -84,16 +94,20 @@ const SlideImageUploader = ({
       lockedDesc: "Upload custom images for each slide",
       noImagesTitle: "No images required",
       noImagesDesc: "The selected templates don't require image uploads.",
+      hintAuto: "You can add or change images later in Preview",
+      hintManual: "You can add or change images later in Preview",
+      imagesUploaded: "images uploaded",
     },
     es: {
       title: "Imágenes del Contenido",
       subtitle: "Sube imágenes para las diapositivas de contenido",
+      subtitleAuto: "La IA decidirá cuántas diapositivas crear (4-10). Sube hasta 9 imágenes - las usaremos en orden según sea necesario.",
+      subtitleManual: "Sube imágenes para las diapositivas de contenido.",
       coverSlide: "Portada",
       contentSlide: "Diapositiva",
       uploadImage: "Subir imagen",
       removeImage: "Eliminar",
-      requiresImage: "Requiere imagen",
-      noImageRequired: "No requiere imagen",
+      optional: "Opcional",
       uploadingImage: "Subiendo...",
       uploadSuccess: "Imagen subida correctamente",
       uploadError: "Error al subir imagen",
@@ -105,22 +119,32 @@ const SlideImageUploader = ({
       lockedDesc: "Sube imágenes personalizadas para cada diapositiva",
       noImagesTitle: "Sin imágenes necesarias",
       noImagesDesc: "Las plantillas seleccionadas no requieren subida de imágenes.",
+      hintAuto: "Puedes añadir o cambiar imágenes después en la Vista Previa",
+      hintManual: "Puedes añadir o cambiar imágenes después en la Vista Previa",
+      imagesUploaded: "imágenes subidas",
     },
   };
 
   const t = translations[langKey as keyof typeof translations];
 
-  // Determine which slides require images based on templates
-  // Note: Cover (index 0) is handled by CoverCustomization, so we only show content slides here
-  const getSlidesRequiringImages = () => {
-    const slides: { index: number; requiresImage: boolean; isCover: boolean }[] = [];
+  // Determine how many content slide slots to show
+  // Auto mode: show maximum possible (9 content slides for 10 total)
+  // Manual mode: show exact count (slideCount - 1 for cover)
+  const contentSlotCount = slideCountMode === "auto"
+    ? MAX_AUTO_CONTENT_SLIDES
+    : slideCount - 1;
 
-    // Content slides only (index 1 to slideCount - 1)
+  // Determine which slides can have images based on templates
+  // Note: Cover (index 0) is handled by CoverCustomization, so we only show content slides here
+  const getSlidesConfig = () => {
+    const slides: { index: number; canHaveImage: boolean; isCover: boolean }[] = [];
+
+    // Content slides only (index 1 to contentSlotCount)
     // Cover slide (index 0) is handled by CoverCustomization component
-    for (let i = 1; i < slideCount; i++) {
+    for (let i = 1; i <= contentSlotCount; i++) {
       slides.push({
         index: i,
-        requiresImage: templateRequiresImage(contentTemplate),
+        canHaveImage: templateRequiresImage(contentTemplate),
         isCover: false,
       });
     }
@@ -128,8 +152,9 @@ const SlideImageUploader = ({
     return slides;
   };
 
-  const slidesConfig = getSlidesRequiringImages();
-  const hasSlidesThatRequireImages = slidesConfig.some((s) => s.requiresImage);
+  const slidesConfig = getSlidesConfig();
+  const hasSlidesThatCanHaveImages = slidesConfig.some((s) => s.canHaveImage);
+  const uploadedImagesCount = slideImages.filter(img => img.publicUrl).length;
 
   // Get image for a specific slide
   const getSlideImage = (slideIndex: number): SlideImage | undefined => {
@@ -239,12 +264,12 @@ const SlideImageUploader = ({
     onSlideImagesChange(updatedImages);
   };
 
-  // Don't render if not creator or no images required
+  // Don't render if not creator or template doesn't use images
   if (!isCreator) {
     return null;
   }
 
-  if (!hasSlidesThatRequireImages) {
+  if (!hasSlidesThatCanHaveImages) {
     return (
       <div className="border border-border/50 rounded-xl p-4 bg-muted/30">
         <div className="flex items-start gap-3">
@@ -262,6 +287,10 @@ const SlideImageUploader = ({
     );
   }
 
+  // Dynamic subtitle based on mode
+  const subtitleText = slideCountMode === "auto" ? t.subtitleAuto : t.subtitleManual;
+  const hintText = slideCountMode === "auto" ? t.hintAuto : t.hintManual;
+
   return (
     <div className="border border-border/50 rounded-xl overflow-hidden">
       {/* Header */}
@@ -269,6 +298,11 @@ const SlideImageUploader = ({
         <div className="flex items-center gap-2">
           <Image className="w-4 h-4 text-accent" />
           <h3 className="font-semibold">{t.title}</h3>
+          {uploadedImagesCount > 0 && (
+            <span className="text-xs text-muted-foreground">
+              ({uploadedImagesCount} {t.imagesUploaded})
+            </span>
+          )}
           <Badge
             variant="secondary"
             className="text-[10px] ml-auto bg-accent/20 text-accent"
@@ -276,123 +310,100 @@ const SlideImageUploader = ({
             Creator+
           </Badge>
         </div>
-        <p className="text-sm text-muted-foreground mt-1">{t.subtitle}</p>
+        <p className="text-sm text-muted-foreground mt-1">{subtitleText}</p>
       </div>
 
       {/* Slides grid */}
       <div className="p-4">
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
           {slidesConfig.map((slide) => {
             const image = getSlideImage(slide.index);
             const isUploading = uploadingIndex === slide.index;
             const hasImage = !!image?.publicUrl;
 
             return (
-              <div key={slide.index} className="space-y-2">
+              <div key={slide.index} className="space-y-1.5">
                 {/* Slide label */}
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-medium">
-                    {slide.isCover
-                      ? t.coverSlide
-                      : `${t.contentSlide} ${slide.index}`}
+                    {`${t.contentSlide} ${slide.index + 1}`}
                   </span>
-                  {slide.requiresImage ? (
-                    <Badge variant="outline" className="text-[9px] px-1">
-                      {t.requiresImage}
-                    </Badge>
-                  ) : (
-                    <Badge
-                      variant="secondary"
-                      className="text-[9px] px-1 opacity-50"
-                    >
-                      {t.noImageRequired}
-                    </Badge>
-                  )}
+                  <Badge
+                    variant="secondary"
+                    className="text-[9px] px-1 opacity-60"
+                  >
+                    {t.optional}
+                  </Badge>
                 </div>
 
                 {/* Upload area */}
-                {slide.requiresImage ? (
-                  <div
-                    className={cn(
-                      "aspect-square rounded-lg border-2 border-dashed overflow-hidden transition-all relative",
-                      hasImage
-                        ? "border-accent"
-                        : "border-border hover:border-accent/50",
-                      isUploading && "opacity-50"
-                    )}
-                  >
-                    {isUploading ? (
-                      <div className="w-full h-full flex flex-col items-center justify-center bg-muted/50 gap-2">
-                        <Loader2 className="w-6 h-6 animate-spin text-accent" />
-                        <span className="text-xs text-muted-foreground">
-                          {t.uploadingImage}
-                        </span>
-                      </div>
-                    ) : hasImage ? (
-                      <>
-                        <img
-                          src={image.publicUrl!}
-                          alt={`Slide ${slide.index}`}
-                          className="w-full h-full object-cover"
-                        />
-                        {/* Remove button */}
-                        <button
-                          onClick={() => handleRemoveImage(slide.index)}
-                          className="absolute top-1 right-1 w-6 h-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-transform"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </>
-                    ) : (
+                <div
+                  className={cn(
+                    "aspect-square rounded-lg border-2 border-dashed overflow-hidden transition-all relative",
+                    hasImage
+                      ? "border-accent"
+                      : "border-border hover:border-accent/50",
+                    isUploading && "opacity-50"
+                  )}
+                >
+                  {isUploading ? (
+                    <div className="w-full h-full flex flex-col items-center justify-center bg-muted/50 gap-2">
+                      <Loader2 className="w-5 h-5 animate-spin text-accent" />
+                      <span className="text-[9px] text-muted-foreground">
+                        {t.uploadingImage}
+                      </span>
+                    </div>
+                  ) : hasImage ? (
+                    <>
+                      <img
+                        src={image.publicUrl!}
+                        alt={`Slide ${slide.index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                      {/* Remove button */}
                       <button
-                        onClick={() => fileInputRefs.current[slide.index]?.click()}
-                        className="w-full h-full flex flex-col items-center justify-center gap-2 hover:bg-accent/5 transition-colors"
+                        onClick={() => handleRemoveImage(slide.index)}
+                        className="absolute top-1 right-1 w-5 h-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-transform"
                       >
-                        <Upload className="w-5 h-5 text-muted-foreground" />
-                        <span className="text-[10px] text-muted-foreground text-center px-2">
-                          {t.uploadImage}
-                        </span>
+                        <X className="w-2.5 h-2.5" />
                       </button>
-                    )}
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => fileInputRefs.current[slide.index]?.click()}
+                      className="w-full h-full flex flex-col items-center justify-center gap-1.5 hover:bg-accent/5 transition-colors"
+                    >
+                      <Upload className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-[9px] text-muted-foreground text-center px-1">
+                        {t.uploadImage}
+                      </span>
+                    </button>
+                  )}
 
-                    {/* Hidden file input */}
-                    <input
-                      ref={(el) => (fileInputRefs.current[slide.index] = el)}
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) handleImageUpload(slide.index, file);
-                        e.target.value = "";
-                      }}
-                    />
-                  </div>
-                ) : (
-                  <div className="aspect-square rounded-lg border border-border/50 bg-muted/30 flex items-center justify-center">
-                    <span className="text-xs text-muted-foreground text-center px-2">
-                      {t.noImageRequired}
-                    </span>
-                  </div>
-                )}
+                  {/* Hidden file input */}
+                  <input
+                    ref={(el) => (fileInputRefs.current[slide.index] = el)}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleImageUpload(slide.index, file);
+                      e.target.value = "";
+                    }}
+                  />
+                </div>
               </div>
             );
           })}
         </div>
 
-        {/* Template info */}
+        {/* Hint text */}
         <div className="mt-4 pt-4 border-t border-border/50">
-          <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-            <span>
-              <strong>{langKey === "pt" ? "Capa:" : "Cover:"}</strong>{" "}
-              {getTemplateName(coverTemplate, langKey)}
-            </span>
-            <span>•</span>
-            <span>
-              <strong>{langKey === "pt" ? "Conteúdo:" : "Content:"}</strong>{" "}
-              {getTemplateName(contentTemplate, langKey)}
-            </span>
-          </div>
+          <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+            <Info className="w-3.5 h-3.5" />
+            {hintText}
+          </p>
         </div>
       </div>
     </div>
