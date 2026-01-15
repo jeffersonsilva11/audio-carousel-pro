@@ -92,15 +92,15 @@ const TrendsAnalytics = () => {
   const runAnalysis = async () => {
     setAnalyzing(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error("Not authenticated");
-
+      // Let Supabase client handle the auth header automatically
       const response = await supabase.functions.invoke("analyze-trends", {
-        body: { period_days: period },
-        headers: { Authorization: `Bearer ${session.access_token}` }
+        body: { period_days: period }
       });
 
-      if (response.error) throw new Error(response.error.message);
+      if (response.error) {
+        console.error("Function error:", response.error);
+        throw new Error(response.error.message || "Function call failed");
+      }
 
       const result = response.data;
       if (!result.success) throw new Error(result.error);
